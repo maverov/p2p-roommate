@@ -1,0 +1,12 @@
+{
+  "name": "@p2p-roommate/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@8.0.0",
+  "scripts": {
+    "dev": "pnpm -r --filter=web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "type-check": "pnpm -r type-check"
+  }
+}
