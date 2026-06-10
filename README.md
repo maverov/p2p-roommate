@@ -1,5 +1,4 @@
-# Stay.bg (placeholder name)
-# Project P2P Roommate Finder
+# Project P2P Roommate Finder - Stay.bg (placeholder name)
 
 > A contract-first, polyglot monorepo — the frontend and backend are fully decoupled through an OpenAPI specification.
 
