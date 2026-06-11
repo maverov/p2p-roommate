@@ -1,45 +1,52 @@
 'use client';
 
-import { useRouter, useParams } from 'next/navigation';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
-import { locales } from '@/lib/locales';
-
-const cookieName = 'NEXT_LOCALE';
+import { memo, useCallback } from 'react';
+import type { Locale } from '@/lib/i18n';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { defaultLocale, isLocale, localeCookieName, locales } from '@/lib/i18n';
 
 function setLocaleCookie(locale: string) {
-  document.cookie = `${cookieName}=${locale}; path=/; max-age=${60 * 60 * 24 * 365};`;
+  document.cookie = `${localeCookieName}=${locale}; path=/; max-age=${60 * 60 * 24 * 365};`;
 }
 
-export function LocaleSwitcher() {
+export const LocaleSwitcher = memo(function LocaleSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const params = useParams() as { locale?: string };
+  const currentLocale: Locale = params.locale && isLocale(params.locale) ? params.locale : defaultLocale;
 
-  const currentLocale = params.locale && locales.includes(params.locale as any) ? params.locale : 'bg';
+  const onLocaleSelect = useCallback(
+    (locale: Locale) => {
+      setLocaleCookie(locale);
+      const segments = pathname.split('/').filter(Boolean);
+      if (segments.length > 0 && isLocale(segments[0])) {
+        segments[0] = locale;
+      } else {
+        segments.unshift(locale);
+      }
+      const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+      router.push(`/${segments.join('/')}${currentSearch}`);
+    },
+    [pathname, router]
+  );
 
   return (
-    <div className="flex gap-2">
+    <nav className="flex gap-2" aria-label="Language switcher">
       {locales.map((locale) => (
         <button
           key={locale}
           type="button"
-          className={locale === currentLocale ? 'font-bold underline' : ''}
-          onClick={() => {
-            setLocaleCookie(locale);
-            const segments = pathname.split('/').filter(Boolean);
-            if (segments.length > 0 && locales.includes(segments[0] as any)) {
-              segments[0] = locale;
-            } else {
-              segments.unshift(locale);
-            }
-            router.push(`/${segments.join('/')}${searchParams ? `?${searchParams.toString()}` : ''}`);
-          }}
+          aria-pressed={locale === currentLocale}
+          className={
+            locale === currentLocale
+              ? 'rounded px-2 py-1 font-bold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2'
+              : 'rounded px-2 py-1 focus-visible:outline-2 focus-visible:outline-offset-2'
+          }
+          onClick={() => onLocaleSelect(locale)}
         >
           {locale.toUpperCase()}
         </button>
       ))}
-    </div>
+    </nav>
   );
-}
+});

@@ -1,7 +1,6 @@
-'use client';
-
 import { LocaleSwitcher } from '@/components/ui/LocaleSwitcher';
-import type { Locale } from './layout';
+import type { Locale } from '@/lib/i18n';
+import { getTranslations } from '@/lib/i18n-server';
 
 interface PageProps {
   params: {
@@ -9,17 +8,15 @@ interface PageProps {
   };
 }
 
-export default function HomePage({ params }: PageProps) {
+export default async function HomePage({ params }: PageProps) {
+  const t = await getTranslations(params.locale);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="self-end">
+    <main id="main-content" className="flex min-h-screen flex-col items-center justify-between p-24">
+      <header className="self-end" aria-label={t('home.switch_language')}>
         <LocaleSwitcher />
-      </div>
-      <h1>
-        {params.locale === 'bg'
-          ? 'Добре дошли в P2P Roommate'
-          : 'Welcome to P2P Roommate'}
-      </h1>
+      </header>
+      <h1 className="text-3xl font-semibold tracking-tight">{t('home.welcome')}</h1>
     </main>
   );
 }

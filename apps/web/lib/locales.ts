@@ -1,6 +1,2 @@
-export const locales = ['bg', 'en'] as const;
-export type Locale = (typeof locales)[number];
-
-export function isLocale(locale: string): locale is Locale {
-  return locales.includes(locale as Locale);
-}
+export { defaultLocale, isLocale, localeCookieName, locales } from './i18n';
+export type { Locale } from './i18n';

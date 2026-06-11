@@ -5,7 +5,7 @@ import { isLocale, locales } from '@/lib/i18n';
 export const dynamicParams = false;
 export const generateStaticParams = () => locales.map((locale) => ({ locale }));
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: {

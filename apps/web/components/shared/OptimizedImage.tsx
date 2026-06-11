@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import Image from 'next/image';
 
 // Example: Optimized image component for listings
 // Usage:
 // <OptimizedListingImage src="/listing-photo.jpg" alt="Apartment" />
 
-export function OptimizedListingImage({
+export const OptimizedListingImage = memo(function OptimizedListingImage({
   src,
   alt,
   width = 800,
@@ -29,4 +30,4 @@ export function OptimizedListingImage({
       />
     </div>
   );
-}
+});
