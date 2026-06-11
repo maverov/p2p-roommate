@@ -52,6 +52,68 @@ export default async function HomePage({ params }: { params: { locale: Locale } 
 }
 ```
 
+## Client components: pass translated strings as props
+
+`getTranslations` is server-only (`lib/i18n-server.ts` imports `server-only`), so client components should receive translated text from a parent server component.
+
+### Server component -> client component example
+
+```tsx
+// app/[locale]/page.tsx (Server Component)
+import type { Locale } from '@/lib/i18n';
+import { getTranslations } from '@/lib/i18n-server';
+import { WelcomeCard } from '@/components/shared/WelcomeCard';
+
+export default async function HomePage({ params }: { params: { locale: Locale } }) {
+  const t = await getTranslations(params.locale);
+
+  return (
+    <WelcomeCard
+      title={t('home.welcome')}
+      switchLanguageLabel={t('home.switch_language')}
+    />
+  );
+}
+```
+
+```tsx
+// components/shared/WelcomeCard.tsx (Client Component)
+'use client';
+
+interface WelcomeCardProps {
+  title: string;
+  switchLanguageLabel: string;
+}
+
+export function WelcomeCard({ title, switchLanguageLabel }: WelcomeCardProps) {
+  return (
+    <section>
+      <h2>{title}</h2>
+      <button type="button">{switchLanguageLabel}</button>
+    </section>
+  );
+}
+```
+
+### Pass only what the client needs
+
+Prefer passing small, explicit props (or a typed `labels` object) instead of passing a generic translation function.
+
+```tsx
+interface LoginLabels {
+  email: string;
+  password: string;
+  submit: string;
+}
+
+// Server component
+const labels: LoginLabels = {
+  email: t('auth.login.email'),
+  password: t('auth.login.password'),
+  submit: t('auth.login.submit'),
+};
+```
+
 ## Add a new locale
 
 1. Add locale code to `locales` in `lib/i18n.ts`.
@@ -67,4 +129,5 @@ export const locales = ['bg', 'en', 'de'] as const;
 1. Keep key paths stable (`feature.section.label` style).
 2. Always add keys to all locales in the same PR.
 3. Avoid hardcoded user-facing strings in components.
-4. Keep interpolation and formatting consistent across languages.
+4. For client components, translate in server components and pass typed props.
+5. Keep interpolation and formatting consistent across languages.
