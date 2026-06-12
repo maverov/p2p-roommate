@@ -13,7 +13,7 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
-    @Mapping(target = "verified", constant = "false")
+    @Mapping(target = "isVerified", constant = "false")
     @Mapping(target = "verificationBadgeExpiresAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
