@@ -4,13 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record UserUpdateRequest(
-    @NotBlank(message = "First name cannot be blank")
-    @Size(max = 100)
-    String firstName,
-
-    @NotBlank(message = "Last name cannot be blank")
-    @Size(max = 100)
-    String lastName,
+    @NotBlank(message = "Name cannot be blank")
+    @Size(max = 200)
+    String name,
 
     @Size(max = 30)
     String phoneNumber,
