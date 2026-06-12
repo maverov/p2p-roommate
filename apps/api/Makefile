@@ -21,7 +21,7 @@ destroy: ## Stop all containers and wipe local database/cache volumes (fresh sta
 restart: down up ## Restart local infrastructure services
 
 build-backend: ## Compile and build the backend application fat-jar locally
-	./mvnw clean package -DskipTests
+	./mvn clean package -DskipTests
 
 docker-build: ## Build the multi-stage backend Docker image
 	docker compose build backend
@@ -33,7 +33,7 @@ logs: ## Tail backend container logs
 	docker compose logs -f backend
 
 test: ## Run the full unit and integration test suite (requires Docker running for Testcontainers)
-	./mvnw test
+	./mvn test
 
 clean: ## Clean Maven target build directories
-	./mvnw clean
+	./mvn clean
