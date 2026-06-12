@@ -47,6 +47,9 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD}
+      # Route security secrets dynamically into the Docker container runtime layer
+      - APPLICATION_SECURITY_JWT_SECRET_KEY=${APPLICATION_SECURITY_JWT_SECRET_KEY}
+      - APPLICATION_SECURITY_JWT_EXPIRATION=${APPLICATION_SECURITY_JWT_EXPIRATION}
     depends_on:
       postgres:
         condition: service_healthy
