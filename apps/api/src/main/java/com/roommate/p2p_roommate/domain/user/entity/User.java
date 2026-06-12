@@ -47,6 +47,13 @@ public class User {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Size(max = 512)
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+
     @Size(max = 30)
     @Column(name = "phone_number")
     private String phoneNumber;

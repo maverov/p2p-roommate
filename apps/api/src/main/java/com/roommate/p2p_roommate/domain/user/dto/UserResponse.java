@@ -13,6 +13,8 @@ public record UserResponse(
     String phoneNumber,
     UserRole role,
     boolean isVerified,
+    String profilePictureUrl,
+    String bio,
     OffsetDateTime createdAt
 ) {
     
