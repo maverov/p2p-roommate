@@ -38,14 +38,9 @@ public class User {
     private String passwordHash; // Nullable for Google OAuth integration
 
     @NotBlank
-    @Size(max = 100)
-    @Column(name = "first_name", nullable = false)
-    private String firstName;
-
-    @NotBlank
-    @Size(max = 100)
-    @Column(name = "last_name", nullable = false)
-    private String lastName;
+    @Size(max = 200)
+    @Column(name = "name", nullable = false)
+    private String name;
 
     @Size(max = 512)
     @Column(name = "profile_picture_url")
