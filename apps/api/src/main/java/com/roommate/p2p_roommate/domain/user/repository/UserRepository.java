@@ -15,4 +15,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     
     // Quick validation checks during onboarding
     boolean existsByEmail(String email);
+    Optional<User> findByGoogleId(String googleId);
 }
