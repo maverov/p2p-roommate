@@ -67,6 +67,10 @@ public class User {
     @Column(name = "verification_badge_expires_at")
     private OffsetDateTime verificationBadgeExpiresAt;
 
+    @Size(max = 255)
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
