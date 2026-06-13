@@ -39,7 +39,7 @@ public class ApplicationSecurityBeans {
         return username -> userRepository.findByEmail(username)
         .map(user -> new User(
             user.getEmail(),
-            user.getPasswordHash(),
+            user.getPasswordHash() != null ? user.getPasswordHash() : "",
             List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         ))
         .orElseThrow(() -> new ResourceNotFoundException("Authentication failed. Target user context does not exist."));
@@ -54,8 +54,9 @@ public class ApplicationSecurityBeans {
                 String password = authentication.getCredentials().toString();
 
                 UserDetails userDetails = userDetailsService().loadUserByUsername(username);
+                String storedPassword = userDetails.getPassword();
 
-                if (!passwordEncoder().matches(password, userDetails.getPassword())) {
+                if (storedPassword == null || storedPassword.isBlank() || !passwordEncoder().matches(password, storedPassword)) {
                     throw new BadCredentialsException("Invalid credentials provided.");
                 }
 
