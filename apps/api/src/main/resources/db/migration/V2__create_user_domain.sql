@@ -7,7 +7,7 @@ CREATE TABLE users (
     bio                         TEXT,
     phone_number                VARCHAR(30),
     role                        VARCHAR(20) NOT NULL DEFAULT 'TENANT'
-    CHECK (role IN ('TENANT', 'OWNER', 'ADMIN'))
+    CHECK (role IN ('TENANT', 'OWNER', 'ADMIN')),
     is_verified                 BOOLEAN NOT NULL DEFAULT FALSE,
     verification_badge_expires_at TIMESTAMPTZ,
     created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
