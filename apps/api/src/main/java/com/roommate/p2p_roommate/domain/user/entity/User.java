@@ -56,10 +56,12 @@ public class User {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, columnDefinition = "user_role")
+    @Builder.Default
     private UserRole role = UserRole.TENANT;
 
     @NotNull
     @Column(name = "is_verified", nullable = false)
+    @Builder.Default
     private boolean isVerified = false;
 
     @Column(name = "verification_badge_expires_at")
