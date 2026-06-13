@@ -39,8 +39,8 @@ export const LocaleSwitcher = memo(function LocaleSwitcher() {
           aria-pressed={locale === currentLocale}
           className={
             locale === currentLocale
-              ? 'rounded px-2 py-1 font-bold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2'
-              : 'rounded px-2 py-1 focus-visible:outline-2 focus-visible:outline-offset-2'
+              ? 'rounded font-bold cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2'
+              : 'rounded cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2'
           }
           onClick={() => onLocaleSelect(locale)}
         >
