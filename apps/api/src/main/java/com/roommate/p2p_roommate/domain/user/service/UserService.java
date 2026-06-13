@@ -33,7 +33,7 @@ public class UserService {
 
         User user = userMapper.toEntity(request);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        return userMapper.toResponse(userRepository.save(user));
+        return userMapper.toResponse(userRepository.saveAndFlush(user));
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +50,7 @@ public class UserService {
         user.setProfilePictureUrl(request.profilePictureUrl());
         user.setBio(request.bio());
 
-        return userMapper.toResponse(userRepository.save(user));
+        return userMapper.toResponse(userRepository.saveAndFlush(user));
     }
 
     @Transactional(readOnly = true)

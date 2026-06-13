@@ -10,8 +10,8 @@ CREATE TABLE users (
     CHECK (role IN ('TENANT', 'OWNER', 'ADMIN')),
     is_verified                 BOOLEAN NOT NULL DEFAULT FALSE,
     verification_badge_expires_at TIMESTAMPTZ,
-    created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at                  TIMESTAMPTZ NOT NULL,
+    updated_at                  TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX idx_users_email ON users (email);
