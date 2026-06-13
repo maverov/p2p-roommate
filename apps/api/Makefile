@@ -15,6 +15,12 @@ up: ## Start local PostgreSQL and Redis containers in the background
 down: ## Stop all local containers and preserve data volumes
 	docker compose down
 
+run:
+	cd apps/api && \
+set -a && source .env && set +a
+mvn spring-boot:run && \
+cd ../..
+
 destroy: ## Stop all containers and wipe local database/cache volumes (fresh start)
 	docker compose down -v
 
