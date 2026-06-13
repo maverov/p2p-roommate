@@ -13,12 +13,15 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
+    @Mapping(target = "bio", ignore = true)
+    @Mapping(target = "profilePictureUrl", ignore = true)
     @Mapping(target = "isVerified", constant = "false")
     @Mapping(target = "verificationBadgeExpiresAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     User toEntity(UserRegisterRequest request);
 
+    @Mapping(source = "verified", target = "isVerified")
     UserResponse toResponse(User user);
     
 }
