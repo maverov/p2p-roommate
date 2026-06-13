@@ -13,9 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.roommate.p2p_roommate.domain.user.dto.AuthRequest;
 import com.roommate.p2p_roommate.domain.user.dto.AuthResponse;
+import com.roommate.p2p_roommate.domain.user.dto.GoogleAuthRequest;
 import com.roommate.p2p_roommate.domain.user.dto.UserRegisterRequest;
 import com.roommate.p2p_roommate.domain.user.dto.UserResponse;
+import com.roommate.p2p_roommate.domain.user.service.GoogleTokenVerfierService;
 import com.roommate.p2p_roommate.domain.user.service.UserService;
+import com.roommate.p2p_roommate.domain.user.service.GoogleTokenVerfierService.GoogleUserInfo;
 import com.roommate.p2p_roommate.global.security.JwtService;
 
 import jakarta.validation.Valid;
@@ -30,6 +33,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
+    private final GoogleTokenVerfierService googleTokenVerfierService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -49,6 +53,14 @@ public class AuthController {
         UserDetails userDetails = (UserDetails) authenticationManager.authenticate(authToken).getPrincipal();
         UserResponse user = userService.getResponseByEmail(userDetails.getUsername());
 
+        return buildAuthResponse(userDetails, user);
+    }
+
+    @PostMapping("/google")
+    public AuthResponse googleLogin(@Valid @RequestBody GoogleAuthRequest request) {
+        GoogleUserInfo googleUser = googleTokenVerfierService.verify(request.idToken());
+        UserResponse user  = userService.loginWithGoogle(googleUser, request.role());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.email());
         return buildAuthResponse(userDetails, user);
     }
 
