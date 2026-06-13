@@ -6,7 +6,8 @@ CREATE TABLE users (
     profile_picture_url         VARCHAR(512),
     bio                         TEXT,
     phone_number                VARCHAR(30),
-    role                        user_role NOT NULL DEFAULT 'TENANT',
+    role                        VARCHAR(20) NOT NULL DEFAULT 'TENANT'
+    CHECK (role IN ('TENANT', 'OWNER', 'ADMIN'))
     is_verified                 BOOLEAN NOT NULL DEFAULT FALSE,
     verification_badge_expires_at TIMESTAMPTZ,
     created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
