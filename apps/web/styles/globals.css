@@ -5,6 +5,7 @@
   *::before,
   *::after {
     box-sizing: border-box;
+    border-color: theme(--color-gray-200);
   }
 
   body {
