@@ -1,3 +1,5 @@
+import { Providers } from '@/app/providers';
+
 export default function AuthLayout({
   children,
 }: {
@@ -5,7 +7,7 @@ export default function AuthLayout({
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-cream px-6 py-12">
-      {children}
+      <Providers>{children}</Providers>
     </main>
   );
 }
