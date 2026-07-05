@@ -1,0 +1,30 @@
+{
+  "home": {
+    "title": "P2P Roommate",
+    "welcome": "Welcome to P2P Roommate",
+    "switch_language": "Switch language"
+  },
+  "hero": {
+    "heading_line1": "No agents.",
+    "heading_line2": "No commissions.",
+    "subheading": "Rooms, apartments and roommates across Bulgaria.",
+    "image_alt": "Coastal balcony in Bulgaria",
+    "search": {
+      "where_label": "Where?",
+      "where_placeholder": "City, neighborhood",
+      "what_label": "What?",
+      "what_placeholder": "Room, Apartment",
+      "budget_label": "Budget?",
+      "budget_placeholder": "up to 600 BGN",
+      "who_label": "Who?",
+      "who_placeholder": "Any",
+      "search_button": "Search"
+    },
+    "flags": {
+      "furnished": "Furnished",
+      "pets_ok": "Pets OK",
+      "girls_only": "Girls only",
+      "near_metro": "Near metro"
+    }
+  }
+}

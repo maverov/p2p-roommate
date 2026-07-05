@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-cream: #faf4e9;
+  --color-brand-ink: #303329;
+  --color-brand-muted: #4f5148;
+  --color-brand-terracotta: #c85b36;
+  --color-brand-terracotta-hover: #b94f2e;
+  --color-brand-olive: #7b7f4d;
+  --color-brand-border: #e4dacd;
+  --color-brand-chip: #fffaf2;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--color-gray-200);
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-ink);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}

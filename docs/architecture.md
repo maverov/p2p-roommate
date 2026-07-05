@@ -1,88 +1,74 @@
-# Project Documentation: stay-bg
+# Architecture
 
-## Project Structure
+## Core Decision
 
-The project follows a monorepo structure, organizing backend services, frontend applications, shared packages, and infrastructure definitions.
+Stay.bg is a full-stack Next.js application.
 
-```text
-stay-bg/
-├── apps/
-│   ├── api/                    # Spring Boot 3, Gradle, Java 21
-│   └── web/                    # Next.js 14 + TanStack Query
-│
-├── packages/
-│   ├── api-contract/           # openapi.yaml lives here
-│   └── generated-types/        # TS types + TanStack Query hooks (auto-generated from openapi.yaml)
-│
-├── infra/                      # Docker, docker-compose for local dev
-├── docs/
-├── pnpm-workspace.yaml         # pnpm manages JS packages only (web + generated-types)
-├── .gitignore
-└── README.md
+The application should optimize for a small, fast-moving product team:
 
-# Web Frontend — Tech Stack
+- one primary TypeScript codebase
+- one PostgreSQL database
+- typed database access through Drizzle
+- authentication through Better Auth
+- feature-oriented UI and product logic
+- server-only concerns kept out of browser bundles
 
-| Concern           | Decision                    |
-|-------------------|-----------------------------|
-| Framework         | Next.js 14 (App Router)     |
-| Styling           | Tailwind v4 + CSS Modules   |
-| Component Library | shadcn/ui                   |
-| Server State      | TanStack Query              |
-| Client State      | Zustand                     |
-| Forms             | React Hook Form + Zod       |
+## Stack
 
----
+| Concern | Decision |
+| --- | --- |
+| App framework | Next.js App Router |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| UI primitives | shadcn/ui |
+| Database | PostgreSQL |
+| ORM | Drizzle |
+| Auth | Better Auth |
+| Forms | React Hook Form |
+| Validation | Zod via `zodResolver` |
+| Client server-state | TanStack Query |
+| Client UI state | Zustand |
 
-## Rationale
+## Runtime Boundaries
 
-**Next.js 14** — SSR is non-negotiable for listing/search pages. SEO is a primary acquisition channel ("стая под наем София"). App Router adds Server Components and per-route streaming, directly improving TTFB and Core Web Vitals.
+### Server-only
 
-**Tailwind v4** — JIT compilation ships only used classes (5–15kb total). CSS Modules kept for complex one-off components (maps, calendars, animations) where utility classes become unwieldy. SCSS rejected: larger bundles, specificity conflicts at scale.
+- database connection
+- Drizzle schema and queries
+- Better Auth server config
+- secrets and environment validation
+- write operations
+- privileged reads
 
-**shadcn/ui** — Components live in the codebase, not in `node_modules`. Full ownership, zero unused overhead, accessibility via Radix UI primitives. Raw Radix rejected: too much time building what shadcn/ui already provides.
+### Client-safe
 
-**TanStack Query** — Owns all server state. Strict rule: API data never touches Zustand.
+- presentational components
+- form components
+- TanStack Query hooks
+- Zustand UI state
+- browser-only interactions
 
-**Zustand** — Owns all client state (auth user, UI state, active filters). Redux Toolkit rejected: correct tool, wrong scale for a two-person team.
+Server-only modules must not be imported by client components. Prefer explicit files such as `lib/server/*`, `db/*`, and route handlers for privileged work.
 
-**React Hook Form + Zod** — Uncontrolled inputs mean no full-tree re-renders on keystroke. Zod schemas are shared between form validation and API contract types.
+## Data Access
 
----
+Use this order of preference:
 
-## State Separation Rule
+1. Server components for initial page data.
+2. Server actions for mutations that are tightly coupled to forms.
+3. Route handlers for public API surfaces and TanStack Query.
+4. TanStack Query for interactive client-side fetching, caching, and refetching.
+
+Do not put database access inside Zustand stores or client components.
+
+## Forms
+
+React Hook Form owns form state and submission ergonomics. Zod owns schema validation and type inference.
+
+```ts
+const form = useForm<FormInput>({
+  resolver: zodResolver(formSchema),
+});
 ```
-TanStack Query  →  anything from/to the server
-Zustand         →  anything purely frontend
-```
-These two never overlap.
 
-```text
-apps/web/
-├── app/                          # Routing only
-│   ├── (auth)/layout.tsx
-│   ├── (marketing)/layout.tsx
-│   ├── (platform)/layout.tsx
-│   ├── layout.tsx
-│   └── page.tsx
-├── features/
-│   └── auth/                     # Example feature (complete structure)
-│       ├── api/
-│       ├── components/
-│       ├── hooks/
-│       ├── store/
-│       ├── schemas/
-│       ├── types/
-│       └── index.ts (barrel export)
-├── components/
-│   ├── ui/
-│   └── shared/
-├── hooks/index.ts
-├── stores/index.ts
-├── lib/
-│   ├── api.ts                    # API client wrapper
-│   └── queryClient.ts            # TanStack Query setup
-├── utils/index.ts
-├── types/index.ts
-├── config/index.ts
-├── styles/
-└── STRUCTURE.md                  # Complete documentation
+Keep form schemas near the feature that owns the form, usually in `features/<feature>/schemas`.
