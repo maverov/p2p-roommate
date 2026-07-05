@@ -1,0 +1,30 @@
+{
+  "home": {
+    "title": "P2P Roommate",
+    "welcome": "Добре дошли в P2P Roommate",
+    "switch_language": "Смени езика"
+  },
+  "hero": {
+    "heading_line1": "Без агенти.",
+    "heading_line2": "Без комисионни.",
+    "subheading": "Стаи, апартаменти и съквартиранти в цяла България.",
+    "image_alt": "Балкон на морския бряг в България",
+    "search": {
+      "where_label": "Къде?",
+      "where_placeholder": "Град, квартал",
+      "what_label": "Какво?",
+      "what_placeholder": "Стая, Апартамент",
+      "budget_label": "Бюджет?",
+      "budget_placeholder": "до 600 лв",
+      "who_label": "Кой?",
+      "who_placeholder": "Без значение",
+      "search_button": "Търсене"
+    },
+    "flags": {
+      "furnished": "С обзавеждане",
+      "pets_ok": "Домашни любимци ОК",
+      "girls_only": "Само момичета",
+      "near_metro": "Близо до метро"
+    }
+  }
+}

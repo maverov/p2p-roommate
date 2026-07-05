@@ -1,112 +1,57 @@
-# Project P2P Roommate Finder - Stay.bg (placeholder name)
+# P2P Roommate Finder - Stay.bg
 
-> A contract-first, polyglot monorepo — the frontend and backend are fully decoupled through an OpenAPI specification.
+Stay.bg is a full-stack Next.js application for roommate and rental discovery in Bulgaria.
 
-### Tech Stack
-- Next.js 14 (App Router)
-- React 19
-- Tailwind v4 + CSS Modules
-- shadcn/ui (Radix UI primitives)
-- TanStack Query v5 (server state)
-- Zustand (client state)
-- React Hook Form + Zod (forms)
+## Target Stack
+
+- Next.js App Router
+- React
 - TypeScript
-- pnpm workspace (monorepo with Spring Boot backend)
-
----
+- Tailwind CSS
+- shadcn/ui
+- Drizzle ORM
+- PostgreSQL
+- Better Auth
+- TanStack Query for client-side server state
+- React Hook Form + Zod for forms and validation
+- pnpm
 
 ## Project Structure
 
-```
-stay-bg/
-│
-├── apps/
-│   ├── api/                        # Spring Boot 3 · Gradle · Java 21
-│   │                               # Owns all business logic, persistence, and auth.
-│   │                               # Completely unaware of the frontend's existence.
-│   │                               # Can be replaced with any other backend (e.g. NestJS)
-│   │                               # without touching any other part of this repo.
-│   │
-│   └── web/                        # Next.js 14 · TanStack Query · TypeScript
-│                                   # SSR for SEO-critical pages (listing pages, search).
-│                                   # TanStack Query handles all client-side server state,
-│                                   # caching, and background refetching.
-│                                   # Completely unaware of what technology runs the API.
-│
-├── packages/
-│   │
-│   ├── api-contract/               # The single source of truth for the API.
-│   │   ├── openapi.yaml            # Hand-authored OpenAPI 3.1 spec. Every endpoint,
-│   │   │                           # request body, and response shape is defined here
-│   │   │                           # before any code is written (API-First / Contract-First).
-│   │   │                           # Neither the frontend nor the backend is built against
-│   │   │                           # each other — both are built against this file.
-│   │   ├── package.json            # Owns the codegen scripts.
-│   │   └── codegen.config.ts       # Orval config — points at openapi.yaml, outputs to
-│   │                               # generated-types/. Run manually or in CI.
-│   │
-│   └── generated-types/            # Auto-generated. Never edited by hand.
-│       ├── package.json            # Makes this importable as a workspace package.
-│       ├── index.ts                # Generated TypeScript types (User, Listing, etc.)
-│       └── hooks/                  # Generated TanStack Query hooks (useGetListings, etc.)
-│                                   # NOTE: all files inside src/ are gitignored.
-│                                   # The package exists in source control; its contents do not.
-│                                   # Regenerated at build time and in CI.
-│
-├── infra/
-│   ├── docker-compose.yml          # Local development environment.
-│   │                               # Runs MongoDB, Redis, and the API together.
-│   │                               # Single command to get a full local stack running.
-│   └── ...                         # Terraform / k8s configs added here as the project scales.
-│
-├── docs/                           # Architecture decision records (ADRs), API usage guides,
-│                                   # onboarding docs. Kept in the repo so docs and code
-│                                   # are versioned together.
-│
-├── Makefile                        # The single entry point for any engineer on any machine.
-│                                   # Abstracts over the polyglot nature of the repo —
-│                                   # no need to know Gradle vs pnpm vs Docker commands.
-│                                   # Key targets: generate | dev | build | lint | test
-│
-├── pnpm-workspace.yaml             # Declares pnpm workspaces for the JS side only:
-│                                   # apps/web and packages/*
-│                                   # Gradle manages apps/api independently.
-│
-├── .gitignore
-└── README.md
+```text
+p2p-roommate/
+├── app/              # Routes, layouts, route handlers, server actions
+├── components/       # Shared UI and shadcn/ui components
+├── db/               # Drizzle client, schema, migrations
+├── docs/             # Architecture notes and engineering docs
+├── features/         # Domain feature modules
+├── lib/              # Auth, env, query client, area data, shared infrastructure
+├── locales/          # Translation dictionaries
+├── public/           # Static assets
+├── stores/           # Client-only UI state
+├── styles/           # Global styles
+└── package.json
 ```
 
----
+## Architecture
 
-## Architectural Patterns
+The Next.js app owns the product surface, authentication, persistence, and server-side business logic. Server-only code stays behind App Router route handlers, server actions, and server components. Browser components do not import database, auth server, or environment modules directly.
 
-### 1. Contract-First Design (API-First)
-The `openapi.yaml` is written before any backend or frontend code. Both sides are independently built against the contract — not against each other. This means:
-- Frontend and backend teams can work fully in parallel
-- The backend can be replaced without the frontend knowing (and vice versa)
-- The contract is the only thing that needs to be agreed on across teams
+PostgreSQL is the system of record. Drizzle owns schema definitions, typed queries, and migrations. Better Auth owns authentication and session lifecycle.
 
-### 2. Polyglot Monorepo
-The backend (Java) and frontend (TypeScript) live in one repository but are fully decoupled at the code level. They share infrastructure configuration, the API contract, and tooling — nothing else.
+## State And Forms
 
-### 3. Generated Code as a Package
-`generated-types/` is treated as a first-class package that can be imported by `apps/web`. The generation step is automated, not manual. The distinction is important: **the package is in source control, the generated files are not**.
-
----
-
-## Key Principle
-
-Neither `apps/api` nor `apps/web` has a direct dependency on the other.  
-They only depend on `packages/api-contract`.  
-Everything else follows from this.
-
----
+- Server-rendered data should be loaded in server components when possible.
+- Interactive client-side server state uses TanStack Query.
+- Client-only UI state uses Zustand.
+- Forms use React Hook Form.
+- Validation schemas use Zod through `zodResolver`.
 
 ## Getting Started
 
-```bash
-make generate   # Generate TS types + hooks from openapi.yaml
-make dev        # Start api + web + infra concurrently
-make build      # Production build for both apps
-make test       # Run all tests across all apps
+```powershell
+pnpm install
+pnpm dev
 ```
+
+Open `http://localhost:3000`.
