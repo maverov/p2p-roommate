@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
-import { Providers } from './providers';
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -86,9 +85,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="bg">
-      <body>
-        <Providers>{children}</Providers>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
