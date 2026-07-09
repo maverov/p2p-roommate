@@ -85,6 +85,34 @@ export const useListings = () => {
 };
 ```
 
+## Backend route handlers
+
+Backend endpoints live under `app/api/`. A route handler should stay small:
+
+1. Parse query params or JSON with a Zod schema.
+2. Require a signed-in user if the route changes private data.
+3. Call a server repository under `features/<feature>/server/`.
+4. Return a consistent JSON response.
+
+```ts
+import { apiOk, handleApiRoute, parseSearchParams } from '@/lib/server/api';
+import { listListingsQuerySchema } from '@/features/listings/schemas';
+import { listPublishedListings } from '@/features/listings/server/repository';
+
+export async function GET(request: Request) {
+  return handleApiRoute(async () => {
+    const query = parseSearchParams(request, listListingsQuerySchema);
+    const listings = await listPublishedListings(query);
+
+    return apiOk(listings);
+  });
+}
+```
+
+Do not import `db`, `auth`, or `serverEnv` into client components. If browser code needs data, call an API route with `fetch`.
+
+For the full beginner guide and endpoint examples, read [README.backend.md](README.backend.md).
+
 ## Forms with React Hook Form + Zod
 
 ```tsx
