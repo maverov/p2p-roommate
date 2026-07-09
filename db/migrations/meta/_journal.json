@@ -15,6 +15,13 @@
       "when": 1783279234338,
       "tag": "0001_luxuriant_imperial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783628310470,
+      "tag": "0002_neat_richard_fisk",
+      "breakpoints": true
     }
   ]
 }

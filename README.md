@@ -39,6 +39,12 @@ The Next.js app owns the product surface, authentication, persistence, and serve
 
 PostgreSQL is the system of record. Drizzle owns schema definitions, typed queries, and migrations. Better Auth owns authentication and session lifecycle.
 
+Backend functionality is exposed through App Router route handlers under `app/api/`. Read the beginner-friendly backend guide before adding or calling API routes:
+
+- [Backend API guide](docs/README.backend.md)
+
+The backend currently covers listings, favorites, profiles, saved profiles, saved searches, reviews, viewing requests, reports, and conversations/messages.
+
 ## State And Forms
 
 - Server-rendered data should be loaded in server components when possible.
@@ -55,3 +61,11 @@ pnpm dev
 ```
 
 Open `http://localhost:3000`.
+
+Run backend checks before opening a pull request:
+
+```powershell
+pnpm type-check
+pnpm lint
+pnpm build
+```
