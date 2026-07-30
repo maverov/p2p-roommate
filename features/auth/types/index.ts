@@ -1,12 +1,17 @@
-// Feature-scoped types for auth domain
-export type User = {
+/**
+ * Shape of the better-auth user as it reaches the UI. Declared explicitly
+ * rather than inferred from `lib/auth.ts` so client components never pull a
+ * `server-only` module into their import graph.
+ */
+export type SessionUser = {
   id: string;
-  email: string;
   name: string;
-  createdAt: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string | null;
 };
 
 export type AuthSession = {
-  token: string;
-  user: User;
+  user: SessionUser;
+  expiresAt: Date;
 };

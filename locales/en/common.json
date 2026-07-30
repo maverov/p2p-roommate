@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "mainNavigation": "Main navigation",
+    "findRoom": "Find a Room",
+    "findRoommate": "Find Roommate",
+    "listProperty": "List your property",
+    "messages": "Messages",
+    "saved": "Saved",
+    "profile": "Profile",
+    "myListings": "My listings",
+    "viewingRequests": "Viewing requests",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "toggleMenu": "Toggle menu",
+    "account": "Account",
+    "accountMenu": "Account menu for {name}",
+    "switchLanguage": "Switch language"
+  },
+  "footer": {
+    "label": "Footer",
+    "explore": "Explore",
+    "host": "Host",
+    "support": "Support",
+    "about": "About",
+    "findRoom": "Find a Room",
+    "findRoommate": "Find Roommate",
+    "listProperty": "List your property",
+    "helpCenter": "Help Center",
+    "safetyTips": "Safety Tips",
+    "aboutUs": "About us",
+    "contact": "Contact",
+    "madeWith": "Made with",
+    "inBulgaria": "in Bulgaria"
+  },
+  "actions": {
+    "browseListings": "Browse listings",
+    "findRoommate": "Find a roommate"
+  },
+  "duration": {
+    "minutes": "{value, plural, one {# minute} other {# minutes}}",
+    "hours": "{value, plural, one {# hour} other {# hours}}",
+    "days": "{value, plural, one {# day} other {# days}}"
+  }
+}

@@ -28,41 +28,49 @@ Good SEO helps the right users discover listings and platform pages from search 
 5. Use one primary `h1` per page.
 6. Do not block important pages in `robots`.
 7. Keep OG image files real and reachable in production.
+8. Titles and descriptions come from translation keys, never from a `locale === 'bg' ? …`
+   ternary — see [README.translations.md](README.translations.md).
 
 ## Example: page metadata with canonical + alternates
 
+Metadata is localized through the `metadata` namespace (or the page's own namespace),
+resolved with an explicit locale so the route stays statically renderable. `routes.*`
+builds the paths so the typed route system stays the single source of URL truth, and
+`openGraphLocale` maps `bg` → `bg_BG` without branching on copy.
+
 ```tsx
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+
+import { isLocale, openGraphLocale } from '@/lib/i18n';
+import { routes } from '@/lib/routes';
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: 'bg' | 'en' };
+  params: { locale: string };
 }): Promise<Metadata> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const path = '/listings';
+  const locale = isLocale(params.locale) ? params.locale : 'bg';
+  const t = await getTranslations({ locale, namespace: 'listings.search' });
+  const tMeta = await getTranslations({ locale, namespace: 'metadata' });
 
   return {
-    title: params.locale === 'bg' ? 'Обяви за наем | Stay.bg' : 'Rental Listings | Stay.bg',
-    description:
-      params.locale === 'bg'
-        ? 'Разгледайте проверени обяви за стаи и апартаменти без посредник.'
-        : 'Browse verified room and apartment listings without intermediaries.',
+    title: t('heading'),
+    description: tMeta('listings.description'),
     alternates: {
-      canonical: `${baseUrl}/${params.locale}${path}`,
+      canonical: `${appUrl}${routes.listings(locale)}`,
       languages: {
-        bg: `${baseUrl}/bg${path}`,
-        en: `${baseUrl}/en${path}`,
-        'x-default': `${baseUrl}/bg${path}`,
+        'bg-BG': `${appUrl}${routes.listings('bg')}`,
+        'en-US': `${appUrl}${routes.listings('en')}`,
       },
     },
     openGraph: {
-      title: params.locale === 'bg' ? 'Обяви за наем | Stay.bg' : 'Rental Listings | Stay.bg',
-      description:
-        params.locale === 'bg'
-          ? 'Проверени обяви без посредник.'
-          : 'Verified listings without intermediaries.',
-      url: `${baseUrl}/${params.locale}${path}`,
+      title: t('heading'),
+      description: tMeta('listings.description'),
+      url: `${appUrl}${routes.listings(locale)}`,
+      locale: openGraphLocale[locale],
       images: ['/og-image.png'],
       type: 'website',
     },
@@ -72,6 +80,20 @@ export async function generateMetadata({
     },
   };
 }
+```
+
+The root `app/layout.tsx` keeps static brand defaults: it sits outside `[locale]` and
+also serves `/login` and `/signup`, so localizing it would force dynamic rendering. Its
+`%s | Stay.bg` title template brands every page title below it — but Open Graph and
+Twitter titles bypass that template, so spell the brand out there.
+
+## Rule: filtered and tabbed URLs are not indexable
+
+Query-string permutations are near-duplicates of the clean index. Set
+`robots: { index: false, follow: true }` when any filter or tab is active:
+
+```tsx
+robots: Object.keys(searchParams).length > 0 ? { index: false, follow: true } : undefined,
 ```
 
 ## Example: noindex for auth pages
@@ -88,9 +110,10 @@ export const metadata: Metadata = {
 };
 ```
 
-## Example: robots configuration
+## Robots
 
-Create `app/robots.ts`:
+`app/robots.ts` exists. It allows `/`, disallows `/api`, `/admin`, `/internal` and
+`/auth`, blocks `GPTBot` and `ChatGPT-User`, and points at `/sitemap.xml`. Shape:
 
 ```tsx
 import type { MetadataRoute } from 'next';
@@ -108,23 +131,36 @@ export default function robots(): MetadataRoute.Robots {
 }
 ```
 
-## Example: sitemap configuration
+## Sitemap
 
-Create `app/sitemap.ts`:
+`app/sitemap.ts` exists but is **not production-ready** — a known gap, not a pattern to
+copy:
+
+- listing URLs are five hardcoded ids instead of a query against published listings;
+- those URLs are `/listings/<id>`, which is not a route — the real one is
+  `/<locale>/listings/<id>` (`routes.listing(locale, id)`);
+- `/bg` and `/en` are emitted twice.
+
+Fixing it means making `sitemap()` async, reading published listing ids from
+`features/listings/server/repository`, and building every URL through `routes.*` so the
+typed route helpers stay the single source of URL truth. Shape to aim for:
 
 ```tsx
 import type { MetadataRoute } from 'next';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-  const routes = ['', '/bg', '/en', '/bg/listings', '/en/listings'];
+import { locales } from '@/lib/i18n';
+import { routes } from '@/lib/routes';
 
-  return routes.map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: 'daily',
-    priority: route.includes('/listings') ? 0.8 : 1.0,
-  }));
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const entries = locales.flatMap((locale) => [
+    { url: `${appUrl}${routes.home(locale)}`, changeFrequency: 'weekly' as const, priority: 1 },
+    { url: `${appUrl}${routes.listings(locale)}`, changeFrequency: 'daily' as const, priority: 0.9 },
+  ]);
+
+  // …plus one entry per published listing, per locale, from the repository.
+  return entries.map((entry) => ({ ...entry, lastModified: new Date() }));
 }
 ```
 

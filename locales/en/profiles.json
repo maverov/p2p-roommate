@@ -1,0 +1,103 @@
+{
+  "common": {
+    "verified": "Verified",
+    "save": "Save profile",
+    "saved": "Profile saved",
+    "signInToSave": "Sign in to save",
+    "loadFailed": "We could not load this data.",
+    "retry": "Try again"
+  },
+  "notFound": "Profile not found",
+  "notFoundBody": "This user may have deleted their profile.",
+  "backToListings": "Browse all listings",
+  "memberSince": "On Stay.bg since",
+  "location": "Location",
+  "reviewCount": "{count, plural, one {# review} other {# reviews}}",
+  "tabsLabel": "Profile sections",
+  "tabs": {
+    "about": "About",
+    "listings": "Listings",
+    "reviews": "Reviews",
+    "preferences": "Roommates"
+  },
+  "stats": {
+    "respondsIn": "Responds in",
+    "responseRate": "Response rate",
+    "successfulRentals": "Successful rentals",
+    "activeListings": "Active listings"
+  },
+  "about": {
+    "heading": "About",
+    "noBio": "This user has not added a description yet.",
+    "traits": "In short",
+    "languages": "Languages",
+    "verification": "Verifications",
+    "identityVerified": "Identity verified",
+    "phoneVerified": "Phone verified",
+    "emailVerified": "Email verified",
+    "profileVerified": "Verified profile",
+    "notVerifiedYet": "This profile has not been verified yet."
+  },
+  "listings": {
+    "heading": "Listings",
+    "empty": "No active listings",
+    "emptyBody": "This user has no published listings right now."
+  },
+  "reviews": {
+    "heading": "Reviews",
+    "empty": "No reviews yet",
+    "emptyBody": "Reviews appear after a confirmed viewing or tenancy.",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}"
+  },
+  "preferences": {
+    "heading": "Roommate preferences",
+    "empty": "No preferences listed",
+    "emptyBody": "This user has not filled in this section yet.",
+    "gender": "Gender",
+    "smoking": "Smokers",
+    "pets": "Pets",
+    "quietHoursFrom": "Quiet hours from",
+    "budget": "Budget",
+    "age": "Age",
+    "ageRange": "{min} – {max}",
+    "ageFrom": "from {min}",
+    "ageTo": "up to {max}",
+    "occupation": "Occupation",
+    "environment": "Environment",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "contact": {
+    "heading": "Get in touch",
+    "sendMessage": "Send message",
+    "aboutListing": "About listing",
+    "messagePlaceholder": "Hi! I am interested in this listing…",
+    "messageSent": "Your message was sent.",
+    "openConversation": "Open conversation",
+    "noListings": "A message is always tied to a listing, and this user has no active listings.",
+    "submit": "Send",
+    "cancel": "Cancel",
+    "showPhone": "Show phone",
+    "phoneHidden": "Sign in to see the phone number",
+    "phonePrivate": "This user has not shared a public phone number.",
+    "ownProfile": "This is your own profile."
+  },
+  "search": {
+    "heading": "Find a roommate",
+    "resultCount": "{count, plural, one {# profile} other {# profiles}}",
+    "city": "City",
+    "anyCity": "All cities",
+    "keyword": "Search",
+    "keywordPlaceholder": "Name, bio…",
+    "empty": "No profiles found",
+    "emptyBody": "Try a broader search or change the city.",
+    "errorTitle": "Profiles could not be loaded",
+    "errorBody": "Something went wrong. Try again shortly.",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}",
+    "verified": "Verified"
+  }
+}

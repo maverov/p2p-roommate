@@ -1,13 +1,22 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
 import { useLogin } from '@/features/auth/api';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas';
 
-export function LoginForm() {
+type LoginFormProps = {
+  /** Already sanitised by the page; where to land after a successful sign-in. */
+  nextPath?: Route | null;
+};
+
+const FIELD_CLASSES =
+  'mt-1 w-full rounded-md border border-brand-border bg-white px-3 py-2 text-brand-ink outline-none transition focus:border-brand-terracotta aria-[invalid=true]:border-brand-terracotta';
+
+export function LoginForm({ nextPath }: LoginFormProps) {
   const router = useRouter();
   const login = useLogin();
   const form = useForm<LoginInput>({
@@ -18,31 +27,37 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
+  const { errors } = form.formState;
+
   const onSubmit = form.handleSubmit((values) => {
     login.mutate(values, {
       onSuccess: () => {
-        router.push('/');
+        // `replace` keeps the login screen out of the back-stack; `refresh`
+        // re-renders server components (navbar, guards) with the new session.
+        router.replace(nextPath ?? '/');
         router.refresh();
       },
     });
   });
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
+    <form className="space-y-4" noValidate onSubmit={onSubmit}>
       <div>
         <label className="text-sm font-medium text-brand-ink" htmlFor="email">
           Email
         </label>
         <input
+          aria-describedby={errors.email ? 'login-email-error' : undefined}
+          aria-invalid={Boolean(errors.email)}
           autoComplete="email"
-          className="mt-1 w-full rounded-md border border-brand-border bg-white px-3 py-2 text-brand-ink outline-none transition focus:border-brand-terracotta"
+          className={FIELD_CLASSES}
           id="email"
           type="email"
           {...form.register('email')}
         />
-        {form.formState.errors.email && (
-          <p className="mt-1 text-sm text-brand-terracotta">
-            {form.formState.errors.email.message}
+        {errors.email && (
+          <p className="mt-1 text-sm text-brand-terracotta" id="login-email-error">
+            {errors.email.message}
           </p>
         )}
       </div>
@@ -52,21 +67,23 @@ export function LoginForm() {
           Password
         </label>
         <input
+          aria-describedby={errors.password ? 'login-password-error' : undefined}
+          aria-invalid={Boolean(errors.password)}
           autoComplete="current-password"
-          className="mt-1 w-full rounded-md border border-brand-border bg-white px-3 py-2 text-brand-ink outline-none transition focus:border-brand-terracotta"
+          className={FIELD_CLASSES}
           id="password"
           type="password"
           {...form.register('password')}
         />
-        {form.formState.errors.password && (
-          <p className="mt-1 text-sm text-brand-terracotta">
-            {form.formState.errors.password.message}
+        {errors.password && (
+          <p className="mt-1 text-sm text-brand-terracotta" id="login-password-error">
+            {errors.password.message}
           </p>
         )}
       </div>
 
       {login.error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
           {login.error.message}
         </p>
       )}

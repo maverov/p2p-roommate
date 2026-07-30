@@ -1,13 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-cream: #faf4e9;
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --color-brand-cream: #fdf8f0;
+  --color-brand-sand: #f6e9d6;
+  --color-brand-surface: #fffcf8;
   --color-brand-ink: #303329;
   --color-brand-muted: #4f5148;
   --color-brand-terracotta: #c85b36;
   --color-brand-terracotta-hover: #b94f2e;
   --color-brand-olive: #7b7f4d;
-  --color-brand-border: #e4dacd;
+  --color-brand-border: #e8dfd2;
   --color-brand-chip: #fffaf2;
 }
 
@@ -42,6 +45,18 @@
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* Fine paper/sandpaper grain. Sits above the background, below content. */
+.bg-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
 }
 
 .sr-only {

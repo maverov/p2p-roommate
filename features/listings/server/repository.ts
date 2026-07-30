@@ -1,6 +1,19 @@
 import 'server-only';
 
-import { and, asc, count, desc, eq, gte, ilike, inArray, lte, ne, or } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  lte,
+  ne,
+  or,
+} from 'drizzle-orm';
 
 import { db } from '@/db';
 import { favorites, listingImages, listings, user } from '@/db/schema';
@@ -8,6 +21,7 @@ import { ApiError } from '@/lib/server/api';
 
 import type {
   CreateListingInput,
+  ListingSort,
   ListListingsQuery,
   UpdateListingInput,
 } from '../schemas';
@@ -38,7 +52,7 @@ export async function listPublishedListings(filters: ListListingsQuery) {
       .from(listings)
       .innerJoin(user, eq(listings.ownerId, user.id))
       .where(where)
-      .orderBy(desc(listings.publishedAt), desc(listings.createdAt))
+      .orderBy(...buildListingOrderBy(filters.sort))
       .limit(filters.perPage)
       .offset(offset),
     db.select({ value: count() }).from(listings).where(where),
@@ -217,6 +231,60 @@ export async function listSavedListings(userId: string) {
   }));
 }
 
+/** Published listing counts per city, for the home page city tiles. */
+export async function countPublishedListingsByCity() {
+  const rows = await db
+    .select({ citySlug: listings.citySlug, value: count() })
+    .from(listings)
+    .where(eq(listings.status, 'PUBLISHED'))
+    .groupBy(listings.citySlug);
+
+  return new Map(rows.map((row) => [row.citySlug, row.value]));
+}
+
+/**
+ * Which of the given listings the viewer has already saved.
+ *
+ * One query for a whole result page instead of a favourite lookup per card,
+ * which is what keeps the search grid at a constant number of round trips.
+ */
+export async function getSavedListingIds(userId: string, listingIds: string[]) {
+  if (listingIds.length === 0) {
+    return new Set<string>();
+  }
+
+  const rows = await db
+    .select({ listingId: favorites.listingId })
+    .from(favorites)
+    .where(
+      and(eq(favorites.userId, userId), inArray(favorites.listingId, listingIds)),
+    );
+
+  return new Set(rows.map((row) => row.listingId));
+}
+
+/**
+ * All listings owned by `ownerId`, any status, newest-first.
+ * Used for the owner's /my-listings dashboard.
+ */
+export async function listOwnListings(ownerId: string) {
+  const rows = await db
+    .select({
+      listing: listings,
+      owner: {
+        id: user.id,
+        name: user.name,
+        image: user.image,
+      },
+    })
+    .from(listings)
+    .innerJoin(user, eq(listings.ownerId, user.id))
+    .where(eq(listings.ownerId, ownerId))
+    .orderBy(desc(listings.updatedAt), desc(listings.createdAt));
+
+  return attachImages(rows);
+}
+
 export async function listSimilarListings(listingId: string, limit = 6) {
   const source = await getPublishedListingById(listingId);
 
@@ -283,6 +351,21 @@ async function attachImages(
   }));
 }
 
+/**
+ * `id` is the final tiebreaker on every sort so pagination is deterministic —
+ * without it Postgres may return the same row on two different pages.
+ */
+function buildListingOrderBy(sort: ListingSort) {
+  switch (sort) {
+    case 'price-asc':
+      return [asc(listings.monthlyRentCents), asc(listings.id)];
+    case 'price-desc':
+      return [desc(listings.monthlyRentCents), asc(listings.id)];
+    default:
+      return [desc(listings.publishedAt), desc(listings.createdAt), asc(listings.id)];
+  }
+}
+
 function buildPublishedListingWhere(filters: ListListingsQuery) {
   const conditions = [eq(listings.status, 'PUBLISHED')];
 
@@ -290,12 +373,12 @@ function buildPublishedListingWhere(filters: ListListingsQuery) {
     conditions.push(eq(listings.citySlug, filters.citySlug));
   }
 
-  if (filters.neighborhoodSlug) {
-    conditions.push(eq(listings.neighborhoodSlug, filters.neighborhoodSlug));
+  if (filters.neighborhoodSlug?.length) {
+    conditions.push(inArray(listings.neighborhoodSlug, filters.neighborhoodSlug));
   }
 
-  if (filters.propertyType) {
-    conditions.push(eq(listings.propertyType, filters.propertyType));
+  if (filters.propertyType?.length) {
+    conditions.push(inArray(listings.propertyType, filters.propertyType));
   }
 
   if (filters.roommatePreference) {
@@ -319,7 +402,12 @@ function buildPublishedListingWhere(filters: ListListingsQuery) {
   }
 
   if (filters.availableFrom) {
-    conditions.push(gte(listings.availableFrom, filters.availableFrom));
+    conditions.push(
+      or(
+        isNull(listings.availableFrom),
+        lte(listings.availableFrom, filters.availableFrom),
+      )!,
+    );
   }
 
   if (filters.isVerified !== undefined) {

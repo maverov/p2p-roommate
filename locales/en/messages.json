@@ -1,0 +1,27 @@
+{
+  "list": {
+    "heading": "Messages",
+    "empty": "No conversations",
+    "emptyBody": "Send a message to a landlord from a listing page.",
+    "errorTitle": "Messages could not be loaded",
+    "errorBody": "Something went wrong talking to the database. Try again shortly.",
+    "youPrefix": "You: ",
+    "noMessages": "No messages yet",
+    "unreadCount": "{count} unread",
+    "directConversation": "Direct conversation",
+    "browseListings": "Browse listings"
+  },
+  "thread": {
+    "backToMessages": "Back",
+    "aboutListing": "About listing",
+    "directConversation": "Direct conversation",
+    "errorTitle": "Conversation could not be loaded",
+    "errorBody": "You do not have access to this conversation or it does not exist.",
+    "noMessages": "No messages yet",
+    "noMessagesBody": "Be the first to send a message.",
+    "messagePlaceholder": "Write a message…",
+    "send": "Send",
+    "loadFailed": "We could not load this data.",
+    "retry": "Try again"
+  }
+}

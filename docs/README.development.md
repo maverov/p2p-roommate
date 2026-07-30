@@ -2,21 +2,41 @@
 
 ## Creating shared components
 
-Add app-wide reusable UI under `components/shared/`.
+Add app-wide reusable UI under `components/shared/`. Labels come from the message
+catalogue and money/dates from `lib/format.ts` — never a literal string or a raw number
+with a currency glued on.
 
 ```tsx
+import { getTranslations } from 'next-intl/server';
+
+import { formatMoneyFromCents } from '@/lib/format';
+import type { Locale } from '@/lib/i18n';
+
 interface ListingCardProps {
   title: string;
-  price: number;
+  monthlyRentCents: number;
+  currency: string;
   location: string;
+  locale: Locale;
 }
 
-export function ListingCard({ title, price, location }: ListingCardProps) {
+export async function ListingCard({
+  title,
+  monthlyRentCents,
+  currency,
+  location,
+  locale,
+}: ListingCardProps) {
+  const t = await getTranslations({ locale, namespace: 'listings.common' });
+
   return (
-    <div className="rounded-lg border border-gray-200 p-4 shadow-sm transition hover:shadow-md">
+    <div className="rounded-lg border border-brand-border p-4 shadow-sm transition hover:shadow-md">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="text-sm text-gray-600">{location}</p>
-      <p className="mt-2 text-xl font-bold text-blue-600">${price}/month</p>
+      <p className="text-sm text-brand-muted">{location}</p>
+      <p className="mt-2 text-xl font-bold text-brand-terracotta">
+        {formatMoneyFromCents(monthlyRentCents, currency, locale)}
+        <span className="text-sm font-medium text-brand-muted">/{t('perMonth')}</span>
+      </p>
     </div>
   );
 }
@@ -24,22 +44,38 @@ export function ListingCard({ title, price, location }: ListingCardProps) {
 
 ## Creating pages
 
-Add route pages under `app/` route groups and compose from features/shared components.
+Product routes live under `app/[locale]/` and compose from feature and shared components.
+Resolve translators with an explicit `locale` so the page stays statically renderable, and
+build links with `lib/routes.ts` rather than string literals.
 
 ```tsx
-import { ListingCard } from '@/components/shared/ListingCard';
+import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 
-export default function ListingsPage() {
+import { ListingCard } from '@/components/shared/ListingCard';
+import { isLocale, type Locale } from '@/lib/i18n';
+
+export default async function ListingsPage({ params }: { params: { locale: string } }) {
+  if (!isLocale(params.locale)) {
+    notFound();
+  }
+
+  const locale: Locale = params.locale;
+  const t = await getTranslations({ locale, namespace: 'listings.search' });
+
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold">Available Listings</h1>
+      <h1 className="text-3xl font-bold">{t('heading')}</h1>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <ListingCard title="Cozy Apartment" price={1200} location="Downtown" />
+        {/* … */}
       </div>
     </main>
   );
 }
 ```
+
+Every page also needs `generateMetadata` built from translation keys — see
+[README.seo.md](README.seo.md).
 
 ## Working with features
 
@@ -116,8 +152,9 @@ For the full beginner guide and endpoint examples, read [README.backend.md](READ
 ## Forms with React Hook Form + Zod
 
 ```tsx
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -128,6 +165,7 @@ const loginSchema = z.object({
 type LoginInput = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
+  const t = useTranslations('common.nav');
   const { register, handleSubmit } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
@@ -136,13 +174,15 @@ export function LoginForm() {
     <form onSubmit={handleSubmit((data) => console.log(data))}>
       <input {...register('email')} />
       <input {...register('password')} type="password" />
-      <button type="submit">Sign in</button>
+      <button type="submit">{t('signIn')}</button>
     </form>
   );
 }
 ```
 
 React Hook Form owns form state. Zod owns validation rules and inferred TypeScript types.
+Client components read copy from `useTranslations` directly — do not pass translated
+strings down as props.
 
 ## Styling
 

@@ -25,9 +25,11 @@ p2p-roommate/
 ├── db/               # Drizzle client, schema, migrations
 ├── docs/             # Architecture notes and engineering docs
 ├── features/         # Domain feature modules
-├── lib/              # Auth, env, query client, area data, shared infrastructure
-├── locales/          # Translation dictionaries
+├── i18n/             # next-intl request config
+├── lib/              # Auth, env, query client, area data, i18n, formatting
+├── locales/          # Message catalogue: <locale>/<namespace>.json
 ├── public/           # Static assets
+├── scripts/          # Repo tooling (i18n-check)
 ├── stores/           # Client-only UI state
 ├── styles/           # Global styles
 └── package.json
@@ -62,10 +64,19 @@ pnpm dev
 
 Open `http://localhost:3000`.
 
-Run backend checks before opening a pull request:
+Run the checks before opening a pull request — these are the same ones CI runs
+(`.github/workflows/ci.yml`):
 
 ```powershell
 pnpm type-check
 pnpm lint
+pnpm i18n:check
 pnpm build
 ```
+
+## Localization
+
+The app serves `bg` (default) and `en` under `/[locale]/...`. All user-facing copy lives
+in `locales/<locale>/<namespace>.json` and is read through `t('…')` — keys are
+type-checked, so a missing translation is a build failure rather than a runtime blank.
+Start with the [translations guide](docs/README.translations.md) before adding copy.

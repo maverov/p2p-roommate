@@ -125,6 +125,17 @@ export async function updateViewingRequest(
   }
 
   if (
+    input.status === 'CANCELLED' &&
+    !['REQUESTED', 'ACCEPTED'].includes(existing.status)
+  ) {
+    throw new ApiError(
+      409,
+      'INVALID_STATUS_TRANSITION',
+      `A ${existing.status.toLowerCase()} viewing request cannot be cancelled.`,
+    );
+  }
+
+  if (
     ['ACCEPTED', 'DECLINED'].includes(input.status) &&
     existing.ownerId !== userId
   ) {
@@ -135,14 +146,38 @@ export async function updateViewingRequest(
     );
   }
 
+  if (
+    ['ACCEPTED', 'DECLINED'].includes(input.status) &&
+    existing.status !== 'REQUESTED'
+  ) {
+    throw new ApiError(
+      409,
+      'INVALID_STATUS_TRANSITION',
+      `A ${existing.status.toLowerCase()} viewing request cannot be ${input.status.toLowerCase()}.`,
+    );
+  }
+
   const [request] = await db
     .update(viewingRequests)
     .set({
       status: input.status,
       updatedAt: new Date(),
     })
-    .where(eq(viewingRequests.id, id))
+    .where(
+      and(
+        eq(viewingRequests.id, id),
+        eq(viewingRequests.status, existing.status),
+      ),
+    )
     .returning();
+
+  if (!request) {
+    throw new ApiError(
+      409,
+      'VIEWING_REQUEST_CHANGED',
+      'The viewing request changed before this update was completed.',
+    );
+  }
 
   return request;
 }

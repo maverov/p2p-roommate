@@ -1,0 +1,45 @@
+{
+  "nav": {
+    "mainNavigation": "Основна навигация",
+    "findRoom": "Намери стая",
+    "findRoommate": "Намери съквартирант",
+    "listProperty": "Публикувай имот",
+    "messages": "Съобщения",
+    "saved": "Запазени",
+    "profile": "Профил",
+    "myListings": "Моите обяви",
+    "viewingRequests": "Заявки за оглед",
+    "signIn": "Вход",
+    "signOut": "Изход",
+    "signingOut": "Излизане…",
+    "toggleMenu": "Отвори менюто",
+    "account": "Профил",
+    "accountMenu": "Меню за профила на {name}",
+    "switchLanguage": "Смени езика"
+  },
+  "footer": {
+    "label": "Долна навигация",
+    "explore": "Разгледай",
+    "host": "Наемодатели",
+    "support": "Помощ",
+    "about": "За нас",
+    "findRoom": "Намери стая",
+    "findRoommate": "Намери съквартирант",
+    "listProperty": "Публикувай имот",
+    "helpCenter": "Помощен център",
+    "safetyTips": "Съвети за сигурност",
+    "aboutUs": "За нас",
+    "contact": "Контакти",
+    "madeWith": "Направено с",
+    "inBulgaria": "в България"
+  },
+  "actions": {
+    "browseListings": "Разгледай обяви",
+    "findRoommate": "Намери съквартирант"
+  },
+  "duration": {
+    "minutes": "{value, plural, one {# минута} other {# минути}}",
+    "hours": "{value, plural, one {# час} other {# часа}}",
+    "days": "{value, plural, one {# ден} other {# дни}}"
+  }
+}

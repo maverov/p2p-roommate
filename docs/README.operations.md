@@ -21,6 +21,23 @@ pnpm dev -- -p 3001
 pnpm type-check
 ```
 
+### `MISSING_MESSAGE` or a key rendered instead of text
+
+A translation key is missing from the locale being rendered. Run:
+
+```powershell
+pnpm i18n:check
+```
+
+It reports which locale is missing which key. Note this should not normally reach
+runtime — `pnpm type-check` catches missing and misspelled keys at build time.
+
+### Dates or prices render differently on server and client
+
+The time zone is pinned in `i18n/request.ts` (`Europe/Sofia`) precisely to prevent
+this. If it reappears, check for a `new Date()` formatted without going through
+`lib/format.ts`.
+
 ### Tailwind classes not applied
 
 1. Restart dev server.
@@ -34,7 +51,13 @@ pnpm add @hookform/resolvers
 
 ## Deployment
 
+Run the CI checks first — these are what `.github/workflows/ci.yml` enforces on every
+pull request:
+
 ```powershell
+pnpm type-check
+pnpm lint
+pnpm i18n:check
 pnpm build
 pnpm start
 ```

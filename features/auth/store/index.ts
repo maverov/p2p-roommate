@@ -1,3 +1,5 @@
+'use client';
+
 import { create } from 'zustand';
 
 // Feature-scoped store for auth UI state (e.g., modal visibility, form state)
