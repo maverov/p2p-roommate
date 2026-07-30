@@ -8,7 +8,26 @@ export default {
     "./hooks/**/*.{ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        serif: [
+          'ui-serif',
+          'Georgia',
+          'Cambria',
+          '"Times New Roman"',
+          'Times',
+          'serif',
+        ],
+        display: [
+          'ui-serif',
+          'Georgia',
+          'Cambria',
+          '"Times New Roman"',
+          'Times',
+          'serif',
+        ],
+      },
+    },
   },
   plugins: [],
 } satisfies Config;

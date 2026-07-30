@@ -32,6 +32,7 @@ export async function GET(request: Request, { params }: MessagesRouteContext) {
     return apiOk({
       items: messages,
       nextCursor: lastMessage?.createdAt.toISOString() ?? query.after?.toISOString() ?? null,
+      nextCursorId: lastMessage?.id ?? query.afterId ?? null,
       pollAfterMs: 3000,
     });
   });

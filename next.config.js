@@ -4,7 +4,11 @@
 let nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  
+
+  // Lets a verification build run into its own directory (NEXT_DIST_DIR=.next-check)
+  // without overwriting the output a running `next dev` is serving from.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+
   // Image optimization
   images: {
     formats: ["image/avif", "image/webp"],
@@ -25,6 +29,11 @@ let nextConfig = {
     optimizePackageImports: ["@radix-ui/react-icons"],
   },
 };
+
+// Points next-intl at the request config that loads the namespaced message files.
+const withNextIntl = require('next-intl/plugin')('./i18n/request.ts');
+
+nextConfig = withNextIntl(nextConfig);
 
 // Wrap with bundle analyzer only if installed
 try {

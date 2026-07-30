@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
+import { Providers } from './providers';
+import { cormorant } from '@/lib/fonts';
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 export const viewport: Viewport = {
   themeColor: '#ffffff',
@@ -33,6 +35,7 @@ export const metadata: Metadata = {
   referrer: 'origin-when-cross-origin',
   metadataBase: new URL(appUrl),
   alternates: {
+    canonical: appUrl,
     languages: {
       'bg-BG': `${appUrl}/bg`,
       'en-US': `${appUrl}/en`,
@@ -53,6 +56,11 @@ export const metadata: Metadata = {
   authors: [{ name: 'Stay.bg Team' }],
   creator: 'Stay.bg Team',
   publisher: 'Stay.bg',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
 
   openGraph: {
     title: 'Stay.bg - Намери стая без посредник',
@@ -68,6 +76,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: 'Stay.bg - P2P платформа за наем',
+        type: 'image/png',
       },
     ],
     type: 'website',
@@ -79,13 +88,16 @@ export const metadata: Metadata = {
     description:
       'P2P платформа за наем на стаи и апартаменти в България. Директен контакт между наематели и наемодатели.',
     images: ['/og-image.png'],
+    creator: '@staybg',
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="bg">
-      <body>{children}</body>
+    <html lang="bg" className={cormorant.variable}>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

@@ -1,4 +1,7 @@
-import { useMutation } from '@tanstack/react-query';
+'use client';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import { authClient, useSession } from '@/lib/auth-client';
 
@@ -33,6 +36,25 @@ export const useSignup = () => {
       const response = await authClient.signUp.email(data);
 
       return unwrapAuthResponse(response);
+    },
+  });
+};
+
+export const useSignOut = () => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await authClient.signOut();
+
+      return unwrapAuthResponse(response);
+    },
+    onSuccess: () => {
+      // Drop every cached response so the next user of this browser cannot read
+      // the previous session's listings, messages or favourites.
+      queryClient.clear();
+      router.refresh();
     },
   });
 };

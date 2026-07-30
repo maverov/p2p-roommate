@@ -11,6 +11,7 @@
 - TanStack Query (server state)
 - Zustand (client/UI state)
 - React Hook Form + Zod
+- next-intl (locale-prefixed routes, namespaced ICU messages)
 
 ## Project layout
 
@@ -22,8 +23,10 @@
 ├── hooks/          # App-wide hooks
 ├── stores/         # Global Zustand stores
 ├── db/             # Drizzle client and schema
-├── lib/            # Infrastructure (auth, API helpers, env, i18n)
-├── locales/        # Translation JSON files
+├── lib/            # Infrastructure (auth, API helpers, env, i18n, formatting)
+├── i18n/           # next-intl request config
+├── locales/        # Message catalogue: <locale>/<namespace>.json + index.ts
+├── scripts/        # Repo tooling (i18n-check)
 ├── styles/         # Global styles
 └── config/         # Constants and flags
 ```
@@ -38,6 +41,10 @@
 6. Keep database access in server-only modules.
 7. Route handlers validate input with Zod before calling Drizzle.
 8. Authenticated route handlers use Better Auth session helpers.
+9. No user-facing string lives in a component. Copy comes from `locales/` through
+   `t('…')`; `locale` decides formatting and routing, never wording. See
+   [README.translations.md](README.translations.md).
+10. Build URLs with the typed helpers in `lib/routes.ts`, not string literals.
 
 ## Backend layout
 
@@ -66,4 +73,5 @@ Current backend resources:
 
 - Detailed structure guide: [../STRUCTURE.md](../STRUCTURE.md)
 - Development workflows: [README.development.md](README.development.md)
+- Translations: [README.translations.md](README.translations.md)
 - Backend API guide: [README.backend.md](README.backend.md)

@@ -10,11 +10,13 @@ This is a production-grade full-stack Next.js App Router structure optimized for
 ### `app/`
 **Purpose:** Next.js App Router routes, layouts, route handlers, and server actions.
 
-- `(auth)/` - Route group for authentication pages (/login, /signup)
-- `(marketing)/` - Route group for marketing pages (/about, /pricing)
-- `(platform)/` - Route group for app pages (/listings, /messages, /profile)
-- `layout.tsx` - Root layout (wraps all pages)
-- `page.tsx` - Home page
+- `[locale]/` - Every product page, under a locale prefix (`/bg/...`, `/en/...`): home,
+  listings, profiles, messages, saved, my-listings, list-property, find-roommate
+- `(auth)/` - Route group for authentication pages (/login, /signup). Locale-free by
+  design, so it sits outside `[locale]/`
+- `api/` - Route handlers
+- `layout.tsx` - Root layout (wraps all pages, including auth)
+- `robots.ts` / `sitemap.ts` - Crawler metadata routes
 
 **Rule:** Page and layout files should compose from `features/` or `components/`. Route handlers and server actions may contain request orchestration, but database/auth details should live in server-only modules.
 
@@ -116,7 +118,35 @@ export const useSidebarStore = create((set) => ({
 - `queryClient.ts` - TanStack Query client setup (cache, retry logic, staleTime)
 - `auth.ts` - Better Auth client-safe helpers
 - `env.ts` - Validate environment variables with Zod
+- `i18n.ts` - Supported locales, `localeTag` (`bg-BG`), `openGraphLocale` (`bg_BG`)
+- `format.ts` - Locale-aware `Intl` formatting (money, dates, ratings, durations)
+- `routes.ts` - Typed route helpers; build every URL through these, not string literals
+- `labels.ts` - Enum types and value lists. Their **labels** live in `locales/*/enums.json`
 - `server/` - Server-only infrastructure helpers
+
+---
+
+### `locales/` and `i18n/`
+**Purpose:** All user-facing copy, in every supported language.
+
+- `locales/<locale>/<namespace>.json` - ICU messages, one file per namespace
+  (`common`, `enums`, `home`, `listings`, `messages`, `metadata`, `profiles`, `saved`)
+- `locales/index.ts` - Server-only catalogue and the `Messages` type. Every locale is
+  typed against `bg`, so a missing key is a compile error
+- `i18n/request.ts` - next-intl request config (messages, time zone), wired by
+  `next-intl/plugin` in `next.config.js`
+- `types/i18n.d.ts` - Feeds `Messages` into next-intl so `t('…')` keys are type-checked
+
+**Rule:** No user-facing string belongs in a component, and copy is never branched on the
+locale. `locale` decides formatting and routing; the catalogue decides wording. Full
+guide: [docs/README.translations.md](docs/README.translations.md).
+
+---
+
+### `scripts/`
+**Purpose:** Repo tooling run from `package.json`, not shipped to the app.
+
+- `i18n-check.ts` - Message catalogue integrity gate (`pnpm i18n:check`), run in CI
 
 ### `db/`
 **Purpose:** Drizzle and PostgreSQL persistence.
@@ -136,12 +166,15 @@ These are **invisible to the app** but required by everything.
 
 Examples:
 - `cn()` - Combine Tailwind class names
-- `formatCurrency()` - Format numbers as currency
-- `formatDate()` - Format dates
 - `truncateText()` - Truncate strings
 - `debounce()` - Debounce function
 
 All utilities are pure functions—no state, no hooks, no side effects.
+
+**Not here:** anything a user reads. Currency, dates, ratings and durations are
+locale-dependent and live in `lib/format.ts`, which takes a `Locale`. Do not add a
+locale-blind `formatCurrency()` or `formatDate()` here — it will silently render the
+wrong separators and month names for one of the two locales.
 
 ---
 

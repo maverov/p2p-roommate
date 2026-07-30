@@ -44,4 +44,8 @@ pnpm build        # Production build
 pnpm start        # Start built app
 pnpm lint         # ESLint
 pnpm type-check   # TypeScript checks
+pnpm i18n:check   # Message catalogue integrity (missing keys, ICU drift)
 ```
+
+`type-check`, `lint` and `i18n:check` are what CI runs on every pull request
+(`.github/workflows/ci.yml`).

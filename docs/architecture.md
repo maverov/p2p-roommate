@@ -28,6 +28,15 @@ The application should optimize for a small, fast-moving product team:
 | Validation | Zod via `zodResolver` |
 | Client server-state | TanStack Query |
 | Client UI state | Zustand |
+| Localization | next-intl (ICU messages under `locales/`) |
+
+## Localization
+
+Every user-facing string lives in `locales/<locale>/<namespace>.json` and is read through
+`getTranslations` (server) or `useTranslations` (client). `locale` decides formatting
+(`lib/format.ts`) and routing (`lib/routes.ts`); it never decides wording. Missing keys are
+a compile error, and `pnpm i18n:check` gates catalogue integrity in CI. Full guide:
+[README.translations.md](README.translations.md).
 
 ## Runtime Boundaries
 

@@ -1,10 +1,14 @@
+import { getTranslations } from 'next-intl/server';
+
 import FeaturedListings from '@/components/home/FeaturedListings';
 import HeroSection from '@/components/home/HeroSection';
+import HowItWorks from '@/components/home/HowItWorks';
 import ListPropertyCta from '@/components/home/ListPropertyCta';
 import PopularCities from '@/components/home/PopularCities';
-import type { Locale } from '@/lib/i18n';
-import { getTranslations } from '@/lib/i18n-server';
-import { getNeighborhoodGroupsByCity } from '@/lib/areas';
+import Testimonials from '@/components/home/Testimonials';
+import { openGraphLocale, type Locale } from '@/lib/i18n';
+import { OrganizationJsonLd, BreadcrumbJsonLd } from '@/lib/jsonld';
+import type { Metadata } from 'next';
 
 interface PageProps {
   params: {
@@ -12,20 +16,55 @@ interface PageProps {
   };
 }
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: 'metadata.home' });
+
+  // The root layout's `%s | Stay.bg` template brands `metadata.title`; Open Graph
+  // titles bypass that template, so they carry the brand themselves.
+  const title = t('title');
+
+  return {
+    title,
+    description: t('description'),
+    alternates: {
+      canonical: `${appUrl}/${params.locale}`,
+      languages: {
+        'bg-BG': `${appUrl}/bg`,
+        'en-US': `${appUrl}/en`,
+      },
+    },
+    openGraph: {
+      title: t('ogTitle', { title }),
+      description: t('ogDescription'),
+      url: `${appUrl}/${params.locale}`,
+      type: 'website',
+      locale: openGraphLocale[params.locale],
+    },
+  };
+}
+
 export default async function HomePage({ params }: PageProps) {
-  await getTranslations(params.locale);
-  getNeighborhoodGroupsByCity('sofia');
+  const t = await getTranslations({ locale: params.locale, namespace: 'metadata.breadcrumb' });
+
+  const breadcrumbItems = [
+    { name: t('home'), url: `${appUrl}/${params.locale}` },
+    { name: t('findListings'), url: `${appUrl}/${params.locale}/listings` },
+  ];
 
   return (
-    <main id="main-content" className="min-h-screen bg-[#20211f] text-zinc-100">
-      {/* <header className="self-end" aria-label={t('home.switch_language')}>
-        <LocaleSwitcher />
-      </header> */}
-      {/* <h1 className="text-3xl font-semibold tracking-tight">{t('home.welcome')}</h1> */}
-      <HeroSection />
-      <PopularCities />
-      <FeaturedListings />
-      <ListPropertyCta />
-    </main>
+    <>
+      <OrganizationJsonLd appUrl={appUrl} />
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      <main id="main-content" className="min-h-screen bg-brand-cream text-brand-ink">
+        <HeroSection locale={params.locale} />
+        <PopularCities locale={params.locale} />
+        <FeaturedListings locale={params.locale} />
+        <ListPropertyCta locale={params.locale} />
+        <Testimonials locale={params.locale} />
+        <HowItWorks locale={params.locale} />
+      </main>
+    </>
   );
 }

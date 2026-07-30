@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
@@ -12,6 +12,67 @@ import {
 } from '@/db/schema';
 import { ApiError } from '@/lib/server/api';
 import { getUserReviewSummary } from '@/features/reviews/server/repository';
+
+export type PublicProfilesFilters = {
+  citySlug?: string;
+  q?: string;
+  page: number;
+  perPage: number;
+};
+
+/**
+ * Paginated list of public profiles for the find-roommate page.
+ * Only returns users who have a `user_profile` row so anonymous
+ * accounts (no bio, no city) stay invisible.
+ */
+export async function listPublicProfiles(filters: PublicProfilesFilters) {
+  const conditions: ReturnType<typeof eq>[] = [];
+
+  if (filters.citySlug) {
+    conditions.push(eq(userProfiles.citySlug, filters.citySlug));
+  }
+
+  if (filters.q) {
+    conditions.push(
+      or(
+        ilike(userProfiles.displayName, `%${filters.q}%`),
+        ilike(user.name, `%${filters.q}%`),
+        ilike(userProfiles.bio, `%${filters.q}%`),
+      ) as ReturnType<typeof eq>,
+    );
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+  const offset = (filters.page - 1) * filters.perPage;
+
+  const [rows, totalRows] = await Promise.all([
+    db
+      .select({
+        profileUserId: user.id,
+        name: userProfiles.displayName,
+        image: userProfiles.avatarUrl,
+        citySlug: userProfiles.citySlug,
+        bio: userProfiles.bio,
+        joinedAt: userProfiles.joinedAt,
+        isVerified: userProfiles.isVerified,
+      })
+      .from(userProfiles)
+      .innerJoin(user, eq(user.id, userProfiles.userId))
+      .where(where)
+      .orderBy(desc(userProfiles.joinedAt))
+      .limit(filters.perPage)
+      .offset(offset),
+    db.select({ value: count() }).from(userProfiles).innerJoin(user, eq(user.id, userProfiles.userId)).where(where),
+  ]);
+
+  return {
+    items: rows,
+    page: filters.page,
+    perPage: filters.perPage,
+    total: totalRows[0]?.value ?? 0,
+  };
+}
+
 
 import type { UpdateProfileInput } from '../schemas';
 
@@ -149,6 +210,22 @@ export async function unsaveProfile(userId: string, profileUserId: string) {
         eq(savedProfiles.profileUserId, profileUserId),
       ),
     );
+}
+
+/** Whether the viewer already saved this profile — drives the header button. */
+export async function isProfileSaved(userId: string, profileUserId: string) {
+  const [row] = await db
+    .select({ profileUserId: savedProfiles.profileUserId })
+    .from(savedProfiles)
+    .where(
+      and(
+        eq(savedProfiles.userId, userId),
+        eq(savedProfiles.profileUserId, profileUserId),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
 }
 
 export async function listSavedProfiles(userId: string) {

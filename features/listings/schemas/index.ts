@@ -10,6 +10,25 @@ const booleanFromQuery = z
   .enum(['true', 'false', '1', '0'])
   .transform((value) => value === 'true' || value === '1');
 
+/**
+ * Multi-select filters travel as a single comma-separated param
+ * (`?propertyType=ROOM,STUDIO`) rather than a repeated key, so the search URL
+ * stays short enough to share and `URLSearchParams` round-trips cleanly.
+ */
+function csvFromQuery<TItem extends z.ZodType<string, string>>(item: TItem, max: number) {
+  return z
+    .string()
+    .transform((value) =>
+      value
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(item).min(1).max(max))
+    .optional()
+    .or(emptyStringToUndefined);
+}
+
 export const listingStatusSchema = z.enum([
   'DRAFT',
   'PUBLISHED',
@@ -38,18 +57,28 @@ export const listingImageInputSchema = z.object({
   sortOrder: z.number().int().min(0).max(50).optional(),
 });
 
-export const createListingInputSchema = z.object({
+/**
+ * Every listing field, with no creation defaults attached.
+ *
+ * Defaults belong to creation only. Layering them here and deriving the update
+ * schema with `.partial()` does not work: `.partial()` leaves a `.default()`
+ * in place, so a PATCH that omits a field re-applies the default instead of
+ * leaving the column alone — silently unpublishing a listing, clearing its
+ * feature flags, emptying its amenities, or resetting its currency. Splitting
+ * the field list from the defaults makes a partial update genuinely partial.
+ */
+const listingFieldsSchema = z.object({
   title: z.string().trim().min(3).max(120),
   description: z.string().trim().min(20).max(5000),
-  status: listingStatusSchema.default('DRAFT'),
+  status: listingStatusSchema,
   propertyType: propertyTypeSchema,
-  roommatePreference: roommatePreferenceSchema.default('ANY'),
+  roommatePreference: roommatePreferenceSchema,
   citySlug: z.string().trim().min(2).max(80),
   neighborhoodSlug: optionalString(z.string().trim().min(2).max(100)),
   addressLine: optionalString(z.string().trim().min(3).max(240)),
   monthlyRentCents: z.number().int().positive().max(50_000_000),
   depositCents: z.number().int().nonnegative().max(50_000_000).optional(),
-  currency: z.string().trim().length(3).default('EUR'),
+  currency: z.string().trim().length(3),
   bedroomCount: z.number().int().min(0).max(20),
   bathroomCount: z.number().int().min(0).max(20),
   maxOccupants: z.number().int().min(1).max(30),
@@ -58,30 +87,44 @@ export const createListingInputSchema = z.object({
   totalFloors: z.number().int().min(0).max(200).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
-  isVerified: z.boolean().default(false),
+  isFurnished: z.boolean(),
+  internetIncluded: z.boolean(),
+  utilitiesIncluded: z.boolean(),
+  petsAllowed: z.boolean(),
+  nearMetro: z.boolean(),
+  roommateFriendly: z.boolean(),
+  availableFrom: z.coerce.date().optional(),
+  amenities: z.array(z.string().trim().min(1).max(80)).max(50),
+  rules: z.array(z.string().trim().min(1).max(120)).max(50),
+  images: z.array(listingImageInputSchema).max(12),
+});
+
+export const createListingInputSchema = listingFieldsSchema.extend({
+  status: listingStatusSchema.default('DRAFT'),
+  roommatePreference: roommatePreferenceSchema.default('ANY'),
+  currency: z.string().trim().length(3).default('BGN'),
   isFurnished: z.boolean().default(false),
   internetIncluded: z.boolean().default(false),
   utilitiesIncluded: z.boolean().default(false),
   petsAllowed: z.boolean().default(false),
   nearMetro: z.boolean().default(false),
   roommateFriendly: z.boolean().default(false),
-  availableFrom: z.coerce.date().optional(),
   amenities: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
   rules: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
   images: z.array(listingImageInputSchema).max(12).default([]),
 });
 
-export const updateListingInputSchema = createListingInputSchema
-  .partial()
-  .extend({
-    images: z.array(listingImageInputSchema).max(12).optional(),
-  });
+/** A partial update: omitted fields are left untouched, never reset. */
+export const updateListingInputSchema = listingFieldsSchema.partial();
+
+/** Sort keys are part of the public URL, so they are slugs rather than columns. */
+export const listingSortSchema = z.enum(['newest', 'price-asc', 'price-desc']);
 
 export const listListingsQuerySchema = z.object({
   q: optionalString(z.string().trim().min(1).max(120)),
   citySlug: optionalString(z.string().trim().min(2).max(80)),
-  neighborhoodSlug: optionalString(z.string().trim().min(2).max(100)),
-  propertyType: propertyTypeSchema.optional(),
+  neighborhoodSlug: csvFromQuery(z.string().trim().min(2).max(100), 40),
+  propertyType: csvFromQuery(propertyTypeSchema, 4),
   roommatePreference: roommatePreferenceSchema.optional(),
   minRentCents: integerFromQuery.nonnegative().optional(),
   maxRentCents: integerFromQuery.nonnegative().optional(),
@@ -95,10 +138,14 @@ export const listListingsQuerySchema = z.object({
   petsAllowed: booleanFromQuery.optional(),
   nearMetro: booleanFromQuery.optional(),
   roommateFriendly: booleanFromQuery.optional(),
+  sort: listingSortSchema.default('newest'),
   page: integerFromQuery.min(1).max(10_000).default(1),
   perPage: integerFromQuery.min(1).max(50).default(20),
 });
 
+export type PropertyType = z.infer<typeof propertyTypeSchema>;
+export type RoommatePreference = z.infer<typeof roommatePreferenceSchema>;
+export type ListingSort = z.infer<typeof listingSortSchema>;
 export type CreateListingInput = z.infer<typeof createListingInputSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingInputSchema>;
 export type ListListingsQuery = z.infer<typeof listListingsQuerySchema>;

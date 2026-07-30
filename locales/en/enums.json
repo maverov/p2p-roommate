@@ -1,0 +1,25 @@
+{
+  "propertyType": {
+    "APARTMENT": "Apartment",
+    "HOUSE": "House",
+    "STUDIO": "Studio",
+    "ROOM": "Room"
+  },
+  "roommatePreference": {
+    "ANY": "No preference",
+    "STUDENTS": "Students",
+    "PROFESSIONALS": "Professionals",
+    "WOMEN_ONLY": "Women only",
+    "MEN_ONLY": "Men only"
+  },
+  "viewingRequestStatus": {
+    "REQUESTED": "Awaiting reply",
+    "ACCEPTED": "Accepted",
+    "DECLINED": "Declined",
+    "CANCELLED": "Cancelled"
+  },
+  "reviewerRole": {
+    "TENANT": "Tenant",
+    "OWNER": "Landlord"
+  }
+}

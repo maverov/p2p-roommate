@@ -1,92 +1,110 @@
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import SquiggleUnderline from '@/components/ui/SquiggleUnderline';
+import { countPublishedListingsByCity } from '@/features/listings/server/repository';
+import type { Locale } from '@/lib/i18n';
+import { routes } from '@/lib/routes';
+import { safeQuery } from '@/lib/server/safe';
 
+/** City names live in `home.popularCities.<slug>`; only the imagery is structural. */
 const POPULAR_CITIES = [
   {
-    name: 'София',
-    listings: '1250+ обяви',
+    slug: 'sofia',
     imageSrc: '/images/landing/sofia.jpg',
     imagePosition: 'center 45%',
-    href: '/search?city=sofia',
   },
   {
-    name: 'Пловдив',
-    listings: '980+ обяви',
+    slug: 'plovdiv',
     imageSrc: '/images/landing/plovdiv.jpg',
     imagePosition: 'center 45%',
-    href: '/search?city=plovdiv',
   },
   {
-    name: 'Варна',
-    listings: '850+ обяви',
+    slug: 'varna',
     imageSrc: '/images/landing/varna.jpg',
     imagePosition: 'center 50%',
-    href: '/search?city=varna',
   },
   {
-    name: 'Бургас',
-    listings: '620+ обяви',
+    slug: 'burgas',
     imageSrc: '/images/landing/burgas.jpg',
     imagePosition: 'center 50%',
-    href: '/search?city=burgas',
   },
   {
-    name: 'Хасково',
-    listings: '310+ обяви',
+    slug: 'haskovo',
     imageSrc: '/images/landing/haskovo.jpg',
     imagePosition: 'center 45%',
-    href: '/search?city=haskovo',
   },
 ] as const;
 
-export default function PopularCities() {
+export default async function PopularCities({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: 'home.popularCities' });
+
+  // Real counts rather than hardcoded copy; a failed count just hides the line.
+  const counts = await safeQuery(countPublishedListingsByCity(), 'listing counts by city');
+
+  const countLabel = (slug: string) => {
+    const total = counts?.get(slug);
+
+    return total === undefined ? null : t('listingCount', { count: total });
+  };
+
   return (
-    <section className="bg-brand-cream px-6 pb-12 pt-8 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-5 flex items-start justify-between gap-4">
+    <section className="bg-brand-cream px-6 pb-14 pt-14 lg:px-10">
+      <div className="mx-auto w-full max-w-[2000px]">
+        <div className="mb-7 flex items-start justify-between gap-4">
           <div>
-            <h2 className="font-serif text-[26px] font-medium leading-none tracking-[-0.03em] text-brand-ink">
-              Popular cities
+            <h2 className="font-serif text-[32px] font-medium leading-none tracking-[-0.03em] text-brand-ink">
+              {t('heading')}
             </h2>
 
             <SquiggleUnderline />
           </div>
 
           <Link
-            href="/cities"
-            className="pt-2 text-md font-medium text-brand-ink transition hover:text-brand-terracotta"
+            href={routes.listings(locale)}
+            className="text-md pt-2 font-medium text-brand-ink transition hover:text-brand-terracotta"
           >
-            View all cities →
+            {t('viewAll')} →
           </Link>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {POPULAR_CITIES.map((city) => (
-            <Link
-              key={city.name}
-              href={city.href}
-              className="group overflow-hidden rounded-[15px] border border-brand-border bg-brand-chip shadow-[0_8px_24px_rgba(75,55,35,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(75,55,35,0.12)]"
-            >
-              <div className="relative h-[100px] overflow-hidden">
-                <Image
-                  src={city.imageSrc}
-                  alt={`${city.name} listings`}
-                  fill
-                  sizes="(min-width: 1024px) 240px, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                  style={{ objectPosition: city.imagePosition }}
-                />
+          {POPULAR_CITIES.map((city, index) => {
+            const name = t(city.slug);
+            const listings = countLabel(city.slug);
 
-                <div className="absolute inset-0 bg-brand-terracotta/20 mix-blend-multiply transition group-hover:bg-brand-terracotta/20" />
-              </div>
+            return (
+              <Link
+                key={city.slug}
+                href={routes.listings(locale, `citySlug=${city.slug}`)}
+                className="group relative block overflow-hidden rounded-[15px] shadow-[0_8px_24px_rgba(75,55,35,0.10)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(75,55,35,0.16)]"
+              >
+                <div className="relative aspect-[3/2] w-full bg-brand-border">
+                  <Image
+                    src={city.imageSrc}
+                    alt={name}
+                    fill
+                    sizes="(min-width: 1024px) 20vw, (min-width: 640px) 50vw, 100vw"
+                    priority={index < 2}
+                    quality={85}
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                    style={{ objectPosition: city.imagePosition }}
+                  />
 
-              <div className="px-4 pb-4 pt-3">
-                <h3 className="text-[15px] font-bold leading-5 text-brand-olive">{city.name}</h3>
-                <p className="mt-0.5 text-[13px] leading-5 text-brand-muted">{city.listings}</p>
-              </div>
-            </Link>
-          ))}
+                  {/* Legibility gradient behind the overlaid text */}
+                  <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/65 via-black/25 to-transparent" />
+                </div>
+
+                <div className="absolute inset-x-0 bottom-0 px-4 pb-3.5">
+                  <h3 className="text-[17px] font-bold leading-6 text-white">{name}</h3>
+
+                  {listings && (
+                    <p className="mt-0.5 text-[13px] leading-4 text-white/85">{listings}</p>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

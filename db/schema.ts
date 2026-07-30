@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   doublePrecision,
   index,
   integer,
@@ -348,6 +350,20 @@ export const reviews = pgTable(
     index('review_target_user_id_idx').on(table.targetUserId),
     index('review_listing_id_idx').on(table.listingId),
     index('review_target_type_idx').on(table.targetType),
+    uniqueIndex('review_listing_reviewer_unique')
+      .on(table.reviewerId, table.listingId)
+      .where(sql`${table.targetType} = 'LISTING'`),
+    uniqueIndex('review_user_reviewer_unique')
+      .on(table.reviewerId, table.targetUserId)
+      .where(sql`${table.targetType} = 'USER'`),
+    check(
+      'review_target_columns_check',
+      sql`(
+        (${table.targetType} = 'LISTING' AND ${table.listingId} IS NOT NULL AND ${table.targetUserId} IS NULL)
+        OR
+        (${table.targetType} = 'USER' AND ${table.targetUserId} IS NOT NULL AND ${table.listingId} IS NULL)
+      )`,
+    ),
   ],
 );
 

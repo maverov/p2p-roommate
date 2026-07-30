@@ -1,0 +1,23 @@
+{
+  "heading": "Saved",
+  "tabsLabel": "Sections",
+  "tabs": {
+    "listings": "Listings",
+    "profiles": "Profiles"
+  },
+  "listings": {
+    "empty": "No saved listings",
+    "emptyBody": "Save listings to come back to them more easily.",
+    "errorTitle": "Listings could not be loaded",
+    "errorBody": "Something went wrong. Try again shortly."
+  },
+  "profiles": {
+    "empty": "No saved profiles",
+    "emptyBody": "Save profiles of potential roommates or landlords.",
+    "errorTitle": "Profiles could not be loaded",
+    "errorBody": "Something went wrong. Try again shortly.",
+    "memberSince": "On Stay.bg since",
+    "savedOn": "Saved on"
+  },
+  "retry": "Try again"
+}

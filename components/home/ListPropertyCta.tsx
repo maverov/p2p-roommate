@@ -1,13 +1,18 @@
+import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
-export default function ListPropertyCta() {
+import type { Locale } from '@/lib/i18n';
+
+export default async function ListPropertyCta({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: 'home.listPropertyCta' });
+
   return (
-    <section className="bg-brand-cream px-4 py-3 lg:px-6">
-      <div className="mx-auto max-w-7xl">
+    <section className="bg-brand-cream px-6 py-3 lg:px-10">
+      <div className="mx-auto w-full max-w-[2000px]">
         <div
-          className="relative min-h-[112px] overflow-hidden rounded-[11px] bg-[#c95d3c] px-5 py-6 shadow-[0_12px_30px_rgba(75,55,35,0.12)] md:h-[96px] md:min-h-0 md:px-0 md:py-0"
+          className="relative min-h-[112px] overflow-hidden rounded-[14px] bg-[#c95d3c] px-5 py-6 shadow-[0_12px_30px_rgba(75,55,35,0.12)] md:h-[128px] md:min-h-0 md:px-0 md:py-0"
           style={{
             background:
               'linear-gradient(90deg, #c85a38 0%, #d5704c 34%, #c85a38 72%, #c7613f 100%)',
@@ -27,7 +32,7 @@ export default function ListPropertyCta() {
           >
             <Image
               src="/images/landing/cta_image.jpg"
-              alt="Person listing a property online"
+              alt={t('imageAlt')}
               fill
               sizes="320px"
               className="object-cover object-center"
@@ -40,21 +45,21 @@ export default function ListPropertyCta() {
           <div className="pointer-events-none absolute left-[275px] top-0 hidden h-full w-[100px] bg-gradient-to-r from-[#f0b08b]/15 to-transparent md:block" />
 
           {/* Right beige blob */}
-          <div className="pointer-events-none absolute -right-2 bottom-0 hidden h-[64px] w-[118px] rounded-tl-full bg-[#eadcc3]/55 md:block" />
+          <div className="pointer-events-none absolute -right-2 bottom-0 hidden h-[86px] w-[150px] rounded-tl-full bg-[#eadcc3]/55 md:block" />
 
           {/* Right leaves */}
-          <div className="pointer-events-none absolute right-[17px] bottom-[4px] hidden h-[88px] w-[86px] text-[#334b2f]/80 md:block">
+          <div className="pointer-events-none absolute bottom-[6px] right-[22px] hidden h-[112px] w-[108px] text-[#334b2f]/80 md:block">
             <LeafDecoration />
           </div>
 
-          <div className="relative z-10 flex h-full flex-col justify-center gap-5 md:flex-row md:items-center md:justify-between md:gap-6 md:pl-[360px] md:pr-[118px]">
+          <div className="relative z-10 flex h-full flex-col justify-center gap-5 md:flex-row md:items-center md:justify-between md:gap-6 md:pl-[380px] md:pr-[190px]">
             <div>
               <h2 className="mb-3 text-[21px] font-bold leading-[21px] tracking-[-0.01em] text-white">
-                Имате свободна стая или имот?
+                {t('heading')}
               </h2>
 
               <p className="mt-[5px] text-[14px] leading-[16px] text-white/95">
-                Публикувайте безплатно и намерете новите си наематели.
+                {t('body')}
               </p>
             </div>
 
@@ -62,7 +67,7 @@ export default function ListPropertyCta() {
               href="/list-property"
               className="inline-flex h-11 w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-[#fdfbf8] px-7 text-[13px] font-bold text-[#c45b3b] shadow-[0_4px_12px_rgba(67,45,31,0.12)] transition hover:bg-white"
             >
-              Публикувай обява
+              {t('action')}
               <ArrowRight size={16} strokeWidth={2.5} />
             </Link>
           </div>

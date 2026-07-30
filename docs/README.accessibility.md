@@ -6,25 +6,41 @@ Accessibility is needed so everyone can use the app (including keyboard-only use
 
 ## Patterns already used in this app
 
-1. `aria-label` for navigation context (`LocaleSwitcher`, homepage header).
-2. `aria-pressed` for selected language button state (`LocaleSwitcher`).
+1. `aria-label` for navigation context (`Navbar`, language switcher, homepage header).
+2. `aria-current` for the active language and the current page in breadcrumbs.
 3. `role="alert"` and `aria-live="assertive"` for error messaging (`app/error.tsx`).
 4. Focus-visible outlines on interactive elements.
 5. Meaningful `alt` text for images (`OptimizedListingImage`).
+6. Accessible names come from translation keys, so a screen reader in `en` does not read
+   Bulgarian labels.
 
 ## Example: accessible language switcher
 
+The live switcher is `LocaleLinks` in `components/shared/navbar/NavbarClient.tsx`. It uses
+**links, not buttons**: switching language is a navigation, so it should be crawlable,
+middle-clickable, and work without JavaScript. `hrefLang` tells assistive tech and
+crawlers what each target is, and `aria-current` marks the active one — `aria-pressed`
+would wrongly describe a navigation as a toggle.
+
 ```tsx
-<nav className="flex gap-2" aria-label="Language switcher">
-  <button
-    type="button"
-    aria-pressed={locale === currentLocale}
-    className="rounded px-2 py-1 focus-visible:outline-2 focus-visible:outline-offset-2"
-  >
-    {locale.toUpperCase()}
-  </button>
-</nav>
+const t = useTranslations('common.nav');
+
+<div aria-label={t('switchLanguage')} role="group">
+  {locales.map((candidate) => (
+    <Link
+      key={candidate}
+      aria-current={candidate === locale ? 'true' : undefined}
+      href={withLocale(pathname, candidate)}
+      hrefLang={candidate}
+    >
+      {candidate.toUpperCase()}
+    </Link>
+  ))}
+</div>;
 ```
+
+Note the label comes from `t('switchLanguage')`, not a literal — an accessible name is
+user-facing copy and belongs in the catalogue like any other string.
 
 ## Example: labeled form field with error message
 

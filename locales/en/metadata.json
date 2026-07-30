@@ -1,0 +1,15 @@
+{
+  "home": {
+    "title": "Find Your Perfect Room",
+    "description": "P2P platform for finding rooms and apartments across Bulgaria. Direct contact between renters and landlords.",
+    "ogTitle": "{title} | Stay.bg",
+    "ogDescription": "P2P platform for finding rooms and apartments across Bulgaria."
+  },
+  "listings": {
+    "description": "Browse rooms, apartments and roommates across Bulgaria — no agents, no commission."
+  },
+  "breadcrumb": {
+    "home": "Home",
+    "findListings": "Find Listings"
+  }
+}

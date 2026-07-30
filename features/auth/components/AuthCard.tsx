@@ -1,9 +1,10 @@
-import Link from 'next/link';
 import type { Route } from 'next';
+import Link from 'next/link';
 
 type AuthCardProps = {
   children: React.ReactNode;
   eyebrow: string;
+  /** Built by `lib/routes` so the `?next=` round-trip survives login ↔ signup. */
   footerHref: Route;
   footerLabel: string;
   footerText: string;

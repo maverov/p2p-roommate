@@ -13,7 +13,7 @@ export const createViewingRequestInputSchema = z.object({
 });
 
 export const updateViewingRequestInputSchema = z.object({
-  status: viewingRequestStatusSchema,
+  status: z.enum(['ACCEPTED', 'DECLINED', 'CANCELLED']),
 });
 
 export const listViewingRequestsQuerySchema = z.object({

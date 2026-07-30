@@ -1,0 +1,99 @@
+{
+  "hero": {
+    "headingLine1": "No agents.",
+    "headingLine2": "No commissions.",
+    "subheading": "Rooms, apartments and roommates across Bulgaria.",
+    "imageAlt": "Balcony overlooking a Bulgarian coastal town"
+  },
+  "search": {
+    "whereLabel": "Where?",
+    "whatLabel": "What?",
+    "budgetLabel": "Budget?",
+    "budgetPlaceholder": "Max",
+    "peopleLabel": "People?",
+    "searchButton": "Search",
+    "searching": "Searching...",
+    "cityRequired": "Please select a city",
+    "selectOption": "Select {label}: {value}",
+    "optionsLabel": "{label} options",
+    "cities": {
+      "sofia": "Sofia",
+      "plovdiv": "Plovdiv",
+      "varna": "Varna",
+      "burgas": "Burgas",
+      "haskovo": "Haskovo"
+    },
+    "propertyTypes": {
+      "room": "Room",
+      "apartment": "Apartment",
+      "roommate": "Roommate"
+    },
+    "flags": {
+      "furnished": "Furnished",
+      "petsOk": "Pets OK",
+      "girlsOnly": "Girls only",
+      "nearMetro": "Near metro"
+    }
+  },
+  "popularCities": {
+    "heading": "Popular cities",
+    "viewAll": "View all cities",
+    "listingCount": "{count, plural, one {# listing} other {# listings}}",
+    "sofia": "Sofia",
+    "plovdiv": "Plovdiv",
+    "varna": "Varna",
+    "burgas": "Burgas",
+    "haskovo": "Haskovo"
+  },
+  "featured": {
+    "heading": "Places you'll love",
+    "viewAll": "View all listings"
+  },
+  "listPropertyCta": {
+    "heading": "Имате свободна стая или имот?",
+    "body": "Публикувайте безплатно и намерете чудесни наематели.",
+    "action": "Публикувай обява",
+    "imageAlt": "Person listing a property online"
+  },
+  "howItWorks": {
+    "heading": "How it works",
+    "steps": {
+      "search": {
+        "title": "1. Search",
+        "description": "Find rooms, apartments or roommates that fit your lifestyle."
+      },
+      "connect": {
+        "title": "2. Connect",
+        "description": "Message, ask questions and connect with people you like."
+      },
+      "moveIn": {
+        "title": "3. Move in",
+        "description": "Agree, move in and start a new chapter in Bulgaria."
+      },
+      "feelAtHome": {
+        "title": "4. Feel at home",
+        "description": "Live local, explore more and enjoy your new community."
+      }
+    }
+  },
+  "testimonials": {
+    "heading": "What people say",
+    "items": {
+      "maria": {
+        "quote": "Found my cozy spot in Plovdiv in just a few days. The process was easy and the community is amazing.",
+        "name": "Maria, Portugal",
+        "role": "Living in Plovdiv"
+      },
+      "lukas": {
+        "quote": "As a student in Varna, stay.bg helped me find a great room and even better flatmates!",
+        "name": "Lukas, Germany",
+        "role": "Living in Varna"
+      },
+      "elena": {
+        "quote": "Listing my apartment was simple and I found wonderful tenants quickly.",
+        "name": "Elena, Sofia",
+        "role": "Property owner"
+      }
+    }
+  }
+}

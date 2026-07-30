@@ -1,0 +1,103 @@
+{
+  "common": {
+    "verified": "Проверен",
+    "save": "Запази профила",
+    "saved": "Запазен профил",
+    "signInToSave": "Влез, за да запазиш",
+    "loadFailed": "Данните не се заредиха.",
+    "retry": "Опитай отново"
+  },
+  "notFound": "Профилът не е намерен",
+  "notFoundBody": "Възможно е потребителят да е изтрил профила си.",
+  "backToListings": "Към всички обяви",
+  "memberSince": "В Stay.bg от",
+  "location": "Локация",
+  "reviewCount": "{count, plural, one {# отзив} other {# отзива}}",
+  "tabsLabel": "Секции в профила",
+  "tabs": {
+    "about": "За мен",
+    "listings": "Обяви",
+    "reviews": "Отзиви",
+    "preferences": "Съквартиранти"
+  },
+  "stats": {
+    "respondsIn": "Отговаря за",
+    "responseRate": "Отговаря на",
+    "successfulRentals": "Успешни наеми",
+    "activeListings": "Активни обяви"
+  },
+  "about": {
+    "heading": "За мен",
+    "noBio": "Потребителят още не е добавил описание.",
+    "traits": "Кратко за мен",
+    "languages": "Езици",
+    "verification": "Потвърждения",
+    "identityVerified": "Потвърдена самоличност",
+    "phoneVerified": "Потвърден телефон",
+    "emailVerified": "Потвърден имейл",
+    "profileVerified": "Проверен профил",
+    "notVerifiedYet": "Профилът още не е преминал проверка."
+  },
+  "listings": {
+    "heading": "Обяви",
+    "empty": "Няма активни обяви",
+    "emptyBody": "Този потребител не поддържа публикувани обяви в момента."
+  },
+  "reviews": {
+    "heading": "Отзиви",
+    "empty": "Няма отзиви",
+    "emptyBody": "Отзиви се появяват след потвърден оглед или наем.",
+    "previous": "Назад",
+    "next": "Напред",
+    "pageOf": "Страница {page} от {total}"
+  },
+  "preferences": {
+    "heading": "Предпочитания за съквартирант",
+    "empty": "Няма посочени предпочитания",
+    "emptyBody": "Потребителят още не е попълнил тази секция.",
+    "gender": "Пол",
+    "smoking": "Пушачи",
+    "pets": "Домашни любимци",
+    "quietHoursFrom": "Тихи часове след",
+    "budget": "Бюджет",
+    "age": "Възраст",
+    "ageRange": "{min} – {max} г.",
+    "ageFrom": "от {min} г.",
+    "ageTo": "до {max} г.",
+    "occupation": "Занимание",
+    "environment": "Среда",
+    "yes": "Да",
+    "no": "Не"
+  },
+  "contact": {
+    "heading": "Свържи се",
+    "sendMessage": "Изпрати съобщение",
+    "aboutListing": "Относно обява",
+    "messagePlaceholder": "Здравейте! Интересувам се от обявата…",
+    "messageSent": "Съобщението е изпратено.",
+    "openConversation": "Отвори разговора",
+    "noListings": "Съобщение може да се изпрати само по конкретна обява, а този потребител няма активни обяви.",
+    "submit": "Изпрати",
+    "cancel": "Отказ",
+    "showPhone": "Покажи телефон",
+    "phoneHidden": "Влез, за да видиш телефона",
+    "phonePrivate": "Потребителят не е споделил телефон публично.",
+    "ownProfile": "Това е твоят профил."
+  },
+  "search": {
+    "heading": "Намери съквартирант",
+    "resultCount": "{count, plural, one {# профил} other {# профила}}",
+    "city": "Град",
+    "anyCity": "Всички градове",
+    "keyword": "Търсене",
+    "keywordPlaceholder": "Име, описание…",
+    "empty": "Няма намерени профили",
+    "emptyBody": "Опитай с по-широко търсене или смени града.",
+    "errorTitle": "Профилите не се заредиха",
+    "errorBody": "Нещо се обърка. Опитай отново след малко.",
+    "previous": "Назад",
+    "next": "Напред",
+    "pageOf": "Страница {page} от {total}",
+    "verified": "Проверен"
+  }
+}

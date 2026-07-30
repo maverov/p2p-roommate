@@ -1,0 +1,25 @@
+{
+  "propertyType": {
+    "APARTMENT": "Апартамент",
+    "HOUSE": "Къща",
+    "STUDIO": "Студио",
+    "ROOM": "Стая"
+  },
+  "roommatePreference": {
+    "ANY": "Без предпочитание",
+    "STUDENTS": "Студенти",
+    "PROFESSIONALS": "Работещи",
+    "WOMEN_ONLY": "Само жени",
+    "MEN_ONLY": "Само мъже"
+  },
+  "viewingRequestStatus": {
+    "REQUESTED": "Изчаква отговор",
+    "ACCEPTED": "Приета",
+    "DECLINED": "Отказана",
+    "CANCELLED": "Отменена"
+  },
+  "reviewerRole": {
+    "TENANT": "Наемател",
+    "OWNER": "Наемодател"
+  }
+}
