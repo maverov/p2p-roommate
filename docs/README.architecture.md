@@ -72,6 +72,7 @@ Current backend resources:
 ## Related docs
 
 - Detailed structure guide: [../STRUCTURE.md](../STRUCTURE.md)
+- Data flow diagram: [README.data-flow.md](README.data-flow.md)
 - Development workflows: [README.development.md](README.development.md)
 - Translations: [README.translations.md](README.translations.md)
 - Backend API guide: [README.backend.md](README.backend.md)
