@@ -47,6 +47,15 @@ Backend functionality is exposed through App Router route handlers under `app/ap
 
 The backend currently covers listings, favorites, profiles, saved profiles, saved searches, reviews, viewing requests, reports, and conversations/messages.
 
+The complete OpenAPI 3.1 document is available at
+[`docs/openapi.json`](docs/openapi.json). It can be imported directly into
+Swagger UI, Postman, Insomnia, or an OpenAPI client generator. Regenerate it
+after changing a route, schema, or Better Auth version:
+
+```powershell
+pnpm openapi:generate
+```
+
 ## State And Forms
 
 - Server-rendered data should be loaded in server components when possible.
