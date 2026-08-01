@@ -2,7 +2,7 @@
 
 Stay.bg is a full-stack Next.js application for roommate and rental discovery in Bulgaria.
 
-## Target Stack
+## Technology Stack
 
 - Next.js App Router
 - React
