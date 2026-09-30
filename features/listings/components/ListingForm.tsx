@@ -3,11 +3,14 @@
 import { useMutation } from '@tanstack/react-query';
 import { CheckCircle2, Loader2, Plus, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 
 import type { CreateListingInput, UpdateListingInput } from '@/features/listings/schemas';
+import { LocationPicker } from '@/features/maps/components/LocationPicker';
+import { PhotoUploadButton } from '@/features/uploads/components/PhotoUploadButton';
+import { useRouterRefresh } from '@/hooks';
 import { apiClient } from '@/lib/api-client';
 import type { CityId } from '@/lib/areas';
 import {
@@ -16,14 +19,20 @@ import {
   getNeighborhoodsByCity,
   isCityId,
 } from '@/lib/areas';
+import { PLATFORM_CURRENCY } from '@/lib/currency';
+import { IMAGE_UPLOAD } from '@/lib/images';
 import type { Locale } from '@/lib/i18n';
 import { PROPERTY_TYPES, ROOMMATE_PREFERENCES } from '@/lib/labels';
+import { BULGARIA_CENTER, CITY_CENTERS } from '@/lib/map';
 import { routes } from '@/lib/routes';
 import {
   emptyListingFormValues,
+  householdFromFormValues,
   type ListingFormValues,
 } from '../form-values';
 import type { ListingDTO } from '../server/repository';
+
+import { HouseholdFields } from './HouseholdFields';
 
 type Props = {
   locale: Locale;
@@ -45,17 +54,17 @@ const FIELD =
 const SECTION = 'space-y-4 rounded-2xl border border-brand-border bg-brand-chip/30 p-5';
 const SECTION_TITLE = 'text-[15px] font-semibold text-brand-ink mb-4';
 const CHECKBOX_ROW = 'flex items-center gap-2 text-[14px] text-brand-ink select-none';
+/** Matches `images: z.array(...).max(12)` in the listing schema. */
+const MAX_IMAGES = 12;
 
 export function ListingForm({ locale, edit }: Props) {
   const t = useTranslations('listings.form');
   const tEnums = useTranslations('enums');
-  const router = useRouter();
+  const { isRefreshing, refresh } = useRouterRefresh();
   const isEdit = edit !== undefined;
   const [form, setForm] = useState<ListingFormValues>(edit?.values ?? emptyListingFormValues);
   const [amenityInput, setAmenityInput] = useState('');
   const [ruleInput, setRuleInput] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [imageAlt, setImageAlt] = useState('');
   const [savedListing, setSavedListing] = useState<ListingDTO | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -72,10 +81,12 @@ export function ListingForm({ locale, edit }: Props) {
       setSavedListing(listing);
       // The listing detail and My listings pages are server-rendered, so their
       // cached HTML has to be dropped for the edit to be visible on navigation.
-      router.refresh();
+      refresh();
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
   });
+  // Busy until the refreshed server data is on screen, not just until the request returns.
+  const isBusy = mutation.isPending || isRefreshing;
 
   const set = <K extends keyof ListingFormValues>(key: K, value: ListingFormValues[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -94,17 +105,23 @@ export function ListingForm({ locale, edit }: Props) {
       sizeSqm: form.sizeSqm ? Number(form.sizeSqm) : undefined,
       floor: form.floor ? Number(form.floor) : undefined,
       totalFloors: form.totalFloors ? Number(form.totalFloors) : undefined,
-      // UI collects BGN; the platform stores integer cents in BGN by convention.
-      monthlyRentCents: Math.round(Number(form.monthlyRentBGN) * 100),
-      depositCents: form.depositBGN ? Math.round(Number(form.depositBGN) * 100) : undefined,
-      currency: 'BGN',
+      // The form edits euros; the API stores integer cents in the platform currency.
+      monthlyRentCents: Math.round(Number(form.monthlyRent) * 100),
+      depositCents: form.deposit ? Math.round(Number(form.deposit) * 100) : undefined,
+      currency: PLATFORM_CURRENCY,
       availableFrom: form.availableFrom ? new Date(form.availableFrom) : undefined,
+      latitude: form.location?.latitude ?? null,
+      longitude: form.location?.longitude ?? null,
       isFurnished: form.isFurnished,
       internetIncluded: form.internetIncluded,
       utilitiesIncluded: form.utilitiesIncluded,
       petsAllowed: form.petsAllowed,
       nearMetro: form.nearMetro,
       roommateFriendly: form.roommateFriendly,
+      privateBathroom: form.privateBathroom,
+      couplesAllowed: form.couplesAllowed,
+      smokingAllowed: form.smokingAllowed,
+      ...householdFromFormValues(form.household),
       description: form.description,
       amenities: form.amenities,
       rules: form.rules,
@@ -132,12 +149,18 @@ export function ListingForm({ locale, edit }: Props) {
       form[list].filter((_, i) => i !== index),
     );
 
-  const addImage = () => {
-    if (!imageUrl.trim() || !imageAlt.trim()) return;
-    set('images', [...form.images, { url: imageUrl.trim(), alt: imageAlt.trim() }]);
-    setImageUrl('');
-    setImageAlt('');
-  };
+  // Functional update: several files can finish uploading before the next render.
+  const addImage = (url: string) =>
+    setForm((prev) => ({
+      ...prev,
+      images: [...prev.images, { url, alt: t('imageAltDefault', { n: prev.images.length + 1 }) }],
+    }));
+
+  const setImageAlt = (index: number, alt: string) =>
+    set(
+      'images',
+      form.images.map((image, i) => (i === index ? { ...image, alt } : image)),
+    );
 
   const removeImage = (index: number) =>
     set(
@@ -258,6 +281,8 @@ export function ListingForm({ locale, edit }: Props) {
               onChange={(e) => {
                 set('citySlug', e.target.value);
                 set('neighborhoodSlug', '');
+                // A pin dropped in the previous city is wrong in the new one.
+                set('location', null);
               }}
             >
               {CITY_IDS.map((id) => (
@@ -282,6 +307,23 @@ export function ListingForm({ locale, edit }: Props) {
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <p className={LABEL}>{t('mapPin')}</p>
+          <LocationPicker
+            fallbackCenter={
+              isCityId(form.citySlug) ? CITY_CENTERS[form.citySlug] : BULGARIA_CENTER
+            }
+            labels={{
+              region: t('mapPin'),
+              hint: t('mapPinHint'),
+              clear: t('mapPinClear'),
+              pin: t('mapPinMarker'),
+            }}
+            onChange={(location) => set('location', location)}
+            value={form.location}
+          />
         </div>
       </section>
 
@@ -337,27 +379,27 @@ export function ListingForm({ locale, edit }: Props) {
         <h2 className={SECTION_TITLE}>{t('sectionPricing')}</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LABEL}>{t('monthlyRent')} (BGN)</label>
+            <label className={LABEL}>{t('monthlyRent')} ({PLATFORM_CURRENCY})</label>
             <input
               type="number"
               min={0}
               step="0.01"
               className={FIELD}
-              value={form.monthlyRentBGN}
-              onChange={(e) => set('monthlyRentBGN', e.target.value)}
-              placeholder="800"
+              value={form.monthlyRent}
+              onChange={(e) => set('monthlyRent', e.target.value)}
+              placeholder="450"
             />
           </div>
           <div>
-            <label className={LABEL}>{t('deposit')} (BGN)</label>
+            <label className={LABEL}>{t('deposit')} ({PLATFORM_CURRENCY})</label>
             <input
               type="number"
               min={0}
               step="0.01"
               className={FIELD}
-              value={form.depositBGN}
-              onChange={(e) => set('depositBGN', e.target.value)}
-              placeholder="800"
+              value={form.deposit}
+              onChange={(e) => set('deposit', e.target.value)}
+              placeholder="450"
             />
           </div>
         </div>
@@ -384,6 +426,9 @@ export function ListingForm({ locale, edit }: Props) {
               ['petsAllowed', t('pets')],
               ['nearMetro', t('nearMetro')],
               ['roommateFriendly', t('roommateFriendly')],
+              ['privateBathroom', t('privateBathroom')],
+              ['couplesAllowed', t('couplesAllowed')],
+              ['smokingAllowed', t('smokingAllowed')],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className={CHECKBOX_ROW}>
@@ -398,6 +443,12 @@ export function ListingForm({ locale, edit }: Props) {
           ))}
         </div>
       </section>
+
+      <HouseholdFields
+        classes={{ section: SECTION, title: SECTION_TITLE, label: LABEL, field: FIELD }}
+        onChange={(household) => set('household', household)}
+        value={form.household}
+      />
 
       {/* Description */}
       <section className={SECTION}>
@@ -452,16 +503,35 @@ export function ListingForm({ locale, edit }: Props) {
           <ul className="mb-3 space-y-2">
             {form.images.map((img, i) => (
               <li
-                key={i}
-                className="flex items-center gap-2 rounded-xl border border-brand-border bg-white px-3 py-2 text-[13px]"
+                key={img.url}
+                className="flex items-center gap-3 rounded-xl border border-brand-border bg-white p-2 text-[13px]"
               >
-                <span className="min-w-0 flex-1 truncate text-brand-muted">{img.url}</span>
-                <span className="shrink-0 text-brand-ink">{img.alt}</span>
+                <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-brand-chip">
+                  <Image alt="" className="object-cover" fill sizes="64px" src={img.url} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <label className="sr-only" htmlFor={`image-alt-${i}`}>
+                    {t('imageAlt')}
+                  </label>
+                  <input
+                    className={FIELD}
+                    id={`image-alt-${i}`}
+                    maxLength={160}
+                    onChange={(e) => setImageAlt(i, e.target.value)}
+                    placeholder={t('imageAlt')}
+                    value={img.alt}
+                  />
+                </div>
+                {i === 0 && (
+                  <span className="shrink-0 rounded-full bg-brand-chip px-2 py-0.5 text-[12px] font-medium text-brand-ink">
+                    {t('coverBadge')}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => removeImage(i)}
                   aria-label={t('removeImage')}
-                  className="ml-1 shrink-0 text-brand-muted hover:text-red-500"
+                  className="shrink-0 p-1 text-brand-muted hover:text-red-500"
                 >
                   <X className="size-4" />
                 </button>
@@ -469,28 +539,18 @@ export function ListingForm({ locale, edit }: Props) {
             ))}
           </ul>
         )}
-        <div className="flex gap-2">
-          <input
-            className={`${FIELD} flex-1`}
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder={t('imageUrl')}
-          />
-          <input
-            className={`${FIELD} w-40`}
-            value={imageAlt}
-            onChange={(e) => setImageAlt(e.target.value)}
-            placeholder={t('imageAlt')}
-          />
-          <button
-            type="button"
-            onClick={addImage}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl border border-brand-border px-3 py-2 text-[13px] font-medium hover:bg-brand-chip"
-          >
-            <Plus className="size-4" />
-            {t('addImage')}
-          </button>
-        </div>
+        <PhotoUploadButton
+          label={t('uploadPhotos')}
+          multiple
+          onUploaded={addImage}
+          purpose="listings"
+          remaining={MAX_IMAGES - form.images.length}
+        />
+        <p className="mt-2 text-[12px] text-brand-muted">
+          {form.images.length >= MAX_IMAGES
+            ? t('photoLimit', { max: MAX_IMAGES })
+            : t('photoHint', { mb: IMAGE_UPLOAD.maxBytes / (1024 * 1024), max: MAX_IMAGES })}
+        </p>
       </section>
 
       {/* Status + submit */}
@@ -499,12 +559,12 @@ export function ListingForm({ locale, edit }: Props) {
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              disabled={mutation.isPending}
+              disabled={isBusy}
               onClick={() => handleSubmit(form.status)}
               className="flex items-center gap-2 rounded-xl bg-brand-terracotta px-6 py-2.5 text-[14px] font-medium text-white hover:bg-brand-terracotta/90 disabled:opacity-60"
             >
-              {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              {mutation.isPending ? t('saving') : t('saveChanges')}
+              {isBusy && <Loader2 className="size-4 animate-spin" />}
+              {isBusy ? t('saving') : t('saveChanges')}
             </button>
           </div>
         ) : (
@@ -527,11 +587,11 @@ export function ListingForm({ locale, edit }: Props) {
             <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
-                disabled={mutation.isPending}
+                disabled={isBusy}
                 onClick={() => handleSubmit(form.status)}
                 className="flex items-center gap-2 rounded-xl bg-brand-terracotta px-6 py-2.5 text-[14px] font-medium text-white hover:bg-brand-terracotta/90 disabled:opacity-60"
               >
-                {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                {isBusy && <Loader2 className="size-4 animate-spin" />}
                 {form.status === 'DRAFT' ? t('saveDraft') : t('publish')}
               </button>
             </div>

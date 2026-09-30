@@ -10,9 +10,15 @@ Accessibility is needed so everyone can use the app (including keyboard-only use
 2. `aria-current` for the active language and the current page in breadcrumbs.
 3. `role="alert"` and `aria-live="assertive"` for error messaging (`app/error.tsx`).
 4. Focus-visible outlines on interactive elements.
-5. Meaningful `alt` text for images (`OptimizedListingImage`).
+5. Meaningful `alt` text for images: listing photos use the owner-provided `alt`
+   (`ListingCard`, `ListingGallery`), which the API requires for every image. The listing
+   form has a labelled description field per photo, pre-filled with "Photo N".
 6. Accessible names come from translation keys, so a screen reader in `en` does not read
    Bulgarian labels.
+7. `role="status"` with `aria-live="polite"` and a visually hidden label for the
+   route-level loading indicator (`app/[locale]/loading.tsx`), which fades in after
+   150 ms so fast navigations do not flash it.
+8. `role="alert"` for upload and form errors (`PhotoUploadButton`, the auth forms).
 
 ## Example: accessible language switcher
 

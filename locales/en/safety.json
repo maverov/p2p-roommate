@@ -1,0 +1,72 @@
+{
+  "metaTitle": "Safety tips",
+  "metaDescription": "How to rent a room safely in Bulgaria: never pay before a viewing, spot common scams, check who owns the property and put everything in writing.",
+  "title": "Safety tips",
+  "intro": "Most people on Stay.bg are exactly who they say they are. These habits protect you from the few who are not.",
+  "sections": {
+    "money": {
+      "title": "Never pay before a viewing",
+      "points": {
+        "viewFirst": "Do not send a deposit, a reservation fee or the first month’s rent before you have viewed the room in person and met the owner or their representative.",
+        "untraceable": "Refuse to pay through money transfer services, crypto, vouchers or gift cards. Those payments are almost impossible to get back.",
+        "receipts": "Pay by bank transfer to an account in the landlord’s name, and get a signed receipt for anything you pay in cash."
+      }
+    },
+    "scams": {
+      "title": "Spot the usual scams",
+      "points": {
+        "price": "The rent is far below similar rooms nearby.",
+        "abroad": "The owner is “abroad” and will send the keys by courier once you pay.",
+        "pressure": "You are pushed to decide today because “many other people are interested”.",
+        "offPlatform": "You are asked to move to another app straight away, or sent a link to a “booking” site that wants your card details.",
+        "photos": "The photos look like a hotel or show up in other listings. A reverse image search takes a minute."
+      }
+    },
+    "viewings": {
+      "title": "Viewings",
+      "points": {
+        "record": "Arrange the viewing through Stay.bg, so there is a record of when and where.",
+        "company": "Go in daylight if you can, take a friend or tell someone where you are going.",
+        "check": "Check that the room matches the photos, and test the water, heating, windows, locks and internet.",
+        "flatmates": "If you will share the home, meet the people you will live with."
+      }
+    },
+    "ownership": {
+      "title": "Check who owns the property",
+      "points": {
+        "deed": "Ask to see the title deed (нотариален акт) and compare the owner’s name with their ID card.",
+        "register": "You can also confirm the owner with a search in the Property Register (Имотен регистър) of the Registry Agency.",
+        "attorney": "If someone rents the place out for the owner, ask for a notarised power of attorney (пълномощно).",
+        "sublet": "If you rent from a tenant, ask for the owner’s written consent to sublet."
+      }
+    },
+    "contract": {
+      "title": "Put it in writing",
+      "points": {
+        "lease": "Sign a written lease that names both parties and states the rent, the deposit, what is included, the term and the notice period.",
+        "handover": "When you move in, sign a handover protocol (приемо-предавателен протокол) recording the condition of the room, furniture and appliances, the meter readings and photos.",
+        "copies": "Keep a copy of everything you sign and of every payment."
+      }
+    },
+    "platform": {
+      "title": "Keep the conversation on Stay.bg",
+      "points": {
+        "record": "Messages on Stay.bg are a record if something goes wrong, and they let us act on a report.",
+        "personal": "Do not share a copy of your ID card, your personal number (ЕГН) or bank details before you get to signing the lease."
+      }
+    },
+    "report": {
+      "title": "Report and block",
+      "points": {
+        "report": "If a listing or a person seems wrong, report it from the listing or the profile. Reports are confidential.",
+        "block": "Block someone from their profile or a conversation to stop them messaging you or requesting viewings."
+      }
+    }
+  },
+  "emergency": {
+    "title": "In an emergency",
+    "body": "If you are in danger, call 112. It is free and works anywhere in Bulgaria. If a scammer has taken your money, tell your bank and the police straight away.",
+    "call": "Call 112"
+  },
+  "templatesLink": "Rental agreement and handover protocol templates"
+}

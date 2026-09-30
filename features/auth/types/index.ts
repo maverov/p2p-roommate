@@ -9,6 +9,7 @@ export type SessionUser = {
   email: string;
   emailVerified: boolean;
   image?: string | null;
+  role?: string | null;
 };
 
 export type AuthSession = {

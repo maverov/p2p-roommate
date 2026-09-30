@@ -13,7 +13,7 @@ const route = (path: string) => path as Route;
 /**
  * Single source of truth for every internal URL.
  *
- * Locale-prefixed pages live under `app/[locale]/*`; auth pages are
+ * Locale-prefixed pages live under `app/[locale]/*`; auth and admin pages are
  * intentionally locale-free because they are `noindex` and shared.
  */
 export const routes = {
@@ -30,10 +30,33 @@ export const routes = {
     route(search ? `/${locale}/saved?${search}` : `/${locale}/saved`),
   myListings: (locale: Locale) => route(`/${locale}/my-listings`),
   listProperty: (locale: Locale) => route(`/${locale}/list-property`),
-  viewingRequests: (locale: Locale) => route(`/${locale}/viewing-requests`),
-  findRoommate: (locale: Locale) => route(`/${locale}/find-roommate`),
+  appliedListings: (locale: Locale) => route(`/${locale}/applied-listings`),
+  findRoommate: (locale: Locale, search?: string) =>
+    route(search ? `/${locale}/find-roommate?${search}` : `/${locale}/find-roommate`),
+  /** SEO landing pages: every city, then each city and neighbourhood. */
+  areas: (locale: Locale) => route(`/${locale}/rooms`),
+  area: (locale: Locale, citySlug: string, neighborhoodSlug?: string) =>
+    route(
+      neighborhoodSlug
+        ? `/${locale}/rooms/${citySlug}/${neighborhoodSlug}`
+        : `/${locale}/rooms/${citySlug}`,
+    ),
+  settings: (locale: Locale) => route(`/${locale}/settings`),
+  privacy: (locale: Locale) => route(`/${locale}/privacy`),
+  terms: (locale: Locale) => route(`/${locale}/terms`),
+  safety: (locale: Locale) => route(`/${locale}/safety`),
+  templates: (locale: Locale) => route(`/${locale}/templates`),
+  template: (locale: Locale, slug: string) => route(`/${locale}/templates/${slug}`),
   login: (next?: string) => withNext('/login', next),
   signup: (next?: string) => withNext('/signup', next),
+  forgotPassword: () => route('/forgot-password'),
+  /** Better Auth appends `?token=` (or `?error=INVALID_TOKEN`) when redirecting here. */
+  resetPassword: () => route('/reset-password'),
+  /** Better Auth appends `error=` here when a verification link is bad or expired. */
+  verifyEmail: (next?: string) => withNext('/verify-email', next),
+  admin: () => route('/admin'),
+  adminReports: (search?: string) => route(search ? `/admin/reports?${search}` : '/admin/reports'),
+  adminReport: (id: string) => route(`/admin/reports/${id}`),
 } as const;
 
 function withNext(path: string, next?: string) {

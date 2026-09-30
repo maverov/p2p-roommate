@@ -21,5 +21,59 @@
   "reviewerRole": {
     "TENANT": "Tenant",
     "OWNER": "Landlord"
+  },
+  "reportReason": {
+    "SCAM": "Scam or fraud",
+    "MISLEADING": "Misleading or false information",
+    "UNAVAILABLE": "Already rented or not available",
+    "HARASSMENT": "Harassment or abusive behavior",
+    "FAKE_PROFILE": "Fake profile",
+    "INAPPROPRIATE": "Offensive or inappropriate content",
+    "OTHER": "Something else"
+  },
+  "roomType": {
+    "SINGLE": "Single room",
+    "DOUBLE": "Double room",
+    "SHARED": "Shared room"
+  },
+  "householdGender": {
+    "FEMALE": "All women",
+    "MALE": "All men",
+    "MIXED": "Mixed"
+  },
+  "householdOccupation": {
+    "STUDENTS": "Students",
+    "PROFESSIONALS": "Working professionals",
+    "MIXED": "Students and professionals"
+  },
+  "cleanliness": {
+    "RELAXED": "Relaxed",
+    "TIDY": "Tidy",
+    "VERY_TIDY": "Very tidy"
+  },
+  "social": {
+    "QUIET": "Quiet",
+    "BALANCED": "Friendly but calm",
+    "SOCIAL": "Social"
+  },
+  "guests": {
+    "RARELY": "Rarely",
+    "SOMETIMES": "Sometimes",
+    "OFTEN": "Often"
+  },
+  "profileTrait": {
+    "NON_SMOKER": "Non-smoker",
+    "STUDENT": "Student",
+    "PROFESSIONAL": "Working professional",
+    "WORKS_FROM_HOME": "Works from home",
+    "EARLY_BIRD": "Early riser",
+    "NIGHT_OWL": "Night owl",
+    "TIDY": "Tidy",
+    "QUIET": "Enjoys quiet",
+    "SOCIAL": "Sociable",
+    "PET_FRIENDLY": "Pet-friendly",
+    "HAS_PET": "Has a pet",
+    "VEGETARIAN": "Vegetarian",
+    "LGBTQ_FRIENDLY": "LGBTQ+ friendly"
   }
 }

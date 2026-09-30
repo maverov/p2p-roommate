@@ -21,5 +21,59 @@
   "reviewerRole": {
     "TENANT": "Наемател",
     "OWNER": "Наемодател"
+  },
+  "reportReason": {
+    "SCAM": "Измама",
+    "MISLEADING": "Подвеждаща или невярна информация",
+    "UNAVAILABLE": "Имотът вече е отдаден или не е наличен",
+    "HARASSMENT": "Тормоз или обидно поведение",
+    "FAKE_PROFILE": "Фалшив профил",
+    "INAPPROPRIATE": "Обидно или неподходящо съдържание",
+    "OTHER": "Друго"
+  },
+  "roomType": {
+    "SINGLE": "Единична стая",
+    "DOUBLE": "Двойна стая",
+    "SHARED": "Споделена стая"
+  },
+  "householdGender": {
+    "FEMALE": "Само жени",
+    "MALE": "Само мъже",
+    "MIXED": "Смесено"
+  },
+  "householdOccupation": {
+    "STUDENTS": "Студенти",
+    "PROFESSIONALS": "Работещи",
+    "MIXED": "Студенти и работещи"
+  },
+  "cleanliness": {
+    "RELAXED": "Спокойно отношение",
+    "TIDY": "Подредено",
+    "VERY_TIDY": "Много подредено"
+  },
+  "social": {
+    "QUIET": "Тихо",
+    "BALANCED": "Приятелско, но спокойно",
+    "SOCIAL": "Общително"
+  },
+  "guests": {
+    "RARELY": "Рядко",
+    "SOMETIMES": "Понякога",
+    "OFTEN": "Често"
+  },
+  "profileTrait": {
+    "NON_SMOKER": "Непушач",
+    "STUDENT": "Студент",
+    "PROFESSIONAL": "Работещ",
+    "WORKS_FROM_HOME": "Работи от вкъщи",
+    "EARLY_BIRD": "Става рано",
+    "NIGHT_OWL": "Нощна птица",
+    "TIDY": "Държи на чистотата",
+    "QUIET": "Обича тишината",
+    "SOCIAL": "Обича компанията",
+    "PET_FRIENDLY": "Приема домашни любимци",
+    "HAS_PET": "Има домашен любимец",
+    "VEGETARIAN": "Вегетарианец",
+    "LGBTQ_FRIENDLY": "Подкрепя ЛГБТК+"
   }
 }

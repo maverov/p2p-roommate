@@ -1,0 +1,5 @@
+{
+  "uploads": "*.public.blob.vercel-storage.com",
+  "site": ["randomuser.me"],
+  "development": ["picsum.photos", "fastly.picsum.photos"]
+}

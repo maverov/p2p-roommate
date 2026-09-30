@@ -1,4 +1,4 @@
-import { localeTag as LOCALE_TAG, type Locale } from '@/lib/i18n';
+import { APP_TIME_ZONE, localeTag as LOCALE_TAG, type Locale } from '@/lib/i18n';
 
 /**
  * `Intl` formatters are expensive to construct, so each distinct configuration
@@ -28,7 +28,10 @@ function dateFormatter(locale: Locale, options: Intl.DateTimeFormatOptions) {
   let formatter = dateFormatters.get(key);
 
   if (!formatter) {
-    formatter = new Intl.DateTimeFormat(LOCALE_TAG[locale], options);
+    formatter = new Intl.DateTimeFormat(LOCALE_TAG[locale], {
+      timeZone: APP_TIME_ZONE,
+      ...options,
+    });
     dateFormatters.set(key, formatter);
   }
 
@@ -65,28 +68,6 @@ export function formatRating(rating: number, locale: Locale) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(rating);
-}
-
-/**
- * Splits a response time into the unit and value that `common.duration.<unit>`
- * expects. The wording (and its plural rules) lives in the message catalogue —
- * this only decides which unit reads best.
- */
-export function responseTimeParts(minutes: number): {
-  unit: 'minutes' | 'hours' | 'days';
-  value: number;
-} {
-  if (minutes < 60) {
-    return { unit: 'minutes', value: minutes };
-  }
-
-  const hours = Math.round(minutes / 60);
-
-  if (hours < 24) {
-    return { unit: 'hours', value: hours };
-  }
-
-  return { unit: 'days', value: Math.round(hours / 24) };
 }
 
 /** Deposit shown as "840 лв (2 months)" when it is a clean multiple of the rent. */

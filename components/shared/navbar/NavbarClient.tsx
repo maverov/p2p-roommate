@@ -1,6 +1,16 @@
 'use client';
 
-import { CalendarCheck, Heart, Home, LogOut, Menu, MessageSquare, User, X } from 'lucide-react';
+import {
+  CalendarCheck,
+  Heart,
+  Home,
+  LogOut,
+  Menu,
+  MessageSquare,
+  ShieldCheck,
+  User,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -9,6 +19,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Avatar } from '@/components/shared/Avatar';
 import { useSignOut, type SessionUser } from '@/features/auth';
 import { locales, type Locale } from '@/lib/i18n';
+import { isAdmin } from '@/lib/roles';
 import { routes, withLocale } from '@/lib/routes';
 
 import { UserMenu } from './UserMenu';
@@ -182,12 +193,21 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
                     {t('myListings')}
                   </Link>
                   <Link
-                    href={routes.viewingRequests(locale)}
+                    href={routes.appliedListings(locale)}
                     className="flex items-center gap-2 py-2 text-[15px] font-medium text-brand-ink hover:text-brand-terracotta"
                   >
                     <CalendarCheck size={18} strokeWidth={1.75} />
-                    {t('viewingRequests')}
+                    {t('appliedListings')}
                   </Link>
+                  {isAdmin(user) && (
+                    <Link
+                      href={routes.admin()}
+                      className="flex items-center gap-2 py-2 text-[15px] font-medium text-brand-ink hover:text-brand-terracotta"
+                    >
+                      <ShieldCheck size={18} strokeWidth={1.75} />
+                      {t('admin')}
+                    </Link>
+                  )}
                 </>
               )}
 

@@ -1,21 +1,26 @@
 import 'server-only';
 
-import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import {
-  listingImages,
-  listings,
-  savedProfiles,
-  user,
-  userProfiles,
-} from '@/db/schema';
-import { ApiError } from '@/lib/server/api';
+import { listingImages, listings, savedProfiles, user, userProfiles } from '@/db/schema';
+import { assertNotBlocked } from '@/features/blocks/server/repository';
+import { toCompatibilityProfile } from '@/features/compatibility/score';
+import { compatibilityColumns } from '@/features/compatibility/server/repository';
 import { getUserReviewSummary } from '@/features/reviews/server/repository';
+import { isCityId, isNeighborhoodInCity } from '@/lib/areas';
+import type { ProfileTrait } from '@/lib/labels';
+import { ApiError } from '@/lib/server/api';
+
+import { parseProfileTraits, parseRoommatePreferences, type UpdateProfileInput } from '../schemas';
 
 export type PublicProfilesFilters = {
   citySlug?: string;
   q?: string;
+  /** Only published "room wanted" posts. */
+  lookingForRoom?: boolean;
+  /** Profiles carrying every one of these tags. */
+  traits?: ProfileTrait[];
   page: number;
   perPage: number;
 };
@@ -30,6 +35,14 @@ export async function listPublicProfiles(filters: PublicProfilesFilters) {
 
   if (filters.citySlug) {
     conditions.push(eq(userProfiles.citySlug, filters.citySlug));
+  }
+
+  if (filters.lookingForRoom) {
+    conditions.push(eq(userProfiles.lookingForRoom, true));
+  }
+
+  if (filters.traits?.length) {
+    conditions.push(sql`${userProfiles.traits} @> ${JSON.stringify(filters.traits)}::jsonb`);
   }
 
   if (filters.q) {
@@ -51,10 +64,10 @@ export async function listPublicProfiles(filters: PublicProfilesFilters) {
         profileUserId: user.id,
         name: userProfiles.displayName,
         image: userProfiles.avatarUrl,
-        citySlug: userProfiles.citySlug,
         bio: userProfiles.bio,
         joinedAt: userProfiles.joinedAt,
         isVerified: userProfiles.isVerified,
+        ...compatibilityColumns,
       })
       .from(userProfiles)
       .innerJoin(user, eq(user.id, userProfiles.userId))
@@ -62,19 +75,38 @@ export async function listPublicProfiles(filters: PublicProfilesFilters) {
       .orderBy(desc(userProfiles.joinedAt))
       .limit(filters.perPage)
       .offset(offset),
-    db.select({ value: count() }).from(userProfiles).innerJoin(user, eq(user.id, userProfiles.userId)).where(where),
+    db
+      .select({ value: count() })
+      .from(userProfiles)
+      .innerJoin(user, eq(user.id, userProfiles.userId))
+      .where(where),
   ]);
 
   return {
-    items: rows,
+    items: rows.map((row) => {
+      const compatibility = toCompatibilityProfile(row);
+
+      return {
+        profileUserId: row.profileUserId,
+        name: row.name,
+        image: row.image,
+        citySlug: row.citySlug,
+        bio: row.bio,
+        joinedAt: row.joinedAt,
+        isVerified: row.isVerified,
+        lookingForRoom: row.lookingForRoom,
+        moveInDate: row.moveInDate,
+        traits: compatibility.traits,
+        budgetMaxCents: compatibility.preferences.budgetMaxCents ?? null,
+        /** For scoring against the viewer on the server; not rendered as is. */
+        compatibility,
+      };
+    }),
     page: filters.page,
     perPage: filters.perPage,
     total: totalRows[0]?.value ?? 0,
   };
 }
-
-
-import type { UpdateProfileInput } from '../schemas';
 
 export async function getPublicProfile(userId: string) {
   const [profile] = await db
@@ -114,12 +146,13 @@ export async function getPublicProfile(userId: string) {
     emailVerified: profile.profile?.emailVerified ?? false,
     phoneVerified: profile.profile?.phoneVerified ?? false,
     identityVerified: profile.profile?.identityVerified ?? false,
-    responseTimeMinutes: profile.profile?.responseTimeMinutes ?? 120,
-    responseRate: profile.profile?.responseRate ?? 0,
-    successfulRentals: profile.profile?.successfulRentals ?? 0,
-    traits: profile.profile?.traits ?? [],
+    traits: parseProfileTraits(profile.profile?.traits),
     languages: profile.profile?.languages ?? [],
     roommatePreferences: profile.profile?.roommatePreferences ?? {},
+    lookingForRoom: profile.profile?.lookingForRoom ?? false,
+    moveInDate: profile.profile?.moveInDate ?? null,
+    stayMonths: profile.profile?.stayMonths ?? null,
+    wantedNeighborhoods: profile.profile?.wantedNeighborhoods ?? [],
     joinedAt: profile.profile?.joinedAt ?? null,
     activeListingCount: activeListingCountRows[0]?.value ?? 0,
     reviews: reviewSummary,
@@ -128,6 +161,11 @@ export async function getPublicProfile(userId: string) {
 
 export async function updateOwnProfile(userId: string, input: UpdateProfileInput) {
   const displayName = input.displayName ?? (await getFallbackDisplayName(userId));
+  const wantedNeighborhoods = await resolveWantedNeighborhoods(userId, input);
+  const changes = {
+    ...input,
+    ...(wantedNeighborhoods !== undefined && { wantedNeighborhoods }),
+  };
   const now = new Date();
 
   const [profile] = await db
@@ -135,13 +173,17 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
     .values({
       userId,
       displayName,
-      ...input,
+      // The badge copy starts from the account: an address confirmed before the profile
+      // existed (email sign-up, or Google) would otherwise never show as verified.
+      emailVerified: sql<boolean>`(SELECT ${user.emailVerified} FROM ${user} WHERE ${user.id} = ${userId})`,
+      ...changes,
     })
     .onConflictDoUpdate({
       target: userProfiles.userId,
+      // `input` carries `displayName` only when the caller sent one. Setting the
+      // fallback here too would reset a custom display name on every partial update.
       set: {
-        ...input,
-        displayName,
+        ...changes,
         updatedAt: now,
       },
     })
@@ -150,15 +192,104 @@ export async function updateOwnProfile(userId: string, input: UpdateProfileInput
   return profile;
 }
 
+/**
+ * Wanted neighbourhoods only mean something inside the profile's city, which this update
+ * may or may not change. A new list is checked against the city the update leaves in
+ * place; a city change without a new list drops the old city's neighbourhoods.
+ * `undefined` means "leave the column alone".
+ */
+async function resolveWantedNeighborhoods(
+  userId: string,
+  input: UpdateProfileInput,
+): Promise<string[] | undefined> {
+  if (input.wantedNeighborhoods === undefined && input.citySlug === undefined) {
+    return undefined;
+  }
+
+  const [existing] = await db
+    .select({
+      citySlug: userProfiles.citySlug,
+      wantedNeighborhoods: userProfiles.wantedNeighborhoods,
+    })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+
+  const citySlug = input.citySlug !== undefined ? input.citySlug : (existing?.citySlug ?? null);
+  const requested = input.wantedNeighborhoods;
+
+  if (!isCityId(citySlug)) {
+    if (requested?.length) {
+      throw new ApiError(400, 'INVALID_NEIGHBORHOOD', 'Choose a city before its neighbourhoods.');
+    }
+
+    return [];
+  }
+
+  if (requested) {
+    const unknown = requested.filter((slug) => !isNeighborhoodInCity(citySlug, slug));
+
+    if (unknown.length > 0) {
+      throw new ApiError(400, 'INVALID_NEIGHBORHOOD', 'Unknown neighbourhood for this city.', {
+        neighborhoods: unknown,
+      });
+    }
+
+    return [...new Set(requested)];
+  }
+
+  return (existing?.wantedNeighborhoods ?? []).filter((slug) =>
+    isNeighborhoodInCity(citySlug, slug),
+  );
+}
+
+/** The signed-in user's own profile for the settings form, including private fields. */
+export async function getEditableProfile(userId: string) {
+  const [row] = await db
+    .select({
+      name: user.name,
+      email: user.email,
+      locale: user.locale,
+      profile: userProfiles,
+    })
+    .from(user)
+    .leftJoin(userProfiles, eq(user.id, userProfiles.userId))
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  if (!row) {
+    throw new ApiError(404, 'USER_NOT_FOUND', 'User was not found.');
+  }
+
+  return {
+    email: row.email,
+    locale: row.locale,
+    displayName: row.profile?.displayName ?? row.name,
+    bio: row.profile?.bio ?? null,
+    phoneNumber: row.profile?.phoneNumber ?? null,
+    citySlug: row.profile?.citySlug ?? null,
+    neighborhoodSlug: row.profile?.neighborhoodSlug ?? null,
+    avatarUrl: row.profile?.avatarUrl ?? null,
+    publicContactAllowed: row.profile?.publicContactAllowed ?? false,
+    traits: parseProfileTraits(row.profile?.traits),
+    languages: row.profile?.languages ?? [],
+    roommatePreferences: row.profile?.roommatePreferences ?? {},
+    lookingForRoom: row.profile?.lookingForRoom ?? false,
+    moveInDate: row.profile?.moveInDate ?? null,
+    stayMonths: row.profile?.stayMonths ?? null,
+    wantedNeighborhoods: row.profile?.wantedNeighborhoods ?? [],
+  };
+}
+
+export type EditableProfile = Awaited<ReturnType<typeof getEditableProfile>>;
+
 export async function listProfileListings(profileUserId: string) {
   const rows = await db
     .select({
       listing: listings,
     })
     .from(listings)
-    .where(
-      and(eq(listings.ownerId, profileUserId), eq(listings.status, 'PUBLISHED')),
-    )
+    .where(and(eq(listings.ownerId, profileUserId), eq(listings.status, 'PUBLISHED')))
     .orderBy(desc(listings.publishedAt), desc(listings.createdAt));
 
   const listingIds = rows.map((row) => row.listing.id);
@@ -193,10 +324,7 @@ export async function saveProfile(userId: string, profileUserId: string) {
 
   await getPublicProfile(profileUserId);
 
-  await db
-    .insert(savedProfiles)
-    .values({ userId, profileUserId })
-    .onConflictDoNothing();
+  await db.insert(savedProfiles).values({ userId, profileUserId }).onConflictDoNothing();
 
   return { saved: true };
 }
@@ -204,12 +332,7 @@ export async function saveProfile(userId: string, profileUserId: string) {
 export async function unsaveProfile(userId: string, profileUserId: string) {
   await db
     .delete(savedProfiles)
-    .where(
-      and(
-        eq(savedProfiles.userId, userId),
-        eq(savedProfiles.profileUserId, profileUserId),
-      ),
-    );
+    .where(and(eq(savedProfiles.userId, userId), eq(savedProfiles.profileUserId, profileUserId)));
 }
 
 /** Whether the viewer already saved this profile — drives the header button. */
@@ -217,12 +340,7 @@ export async function isProfileSaved(userId: string, profileUserId: string) {
   const [row] = await db
     .select({ profileUserId: savedProfiles.profileUserId })
     .from(savedProfiles)
-    .where(
-      and(
-        eq(savedProfiles.userId, userId),
-        eq(savedProfiles.profileUserId, profileUserId),
-      ),
-    )
+    .where(and(eq(savedProfiles.userId, userId), eq(savedProfiles.profileUserId, profileUserId)))
     .limit(1);
 
   return Boolean(row);
@@ -244,10 +362,7 @@ export async function listSavedProfiles(userId: string) {
     .orderBy(desc(savedProfiles.createdAt));
 }
 
-export async function getProfilePhoneForViewer(
-  viewerId: string,
-  profileUserId: string,
-) {
+export async function getProfilePhoneForViewer(viewerId: string, profileUserId: string) {
   const [profile] = await db
     .select({
       phoneNumber: userProfiles.phoneNumber,
@@ -261,8 +376,12 @@ export async function getProfilePhoneForViewer(
     throw new ApiError(404, 'PHONE_NOT_FOUND', 'Phone number is not available.');
   }
 
-  if (!profile.publicContactAllowed && viewerId !== profileUserId) {
-    throw new ApiError(403, 'PHONE_PRIVATE', 'Phone number is private.');
+  if (viewerId !== profileUserId) {
+    if (!profile.publicContactAllowed) {
+      throw new ApiError(403, 'PHONE_PRIVATE', 'Phone number is private.');
+    }
+
+    await assertNotBlocked(viewerId, profileUserId);
   }
 
   return { phoneNumber: profile.phoneNumber };

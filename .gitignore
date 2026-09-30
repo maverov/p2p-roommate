@@ -11,6 +11,8 @@ bun.lockb
 
 # Next.js
 /.next/
+# Side-by-side builds and dev servers (NEXT_DIST_DIR=.next-check, .next-dev, ...)
+/.next-*/
 /out/
 .vercel
 *.tsbuildinfo

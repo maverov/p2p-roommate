@@ -4,21 +4,16 @@ import Link from 'next/link';
 type AuthCardProps = {
   children: React.ReactNode;
   eyebrow: string;
-  /** Built by `lib/routes` so the `?next=` round-trip survives login ↔ signup. */
-  footerHref: Route;
-  footerLabel: string;
-  footerText: string;
   title: string;
+  /** Built by `lib/routes` so the `?next=` round-trip survives login ↔ signup. */
+  footer?: {
+    href: Route;
+    label: string;
+    text?: string;
+  };
 };
 
-export function AuthCard({
-  children,
-  eyebrow,
-  footerHref,
-  footerLabel,
-  footerText,
-  title,
-}: AuthCardProps) {
+export function AuthCard({ children, eyebrow, footer, title }: AuthCardProps) {
   return (
     <section className="w-full max-w-md rounded-lg border border-brand-border bg-white p-6 shadow-[0_16px_48px_rgba(48,51,41,0.10)]">
       <p className="text-sm font-semibold uppercase tracking-wide text-brand-terracotta">
@@ -30,12 +25,17 @@ export function AuthCard({
 
       <div className="mt-6">{children}</div>
 
-      <p className="mt-6 text-sm text-brand-muted">
-        {footerText}{' '}
-        <Link className="font-semibold text-brand-terracotta hover:text-brand-terracotta-hover" href={footerHref}>
-          {footerLabel}
-        </Link>
-      </p>
+      {footer && (
+        <p className="mt-6 text-sm text-brand-muted">
+          {footer.text && `${footer.text} `}
+          <Link
+            className="font-semibold text-brand-terracotta hover:text-brand-terracotta-hover"
+            href={footer.href}
+          >
+            {footer.label}
+          </Link>
+        </p>
+      )}
     </section>
   );
 }

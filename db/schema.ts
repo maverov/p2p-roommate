@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
+  date,
   doublePrecision,
   index,
   integer,
@@ -29,6 +31,13 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').default(false).notNull(),
   image: text('image'),
+  // Owned by the Better Auth admin plugin (lib/auth.ts), which never lets users write them.
+  role: text('role'),
+  banned: boolean('banned').default(false).notNull(),
+  banReason: text('ban_reason'),
+  banExpires: timestamp('ban_expires', { withTimezone: true }),
+  /** The language emails are written in. Set at sign-up, changed in settings (`lib/auth.ts`). */
+  locale: text('locale').default('bg').notNull(),
   ...timestamps,
 });
 
@@ -40,6 +49,7 @@ export const session = pgTable(
     token: text('token').notNull().unique(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
+    impersonatedBy: text('impersonated_by'),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -85,6 +95,25 @@ export const verification = pgTable(
   (table) => [index('verification_identifier_idx').on(table.identifier)],
 );
 
+/**
+ * Better Auth's rate-limit store (`rateLimit.storage: 'database'` in `lib/auth.ts`).
+ * The default in-memory store is per process, so on serverless every instance would
+ * count separately and the limit would never trip.
+ */
+export const rateLimit = pgTable('rate_limit', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  count: integer('count').notNull(),
+  lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
+});
+
+/** Fixed-window counters for the app's own API routes (`lib/server/rate-limit.ts`). */
+export const apiRateLimits = pgTable('api_rate_limit', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  resetAt: timestamp('reset_at', { withTimezone: true }).notNull(),
+});
+
 export const listingStatus = pgEnum('listing_status', [
   'DRAFT',
   'PUBLISHED',
@@ -106,6 +135,8 @@ export const roommatePreference = pgEnum('roommate_preference', [
   'WOMEN_ONLY',
   'MEN_ONLY',
 ]);
+
+export const roomType = pgEnum('room_type', ['SINGLE', 'DOUBLE', 'SHARED']);
 
 export const reportStatus = pgEnum('report_status', [
   'OPEN',
@@ -150,15 +181,23 @@ export const userProfiles = pgTable(
     publicContactAllowed: boolean('public_contact_allowed')
       .default(false)
       .notNull(),
-    responseTimeMinutes: integer('response_time_minutes').default(120).notNull(),
-    responseRate: integer('response_rate').default(0).notNull(),
-    successfulRentals: integer('successful_rentals').default(0).notNull(),
+    /** `PROFILE_TRAITS` ids. Read through `parseProfileTraits`: older rows may hold free text. */
     traits: jsonb('traits').$type<string[]>().default([]).notNull(),
     languages: jsonb('languages').$type<string[]>().default([]).notNull(),
     roommatePreferences: jsonb('roommate_preferences')
       .$type<Record<string, unknown>>()
       .default({})
       .notNull(),
+    /**
+     * A published "room wanted" post: owners can find this profile and message it
+     * without a listing of its own. The budget lives in `roommatePreferences`.
+     */
+    lookingForRoom: boolean('looking_for_room').default(false).notNull(),
+    /** Calendar date (no time zone), `YYYY-MM-DD`. */
+    moveInDate: date('move_in_date', { mode: 'string' }),
+    stayMonths: integer('stay_months'),
+    /** Neighbourhood slugs within `citySlug`. */
+    wantedNeighborhoods: jsonb('wanted_neighborhoods').$type<string[]>().default([]).notNull(),
     joinedAt: timestamp('joined_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -167,6 +206,10 @@ export const userProfiles = pgTable(
   (table) => [
     index('user_profile_city_idx').on(table.citySlug),
     index('user_profile_verified_idx').on(table.isVerified),
+    index('user_profile_looking_city_idx').on(table.lookingForRoom, table.citySlug),
+    // Serves the find-roommate lifestyle filter (`traits @> '[...]'`).
+    index('user_profile_traits_idx').using('gin', table.traits),
+    check('user_profile_stay_months_range', sql`${table.stayMonths} BETWEEN 1 AND 60`),
   ],
 );
 
@@ -189,6 +232,7 @@ export const listings = pgTable(
     addressLine: text('address_line'),
     monthlyRentCents: integer('monthly_rent_cents').notNull(),
     depositCents: integer('deposit_cents'),
+    /** Always `PLATFORM_CURRENCY` (`lib/currency.ts`); see `listing_currency_eur`. */
     currency: text('currency').default('EUR').notNull(),
     bedroomCount: integer('bedroom_count').notNull(),
     bathroomCount: integer('bathroom_count').notNull(),
@@ -205,6 +249,15 @@ export const listings = pgTable(
     petsAllowed: boolean('pets_allowed').default(false).notNull(),
     nearMetro: boolean('near_metro').default(false).notNull(),
     roommateFriendly: boolean('roommate_friendly').default(false).notNull(),
+    /** The room on offer; null for whole-property listings. */
+    roomType: roomType('room_type'),
+    privateBathroom: boolean('private_bathroom').default(false).notNull(),
+    couplesAllowed: boolean('couples_allowed').default(false).notNull(),
+    smokingAllowed: boolean('smoking_allowed').default(false).notNull(),
+    minStayMonths: integer('min_stay_months'),
+    maxStayMonths: integer('max_stay_months'),
+    /** Who lives there now and how (`listingHouseholdSchema`); display only, never filtered. */
+    household: jsonb('household').$type<Record<string, unknown>>().default({}).notNull(),
     availableFrom: timestamp('available_from', { withTimezone: true }),
     amenities: jsonb('amenities').$type<string[]>().default([]).notNull(),
     rules: jsonb('rules').$type<string[]>().default([]).notNull(),
@@ -218,6 +271,16 @@ export const listings = pgTable(
     index('listing_price_idx').on(table.monthlyRentCents),
     index('listing_verified_idx').on(table.isVerified),
     index('listing_available_from_idx').on(table.availableFrom),
+    index('listing_status_published_idx').on(table.status, table.publishedAt),
+    check('listing_monthly_rent_positive', sql`${table.monthlyRentCents} > 0`),
+    check('listing_deposit_nonnegative', sql`${table.depositCents} >= 0`),
+    check('listing_currency_eur', sql`${table.currency} = 'EUR'`),
+    check('listing_min_stay_range', sql`${table.minStayMonths} BETWEEN 1 AND 60`),
+    check('listing_max_stay_range', sql`${table.maxStayMonths} BETWEEN 1 AND 60`),
+    check(
+      'listing_stay_order',
+      sql`${table.minStayMonths} IS NULL OR ${table.maxStayMonths} IS NULL OR ${table.minStayMonths} <= ${table.maxStayMonths}`,
+    ),
   ],
 );
 
@@ -280,21 +343,28 @@ export const savedProfiles = pgTable(
   ],
 );
 
-export const savedSearches = pgTable(
-  'saved_search',
+/**
+ * One row per "A blocked B". Stored one-way so each side's list is their own, but
+ * enforced both ways: neither person can message or request a viewing from the other.
+ */
+export const userBlocks = pgTable(
+  'user_block',
   {
-    id: text('id').primaryKey(),
-    userId: text('user_id')
+    blockerId: text('blocker_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    filters: jsonb('filters').$type<Record<string, unknown>>().notNull(),
-    notificationsEnabled: boolean('notifications_enabled')
-      .default(true)
+    blockedId: text('blocked_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
       .notNull(),
-    ...timestamps,
   },
-  (table) => [index('saved_search_user_id_idx').on(table.userId)],
+  (table) => [
+    primaryKey({ columns: [table.blockerId, table.blockedId] }),
+    index('user_block_blocked_id_idx').on(table.blockedId),
+    check('user_block_not_self', sql`${table.blockerId} <> ${table.blockedId}`),
+  ],
 );
 
 export const viewingRequests = pgTable(
@@ -364,6 +434,7 @@ export const reviews = pgTable(
         (${table.targetType} = 'USER' AND ${table.targetUserId} IS NOT NULL AND ${table.listingId} IS NULL)
       )`,
     ),
+    check('review_rating_range', sql`${table.rating} BETWEEN 1 AND 5`),
   ],
 );
 
@@ -439,6 +510,9 @@ export const reports = pgTable(
     reason: text('reason').notNull(),
     details: text('details'),
     status: reportStatus('status').default('OPEN').notNull(),
+    resolvedById: text('resolved_by').references(() => user.id, { onDelete: 'set null' }),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    resolutionNote: text('resolution_note'),
     ...timestamps,
   },
   (table) => [

@@ -23,7 +23,44 @@ type ContactProfilePanelProps = {
    * database hiccup would tell the viewer something false about the profile.
    */
   listings: Array<{ id: string; title: string }> | null;
+  /** The profile has a "room wanted" post, so it can be written to without a listing. */
+  lookingForRoom: boolean;
+  /** The viewer's own published listings, which they can offer to someone looking. */
+  viewerListings: Array<{ id: string; title: string }>;
 };
+
+type ListingSummary = { id: string; title: string };
+
+/**
+ * What a new thread is about, encoded as the composer's select value:
+ * `listing:<id>` asks about their listing, `offer:<id>` offers one of yours,
+ * `direct` writes to someone looking for a room with no listing attached.
+ */
+type Topic = `listing:${string}` | `offer:${string}` | 'direct';
+
+function topicOptions(
+  theirListings: ListingSummary[],
+  viewerListings: ListingSummary[],
+  lookingForRoom: boolean,
+) {
+  return {
+    theirs: theirListings.map((listing) => ({ value: `listing:${listing.id}` as Topic, ...listing })),
+    yours: lookingForRoom
+      ? viewerListings.map((listing) => ({ value: `offer:${listing.id}` as Topic, ...listing }))
+      : [],
+    direct: lookingForRoom,
+  };
+}
+
+function conversationInput(topic: Topic, profileUserId: string, message: string) {
+  if (topic === 'direct') return { recipientId: profileUserId, message };
+
+  const [kind, listingId] = topic.split(':') as ['listing' | 'offer', string];
+
+  return kind === 'listing'
+    ? { listingId, message }
+    : { recipientId: profileUserId, listingId, message };
+}
 
 const PRIMARY_BUTTON =
   'flex w-full items-center justify-center gap-2 rounded-[10px] bg-brand-terracotta px-4 py-3 text-[14px] font-bold text-white transition hover:bg-brand-terracotta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-terracotta disabled:opacity-60';
@@ -39,7 +76,9 @@ export function ContactProfilePanel({
   isOwnProfile,
   listings,
   locale,
+  lookingForRoom,
   profileUserId,
+  viewerListings,
 }: ContactProfilePanelProps) {
   const pathname = usePathname();
   const t = useTranslations('profiles.contact');
@@ -47,7 +86,7 @@ export function ContactProfilePanel({
   const [isComposing, setIsComposing] = useState(false);
 
   const sendMessage = useMutation({
-    mutationFn: (input: { listingId: string; message: string }) =>
+    mutationFn: (input: { listingId?: string; recipientId?: string; message: string }) =>
       apiClient.post<{ id: string }>('/api/conversations', input),
     onSuccess: () => setIsComposing(false),
   });
@@ -59,9 +98,14 @@ export function ContactProfilePanel({
 
   if (isOwnProfile) {
     return (
-      <p className="rounded-[10px] border border-brand-border bg-brand-chip px-4 py-3 text-center text-[13px] text-brand-muted">
-        {t('ownProfile')}
-      </p>
+      <div className="grid gap-2">
+        <p className="rounded-[10px] border border-brand-border bg-brand-chip px-4 py-3 text-center text-[13px] text-brand-muted">
+          {t('ownProfile')}
+        </p>
+        <Link className={SECONDARY_BUTTON} href={routes.settings(locale)}>
+          {t('editProfile')}
+        </Link>
+      </div>
     );
   }
 
@@ -83,6 +127,12 @@ export function ContactProfilePanel({
     );
   }
 
+  const options = topicOptions(listings ?? [], viewerListings, lookingForRoom);
+  const optionCount = options.theirs.length + options.yours.length + (options.direct ? 1 : 0);
+  const defaultTopic: Topic | undefined = lookingForRoom
+    ? (options.yours[0]?.value ?? 'direct')
+    : options.theirs[0]?.value;
+
   return (
     <div className="grid gap-2">
       {sendMessage.isSuccess ? (
@@ -99,11 +149,11 @@ export function ContactProfilePanel({
             {t('openConversation')} →
           </Link>
         </div>
-      ) : listings === null ? (
+      ) : listings === null && !lookingForRoom ? (
         <p className="text-[13px] leading-5 text-brand-terracotta" role="alert">
           {tCommon('loadFailed')}
         </p>
-      ) : listings.length === 0 ? (
+      ) : optionCount === 0 || !defaultTopic ? (
         <p className="rounded-[10px] border border-brand-border bg-brand-chip px-4 py-3 text-[13px] leading-5 text-brand-muted">
           {t('noListings')}
         </p>
@@ -113,36 +163,56 @@ export function ContactProfilePanel({
           onSubmit={(event) => {
             event.preventDefault();
             const form = new FormData(event.currentTarget);
-            const listingId = String(form.get('listingId') ?? '');
+            const topic = String(form.get('topic') ?? '') as Topic;
             const message = String(form.get('message') ?? '').trim();
 
-            if (listingId && message) {
-              sendMessage.mutate({ listingId, message });
+            if (topic && message) {
+              sendMessage.mutate(conversationInput(topic, profileUserId, message));
             }
           }}
         >
           {/*
-            A conversation is always anchored to a listing (`conversation.listing_id`),
-            so messaging a person means choosing which listing to ask about. With a
-            single listing there is nothing to choose, so the field is hidden.
+            A thread is about one of their listings, one of yours offered to someone
+            looking for a room, or — for someone looking — nothing in particular.
+            With a single possibility there is nothing to choose, so it is hidden.
           */}
-          {listings.length === 1 ? (
-            <input name="listingId" type="hidden" value={listings[0].id} />
+          {optionCount === 1 ? (
+            <input name="topic" type="hidden" value={defaultTopic} />
           ) : (
             <>
               <label
                 className="text-[13px] font-bold text-brand-ink"
-                htmlFor="profile-message-listing"
+                htmlFor="profile-message-topic"
               >
-                {t('aboutListing')}
+                {t('about')}
               </label>
 
-              <select className={FIELD} id="profile-message-listing" name="listingId" required>
-                {listings.map((listing) => (
-                  <option key={listing.id} value={listing.id}>
-                    {listing.title}
-                  </option>
-                ))}
+              <select
+                className={FIELD}
+                defaultValue={defaultTopic}
+                id="profile-message-topic"
+                name="topic"
+                required
+              >
+                {options.theirs.length > 0 && (
+                  <optgroup label={t('theirListings')}>
+                    {options.theirs.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {options.yours.length > 0 && (
+                  <optgroup label={t('yourListings')}>
+                    {options.yours.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {options.direct && <option value="direct">{t('noSpecificListing')}</option>}
               </select>
             </>
           )}
@@ -157,7 +227,7 @@ export function ContactProfilePanel({
           <textarea
             autoFocus
             className={cn(FIELD, 'min-h-[92px] resize-y')}
-            defaultValue={t('messagePlaceholder')}
+            defaultValue={lookingForRoom ? t('directPlaceholder') : t('messagePlaceholder')}
             id="profile-message-body"
             maxLength={2000}
             name="message"

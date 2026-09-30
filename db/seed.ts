@@ -22,14 +22,14 @@ import {
   listings,
   messages,
   reviews,
-  savedSearches,
   user,
   userProfiles,
   viewingRequests,
 } from './schema';
+import { PLATFORM_CURRENCY } from '../lib/currency';
+import type { ProfileTrait } from '../lib/labels';
 
 const SEED_PASSWORD = 'password123';
-const CURRENCY = 'BGN';
 
 /** Anchors relative dates so re-seeding always produces "available soon" listings. */
 const now = new Date();
@@ -56,13 +56,12 @@ type SeedUser = {
   phoneVerified: boolean;
   identityVerified: boolean;
   publicContactAllowed: boolean;
-  responseTimeMinutes: number;
-  responseRate: number;
-  successfulRentals: number;
-  traits: string[];
+  traits: ProfileTrait[];
   languages: string[];
   roommatePreferences: Record<string, unknown>;
   joinedMonthsAgo: number;
+  /** A published "room wanted" post; the budget is in `roommatePreferences`. */
+  roomWanted?: { neighborhoods: string[]; moveInInDays: number; stayMonths: number | null };
 };
 
 const SEED_USERS: SeedUser[] = [
@@ -78,20 +77,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: true,
     identityVerified: true,
     publicContactAllowed: true,
-    responseTimeMinutes: 120,
-    responseRate: 96,
-    successfulRentals: 28,
-    traits: [
-      'Собственик',
-      'Непушач',
-      'Пет-френдли',
-      'Работи от офис',
-      'Чистота: висок стандарт',
-      'Предпочита спокойна среда',
-      'Общителна',
-      'Редовен график',
-      'Уважава личното пространство',
-    ],
+    traits: ['NON_SMOKER', 'PROFESSIONAL', 'TIDY', 'QUIET', 'SOCIAL', 'PET_FRIENDLY'],
     languages: ['Български', 'Английски'],
     roommatePreferences: {
       gender: 'ANY',
@@ -119,10 +105,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: true,
     identityVerified: false,
     publicContactAllowed: true,
-    responseTimeMinutes: 45,
-    responseRate: 92,
-    successfulRentals: 14,
-    traits: ['Собственик', 'Непушач', 'Бърз отговор', 'Ясни условия'],
+    traits: ['NON_SMOKER', 'PROFESSIONAL'],
     languages: ['Български', 'Английски', 'Немски'],
     roommatePreferences: {
       gender: 'ANY',
@@ -145,10 +128,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: true,
     identityVerified: true,
     publicContactAllowed: false,
-    responseTimeMinutes: 240,
-    responseRate: 88,
-    successfulRentals: 9,
-    traits: ['Собственик', 'Реални снимки', 'Без комисиона'],
+    traits: ['WORKS_FROM_HOME', 'QUIET'],
     languages: ['Български'],
     roommatePreferences: { gender: 'ANY', smoking: false, pets: false },
     joinedMonthsAgo: 18,
@@ -165,10 +145,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: false,
     identityVerified: false,
     publicContactAllowed: false,
-    responseTimeMinutes: 180,
-    responseRate: 79,
-    successfulRentals: 6,
-    traits: ['Собственик', 'Подходящо за студенти', 'Гъвкав срок'],
+    traits: ['TIDY', 'PET_FRIENDLY', 'HAS_PET'],
     languages: ['Български', 'Английски'],
     roommatePreferences: { gender: 'ANY', smoking: false, pets: true },
     joinedMonthsAgo: 11,
@@ -185,10 +162,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: true,
     identityVerified: false,
     publicContactAllowed: true,
-    responseTimeMinutes: 300,
-    responseRate: 71,
-    successfulRentals: 3,
-    traits: ['Собственик', 'Дългосрочен наем'],
+    traits: ['PROFESSIONAL'],
     languages: ['Български'],
     roommatePreferences: { gender: 'ANY', smoking: false, pets: false },
     joinedMonthsAgo: 7,
@@ -205,10 +179,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: true,
     identityVerified: false,
     publicContactAllowed: false,
-    responseTimeMinutes: 60,
-    responseRate: 94,
-    successfulRentals: 2,
-    traits: ['Наемател', 'Непушач', 'Ранобудна', 'Без домашни любимци'],
+    traits: ['NON_SMOKER', 'PROFESSIONAL', 'EARLY_BIRD', 'TIDY'],
     languages: ['Български', 'Английски'],
     roommatePreferences: {
       gender: 'ANY',
@@ -218,6 +189,7 @@ const SEED_USERS: SeedUser[] = [
       budgetMaxCents: 60_000,
     },
     joinedMonthsAgo: 9,
+    roomWanted: { neighborhoods: ['studentski-grad', 'lozenets'], moveInInDays: 21, stayMonths: 12 },
   },
   {
     id: 'seed-user-simona',
@@ -231,10 +203,7 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: false,
     identityVerified: false,
     publicContactAllowed: false,
-    responseTimeMinutes: 90,
-    responseRate: 85,
-    successfulRentals: 1,
-    traits: ['Наемател', 'Непушач'],
+    traits: ['NON_SMOKER', 'NIGHT_OWL', 'VEGETARIAN'],
     languages: ['Български', 'Английски'],
     roommatePreferences: { gender: 'WOMEN_ONLY', smoking: false, pets: true },
     joinedMonthsAgo: 30,
@@ -251,13 +220,11 @@ const SEED_USERS: SeedUser[] = [
     phoneVerified: false,
     identityVerified: false,
     publicContactAllowed: false,
-    responseTimeMinutes: 150,
-    responseRate: 62,
-    successfulRentals: 1,
-    traits: ['Наемател', 'Студент'],
+    traits: ['STUDENT', 'SOCIAL'],
     languages: ['Български'],
-    roommatePreferences: { gender: 'ANY', smoking: false, pets: false },
+    roommatePreferences: { gender: 'ANY', smoking: false, pets: false, budgetMaxCents: 40_000 },
     joinedMonthsAgo: 14,
+    roomWanted: { neighborhoods: ['studentski-grad', 'darvenitsa'], moveInInDays: 10, stayMonths: 6 },
   },
 ];
 
@@ -293,6 +260,79 @@ type SeedListing = {
   rules: string[];
   imageCount: number;
   publishedDaysAgo: number;
+};
+
+/**
+ * Room, stay and household details for the room listings, kept apart from
+ * `SEED_LISTINGS` so the whole-property listings do not each repeat empty values.
+ */
+const SEED_ROOM_DETAILS: Record<
+  string,
+  {
+    roomType: 'SINGLE' | 'DOUBLE' | 'SHARED';
+    privateBathroom?: boolean;
+    couplesAllowed?: boolean;
+    smokingAllowed?: boolean;
+    minStayMonths?: number;
+    maxStayMonths?: number;
+    household: Record<string, unknown>;
+  }
+> = {
+  'seed-listing-01': {
+    roomType: 'DOUBLE',
+    couplesAllowed: true,
+    minStayMonths: 6,
+    household: {
+      size: 2,
+      genders: 'MIXED',
+      ageMin: 24,
+      ageMax: 31,
+      occupation: 'PROFESSIONALS',
+      smokers: false,
+      pets: true,
+      cleanliness: 'TIDY',
+      social: 'BALANCED',
+      guests: 'SOMETIMES',
+      preferredAgeMin: 22,
+      preferredAgeMax: 35,
+    },
+  },
+  'seed-listing-07': {
+    roomType: 'SINGLE',
+    minStayMonths: 3,
+    maxStayMonths: 12,
+    household: {
+      size: 3,
+      genders: 'MIXED',
+      ageMin: 19,
+      ageMax: 24,
+      occupation: 'STUDENTS',
+      smokers: false,
+      pets: false,
+      cleanliness: 'RELAXED',
+      social: 'SOCIAL',
+      guests: 'OFTEN',
+    },
+  },
+  'seed-listing-11': {
+    roomType: 'SINGLE',
+    privateBathroom: true,
+    minStayMonths: 12,
+    household: {
+      size: 1,
+      genders: 'FEMALE',
+      ageMin: 28,
+      ageMax: 28,
+      occupation: 'PROFESSIONALS',
+      smokers: false,
+      pets: false,
+      cleanliness: 'VERY_TIDY',
+      social: 'QUIET',
+      guests: 'RARELY',
+      preferredAgeMin: 23,
+      preferredAgeMax: 40,
+    },
+  },
 };
 
 const SEED_LISTINGS: SeedListing[] = [
@@ -923,6 +963,25 @@ const SEED_VIEWING_REQUESTS: SeedViewingRequest[] = [
   },
 ];
 
+const LOCAL_DATABASE_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
+
+/**
+ * Seed accounts share a published password, so seeding a reachable database creates
+ * accounts anyone can sign in to. Only local hosts pass unless explicitly overridden.
+ */
+function assertLocalDatabase(databaseUrl: string) {
+  const { hostname } = new URL(databaseUrl);
+
+  if (LOCAL_DATABASE_HOSTS.has(hostname) || process.env.ALLOW_REMOTE_SEED === '1') {
+    return;
+  }
+
+  throw new Error(
+    `Refusing to seed ${hostname}: seed users share the password "${SEED_PASSWORD}". ` +
+      'Set ALLOW_REMOTE_SEED=1 only for a disposable, non-public database.',
+  );
+}
+
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -931,6 +990,8 @@ async function main() {
       'DATABASE_URL is not set. Run `pnpm db:seed` so .env.local is loaded, and make sure Postgres is running.',
     );
   }
+
+  assertLocalDatabase(databaseUrl);
 
   const client = postgres(databaseUrl, { max: 1 });
   const db = drizzle(client);
@@ -982,12 +1043,15 @@ async function main() {
           phoneVerified: seedUser.phoneVerified,
           identityVerified: seedUser.identityVerified,
           publicContactAllowed: seedUser.publicContactAllowed,
-          responseTimeMinutes: seedUser.responseTimeMinutes,
-          responseRate: seedUser.responseRate,
-          successfulRentals: seedUser.successfulRentals,
           traits: seedUser.traits,
           languages: seedUser.languages,
           roommatePreferences: seedUser.roommatePreferences,
+          lookingForRoom: Boolean(seedUser.roomWanted),
+          wantedNeighborhoods: seedUser.roomWanted?.neighborhoods ?? [],
+          moveInDate: seedUser.roomWanted
+            ? daysFromNow(seedUser.roomWanted.moveInInDays).toISOString().slice(0, 10)
+            : null,
+          stayMonths: seedUser.roomWanted?.stayMonths ?? null,
           joinedAt: monthsAgo(seedUser.joinedMonthsAgo),
         })),
       );
@@ -1006,7 +1070,7 @@ async function main() {
           addressLine: listing.addressLine,
           monthlyRentCents: listing.monthlyRentCents,
           depositCents: listing.depositCents,
-          currency: CURRENCY,
+          currency: PLATFORM_CURRENCY,
           bedroomCount: listing.bedroomCount,
           bathroomCount: listing.bathroomCount,
           maxOccupants: listing.maxOccupants,
@@ -1022,6 +1086,7 @@ async function main() {
           petsAllowed: listing.petsAllowed,
           nearMetro: listing.nearMetro,
           roommateFriendly: listing.roommateFriendly,
+          ...SEED_ROOM_DETAILS[listing.id],
           availableFrom: daysFromNow(listing.availableInDays),
           amenities: listing.amenities,
           rules: listing.rules,
@@ -1090,35 +1155,6 @@ async function main() {
         { userId: 'seed-user-desislava', listingId: 'seed-listing-11' },
         { userId: 'seed-user-andrey', listingId: 'seed-listing-07' },
         { userId: 'seed-user-simona', listingId: 'seed-listing-01' },
-      ]);
-
-      await tx.insert(savedSearches).values([
-        {
-          id: 'seed-search-01',
-          userId: 'seed-user-desislava',
-          name: 'София · Апартамент · до 1200 лв',
-          filters: {
-            citySlug: 'sofia',
-            propertyType: 'APARTMENT',
-            minRentCents: 35_000,
-            maxRentCents: 120_000,
-            isVerified: true,
-            roommateFriendly: true,
-          },
-          notificationsEnabled: true,
-        },
-        {
-          id: 'seed-search-02',
-          userId: 'seed-user-andrey',
-          name: 'Стая в Студентски град',
-          filters: {
-            citySlug: 'sofia',
-            neighborhoodSlug: 'studentski-grad',
-            propertyType: 'ROOM',
-            maxRentCents: 45_000,
-          },
-          notificationsEnabled: false,
-        },
       ]);
 
       await tx.insert(conversations).values([

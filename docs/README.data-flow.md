@@ -7,9 +7,9 @@ the rendered UI components.
 flowchart TD
   %% Request + i18n bootstrap
   A[Browser request /{locale}/...] --> B[app/[locale]/layout.tsx]
-  B --> C[getMessages(locale)]
+  B --> C[getClientMessages(locale)]
   C --> D[locales/{locale}/*.json]
-  B --> E[NextIntlClientProvider]
+  B --> E[NextIntlClientProvider - client namespaces only]
   B --> F[Navbar/Footer + page children]
 
   %% Home page server-component data flow
@@ -41,7 +41,7 @@ flowchart TD
   U --> V[React Query mutation + apiClient]
   V --> W[POST/DELETE /api/listings/[id]/favorite]
   W --> X[app/api/listings/[id]/favorite/route.ts]
-  X --> Y[requireCurrentUser + getPublishedListingById]
+  X --> Y[requireCurrentUser + enforceRateLimit + getPublishedListingById]
   Y --> P
   X --> Z[favorites table write]
   Z --> Q
@@ -53,14 +53,14 @@ flowchart TD
 ## Quick reading guide
 
 - **Server-rendered reads** happen in server components (for example
-  [FeaturedListings.tsx](C:/Users/PC/Desktop/p2p-roommate/components/home/FeaturedListings.tsx))
+  [FeaturedListings.tsx](../components/home/FeaturedListings.tsx))
   before HTML is returned.
-- **Translations** come from [locales/](C:/Users/PC/Desktop/p2p-roommate/locales)
-  via [layout.tsx](C:/Users/PC/Desktop/p2p-roommate/app/[locale]/layout.tsx) and
-  `getTranslations`.
+- **Translations** come from [locales/](../locales)
+  via [layout.tsx](../app/[locale]/layout.tsx), which sends only the client namespaces
+  (`getClientMessages`) to the browser, and `getTranslations` on the server.
 - **Database access** is centralized in
-  [repository.ts](C:/Users/PC/Desktop/p2p-roommate/features/listings/server/repository.ts)
+  [repository.ts](../features/listings/server/repository.ts)
   and executed through Drizzle.
 - **Interactive actions** from client components use API routes, then update local
   UI state (optimistic heart toggle in
-  [SaveListingButton.tsx](C:/Users/PC/Desktop/p2p-roommate/features/listings/components/SaveListingButton.tsx)).
+  [SaveListingButton.tsx](../features/listings/components/SaveListingButton.tsx)).

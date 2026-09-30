@@ -21,15 +21,12 @@
     "preferences": "Съквартиранти"
   },
   "stats": {
-    "respondsIn": "Отговаря за",
-    "responseRate": "Отговаря на",
-    "successfulRentals": "Успешни наеми",
     "activeListings": "Активни обяви"
   },
   "about": {
     "heading": "За мен",
     "noBio": "Потребителят още не е добавил описание.",
-    "traits": "Кратко за мен",
+    "traits": "Начин на живот",
     "languages": "Езици",
     "verification": "Потвърждения",
     "identityVerified": "Потвърдена самоличност",
@@ -72,17 +69,22 @@
   "contact": {
     "heading": "Свържи се",
     "sendMessage": "Изпрати съобщение",
-    "aboutListing": "Относно обява",
     "messagePlaceholder": "Здравейте! Интересувам се от обявата…",
     "messageSent": "Съобщението е изпратено.",
     "openConversation": "Отвори разговора",
-    "noListings": "Съобщение може да се изпрати само по конкретна обява, а този потребител няма активни обяви.",
+    "noListings": "Можеш да пишеш на този потребител по някоя от обявите му, но той няма активни обяви и не търси стая.",
     "submit": "Изпрати",
     "cancel": "Отказ",
     "showPhone": "Покажи телефон",
     "phoneHidden": "Влез, за да видиш телефона",
     "phonePrivate": "Потребителят не е споделил телефон публично.",
-    "ownProfile": "Това е твоят профил."
+    "ownProfile": "Това е твоят профил.",
+    "editProfile": "Редактирай профила",
+    "about": "Относно",
+    "theirListings": "Неговите обяви",
+    "yourListings": "Твоите обяви",
+    "noSpecificListing": "Без конкретна обява",
+    "directPlaceholder": "Здравей! Видях, че търсиш стая…"
   },
   "search": {
     "heading": "Намери съквартирант",
@@ -98,6 +100,23 @@
     "previous": "Назад",
     "next": "Напред",
     "pageOf": "Страница {page} от {total}",
-    "verified": "Проверен"
+    "verified": "Проверен",
+    "lookingOnly": "Само търсещи стая",
+    "lookingBadge": "Търси стая",
+    "budgetUpTo": "до {max}",
+    "movingFrom": "от {date}",
+    "traits": "Начин на живот"
+  },
+  "roomWanted": {
+    "heading": "Търси стая",
+    "where": "Къде",
+    "anywhere": "Навсякъде в {city}",
+    "budget": "Бюджет",
+    "budgetUpTo": "до {max}",
+    "budgetFrom": "от {min}",
+    "budgetRange": "{min} – {max}",
+    "moveIn": "Нанасяне",
+    "stay": "Престой",
+    "flexible": "Гъвкаво"
   }
 }

@@ -1,0 +1,101 @@
+{
+  "metaTitle": "Settings",
+  "heading": "Account settings",
+  "subheading": "How others see you and how we contact you.",
+  "viewProfile": "View public profile",
+  "save": "Save",
+  "saving": "Saving…",
+  "saved": "Your changes are saved.",
+  "saveFailed": "Your changes were not saved. Please try again.",
+  "loadErrorTitle": "Settings could not be loaded",
+  "loadErrorBody": "Refresh the page in a moment.",
+  "profile": {
+    "heading": "Public profile",
+    "description": "Shown on your profile page and next to your listings.",
+    "displayName": "Display name",
+    "bio": "About me",
+    "bioHint": "Up to {max} characters.",
+    "phone": "Phone",
+    "phoneHint": "Only signed-in users can see it, and only if you allow it below.",
+    "publicContact": "Show my phone number to signed-in users",
+    "city": "City",
+    "neighborhood": "Neighbourhood",
+    "none": "Not set",
+    "languages": "Languages",
+    "languagesHint": "Separate with commas, e.g. Bulgarian, English.",
+    "avatar": "Photo",
+    "avatarUpload": "Upload photo",
+    "avatarRemove": "Remove",
+    "traits": "Lifestyle",
+    "traitsHint": "Shown on your profile. People looking for a roommate can filter by them."
+  },
+  "preferences": {
+    "heading": "Roommate preferences",
+    "description": "Helps the right people find you. Everything is optional.",
+    "gender": "Roommate gender",
+    "smoking": "Smokers",
+    "pets": "Pets",
+    "any": "No preference",
+    "yes": "Yes",
+    "no": "No",
+    "quietHoursFrom": "Quiet hours from",
+    "ageMin": "Age from",
+    "ageMax": "Age up to",
+    "occupation": "Occupation",
+    "environment": "Preferred environment"
+  },
+  "account": {
+    "heading": "Account and notifications",
+    "email": "Email",
+    "emailLanguage": "Email language",
+    "emailLanguageHint": "We send message and viewing notifications in this language.",
+    "languageNames": {
+      "bg": "Български",
+      "en": "English"
+    }
+  },
+  "data": {
+    "heading": "Your data",
+    "description": "Download a copy of everything we store about you: profile, listings, messages, reviews and requests.",
+    "export": "Download my data",
+    "exporting": "Preparing…",
+    "exportFailed": "The download failed. Please try again."
+  },
+  "deleteAccount": {
+    "heading": "Delete account",
+    "description": "Permanently deletes your account, listings, photos, messages and saved items. This cannot be undone.",
+    "start": "Delete my account",
+    "confirmLabel": "Enter your password to confirm",
+    "confirm": "Delete permanently",
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "wrongPassword": "Wrong password.",
+    "failed": "Your account was not deleted. Please try again.",
+    "confirmNoPassword": "Your account has no password, so there is nothing to type: this deletes it for good.",
+    "reauthRequired": "For your security, sign in with {provider} again, then delete the account.",
+    "reauth": "Sign in with {provider} again"
+  },
+  "roomWanted": {
+    "heading": "Room wanted",
+    "description": "Looking for a room? Publish what you need and owners can find you and write to you first.",
+    "publish": "Show my profile as 'Looking for a room'",
+    "publishHint": "Owners can then message you directly, without you writing to them first.",
+    "neighborhoods": "Preferred neighbourhoods",
+    "neighborhoodsHint": "Leave empty to search the whole city.",
+    "needCity": "Choose your city in the public profile above first.",
+    "budgetMin": "Budget from ({currency})",
+    "budgetMax": "Budget up to ({currency})",
+    "moveInDate": "Move-in date",
+    "stay": "How long you want to stay",
+    "stayAny": "Flexible"
+  },
+  "blocked": {
+    "heading": "Blocked users",
+    "hint": "People you block cannot message you or request viewings of your listings, and you cannot contact them.",
+    "empty": "You have not blocked anyone.",
+    "blockedOn": "Blocked on {date}",
+    "unblock": "Unblock",
+    "failed": "Could not unblock. Try again.",
+    "loadFailed": "We could not load your blocked users."
+  }
+}

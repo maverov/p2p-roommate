@@ -21,15 +21,12 @@
     "preferences": "Roommates"
   },
   "stats": {
-    "respondsIn": "Responds in",
-    "responseRate": "Response rate",
-    "successfulRentals": "Successful rentals",
     "activeListings": "Active listings"
   },
   "about": {
     "heading": "About",
     "noBio": "This user has not added a description yet.",
-    "traits": "In short",
+    "traits": "Lifestyle",
     "languages": "Languages",
     "verification": "Verifications",
     "identityVerified": "Identity verified",
@@ -72,17 +69,22 @@
   "contact": {
     "heading": "Get in touch",
     "sendMessage": "Send message",
-    "aboutListing": "About listing",
     "messagePlaceholder": "Hi! I am interested in this listing…",
     "messageSent": "Your message was sent.",
     "openConversation": "Open conversation",
-    "noListings": "A message is always tied to a listing, and this user has no active listings.",
+    "noListings": "You can message this user about one of their listings, but they have no active listings and are not looking for a room.",
     "submit": "Send",
     "cancel": "Cancel",
     "showPhone": "Show phone",
     "phoneHidden": "Sign in to see the phone number",
     "phonePrivate": "This user has not shared a public phone number.",
-    "ownProfile": "This is your own profile."
+    "ownProfile": "This is your own profile.",
+    "editProfile": "Edit profile",
+    "about": "About",
+    "theirListings": "Their listings",
+    "yourListings": "Your listings",
+    "noSpecificListing": "No specific listing",
+    "directPlaceholder": "Hi! I saw you are looking for a room…"
   },
   "search": {
     "heading": "Find a roommate",
@@ -98,6 +100,23 @@
     "previous": "Previous",
     "next": "Next",
     "pageOf": "Page {page} of {total}",
-    "verified": "Verified"
+    "verified": "Verified",
+    "lookingOnly": "Only people looking for a room",
+    "lookingBadge": "Looking for a room",
+    "budgetUpTo": "up to {max}",
+    "movingFrom": "from {date}",
+    "traits": "Lifestyle"
+  },
+  "roomWanted": {
+    "heading": "Looking for a room",
+    "where": "Where",
+    "anywhere": "Anywhere in {city}",
+    "budget": "Budget",
+    "budgetUpTo": "up to {max}",
+    "budgetFrom": "from {min}",
+    "budgetRange": "{min} – {max}",
+    "moveIn": "Move-in",
+    "stay": "Stay",
+    "flexible": "Flexible"
   }
 }

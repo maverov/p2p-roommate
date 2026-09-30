@@ -1,0 +1,28 @@
+{
+  "hub": {
+    "metaTitle": "Rooms and flats for rent by area",
+    "metaDescription": "Rooms, flats and shared homes for rent straight from the owners in Sofia and Plovdiv, neighbourhood by neighbourhood. No agents, no commissions.",
+    "title": "Rooms and flats for rent by area",
+    "intro": "Rooms, flats and shared homes straight from the owners, city by city and neighbourhood by neighbourhood.",
+    "popular": "Neighbourhoods with listings"
+  },
+  "breadcrumb": "Rooms for rent",
+  "listingCount": "{count, plural, =0 {No listings yet} one {# listing} other {# listings}}",
+  "metaTitle": "Rooms and flats for rent {place}",
+  "metaDescription": "{count, plural, one {# room or flat} other {# rooms and flats}} for rent {place}, straight from the owners. Typical rent {median} a month. No agents, no commissions.",
+  "metaDescriptionEmpty": "Rooms and flats for rent {place}, straight from the owners. No agents, no commissions.",
+  "title": "Rooms and flats for rent {place}",
+  "intro": "{count, plural, one {# listing} other {# listings}} from owners, with no agent fees. Rents run from {min} to {max} a month; the typical rent is {median}.",
+  "introSingle": "One listing from its owner, at {median} a month, with no agent fees.",
+  "seeAll": "See {count, plural, one {the listing} other {all # listings}}",
+  "findRoommate": "Find a roommate {inCity}",
+  "latest": "Latest listings",
+  "emptyTitle": "No listings here yet",
+  "emptyBody": "New ones appear as soon as owners publish them. Meanwhile, try the whole city or a nearby neighbourhood.",
+  "loadFailed": "Listings could not be loaded. Try again shortly.",
+  "neighborhoods": "Neighbourhoods {inCity}",
+  "nearby": "Nearby neighbourhoods",
+  "allOf": "All of {city}",
+  "seekers": "{count, plural, one {# person is} other {# people are}} looking for a room {place}.",
+  "seekersCta": "Have a room? List it for free"
+}

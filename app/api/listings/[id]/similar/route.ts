@@ -1,5 +1,6 @@
 import { listSimilarListings } from '@/features/listings/server/repository';
-import { apiOk, handleApiRoute, parseSearchParams } from '@/lib/server/api';
+import { apiOk, getCurrentUser, handleApiRoute, parseSearchParams } from '@/lib/server/api';
+import { apiContactMasker } from '@/lib/server/contact-visibility';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -18,8 +19,11 @@ type SimilarListingsRouteContext = {
 export async function GET(request: Request, { params }: SimilarListingsRouteContext) {
   return handleApiRoute(async () => {
     const query = parseSearchParams(request, similarListingsQuerySchema);
-    const listings = await listSimilarListings(params.id, query.limit);
+    const [listings, viewer] = await Promise.all([
+      listSimilarListings(params.id, query.limit),
+      getCurrentUser(request),
+    ]);
 
-    return apiOk({ items: listings });
+    return apiOk({ items: listings.map(apiContactMasker(Boolean(viewer)).listing) });
   });
 }

@@ -56,20 +56,20 @@ So the **business vision stayed mostly the same**, but the technical implementat
 
 The current project already has a strong base for the marketplace:
 
-- authentication
+- authentication with required email verification and password reset
 - localized app structure
 - public listing browsing
 - listing details
-- listing creation and editing
+- listing creation and editing, with photo uploads
 - search and filtering
-- user profiles
+- user profiles, edited from a settings page
 - saved listings / favorites
 - saved profiles
 - reviews
 - reports
 - conversations / messaging
 - viewing requests
-- saved searches
+- email notifications
 
 This means the project is already beyond a very early MVP stage.
 
@@ -80,7 +80,8 @@ One of the main promises of the business plan is direct communication without br
 That is already reflected in the product through:
 - conversations/messages
 - owner contact flows
-- viewing requests
+- viewing requests, which owners accept or decline from My Listings
+- email notifications for new messages and viewing-request updates
 - saved/favorite actions
 - profile-based interactions
 
@@ -94,18 +95,20 @@ The listings side of the product is already clearly established:
 - location data
 - listing filters
 - listing validation
-- image support
+- photo uploads (up to 12 per listing, each with alt text; the first is the cover)
+- a single currency (EUR)
 
 ### 4. Trust and moderation basics
 
 The business plan depends heavily on trust.
 
 The current app already includes important parts of that base:
-- user accounts
+- user accounts with a verified email address
 - profile data
-- reviews
-- reporting flows
-- protected user actions
+- reviews (gated on an accepted viewing request, and offered once the viewing has taken place)
+- reporting flows with structured reasons
+- an admin panel (`/admin`) for triaging reports, archiving listings, and banning users
+- protected user actions, with per-user rate limits on messaging, listings, viewing requests, reviews, reports, and uploads
 
 So the trust layer has started, even if the full verification vision is not complete yet.
 
@@ -116,6 +119,14 @@ The platform already supports a multilingual setup, which is a meaningful produc
 - locale-based routes
 - typed translations
 - Bulgarian and English support
+- emails in each user's chosen language
+
+### 6. Privacy and account controls
+
+- a settings page for the profile, roommate preferences, and email language
+- a download of all of the user's data (JSON)
+- self-service account deletion, which also removes the user's uploaded photos
+- privacy and terms pages with the agreed section structure (the text is still a placeholder awaiting legal review)
 
 ## What looks partially achieved
 
@@ -127,7 +138,7 @@ The pitch materials strongly emphasize:
 - verified owner status
 - visible trust signals
 
-The current product appears to have some of the groundwork, but not the full end-to-end verification system yet.
+The current product verifies every email address before an account can sign in. Profiles store verification flags, but nothing sets them for real accounts yet, so the badges are hidden (`VERIFICATION_BADGES` in `lib/feature-flags.ts`) until a phone or ID verification workflow exists.
 
 Status: **partially achieved**
 
@@ -143,7 +154,7 @@ Status: **partially achieved**
 
 Messaging exists, which is a big step.
 
-However, the older roadmap also suggested a more real-time chat experience. The current project appears to have the product flow, but not necessarily the full real-time experience yet.
+However, the older roadmap also suggested a more real-time chat experience. The current project has the product flow (new messages arrive by polling, and the recipient gets an email), but not a real-time experience yet.
 
 Status: **partially achieved**
 
@@ -209,7 +220,7 @@ Status: **still left to build**
 
 ### 6. Advanced notifications and alerts
 
-Saved searches exist, but the broader roadmap suggests:
+Transactional emails exist (email verification, password reset, new messages, viewing-request updates), but the broader roadmap suggests:
 - proactive alerts
 - push-style notifications
 - stronger re-engagement flows
@@ -238,11 +249,15 @@ Status: **still left to build**
 
 ### 9. Admin panel
 
-An admin panel would support moderation, reporting review, verification workflows, and broader platform management.
+A first admin panel exists at `/admin`: a dashboard, a report queue with resolve/dismiss
+decisions, listing archiving, and timed or permanent user bans (Better Auth `admin`
+plugin).
 
-This would be especially useful as the product grows and needs stronger internal tools.
+Still missing: verification review workflows, user search and management beyond bans,
+a general audit log (report decisions already record who resolved them and why), and
+broader platform management.
 
-Status: **still left to build**
+Status: **partially achieved**
 
 ## Simple progress view
 
@@ -260,7 +275,10 @@ Status: **still left to build**
 - reports
 - messaging
 - viewing requests
-- saved searches
+- email verification and password reset
+- email notifications
+- photo uploads
+- account settings, data download, and account deletion
 - localization
 - backend/API foundation
 
@@ -271,6 +289,8 @@ Status: **still left to build**
 - premium trust signals
 - messaging maturity
 - moderation / fraud-prevention depth
+- admin panel (report moderation, listing archiving, and bans are built; verification review and a general audit log are not)
+- legal pages (privacy and terms have their structure; the final text awaits legal review)
 
 ### Still left to build
 
@@ -283,9 +303,8 @@ Status: **still left to build**
 - advanced roommate matching
 - anti-agent detection
 - full identity and phone verification
-- alerts and push notifications
+- proactive alerts and push notifications
 - partner revenue integrations
-- admin panel
 - mobile / PWA expansion
 
 ## Bottom line
@@ -296,7 +315,7 @@ What remains is mostly the layer that turns the platform into a stronger busines
 - monetization
 - verification
 - anti-agent protection
-- admin tooling
+- deeper admin tooling (verification review, a general audit log)
 - contracts
 - advanced roommate intelligence
 - deeper notifications and trust systems

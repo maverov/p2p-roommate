@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   ],
   category: 'Real Estate',
   classification: 'Rental marketplace',
-  referrer: 'origin-when-cross-origin',
   metadataBase: new URL(appUrl),
   alternates: {
     canonical: appUrl,

@@ -5,6 +5,23 @@ import { betterAuth } from 'better-auth';
 import { nextCookies } from 'better-auth/next-js';
 
 import { generator as generateBetterAuthOpenApi } from '../node_modules/better-auth/dist/plugins/open-api/generator.mjs';
+import { PLATFORM_CURRENCY } from '../lib/currency';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../lib/auth-rules';
+import { IMAGE_UPLOAD } from '../lib/images';
+import imageHosts from '../lib/image-hosts.json';
+import { API_CONTACT_PLACEHOLDER } from '../lib/contact-redaction';
+import {
+  CLEANLINESS_LEVELS,
+  GUEST_FREQUENCIES,
+  HOUSEHOLD_GENDERS,
+  HOUSEHOLD_OCCUPATIONS,
+  PROFILE_TRAITS,
+  REPORT_REASONS,
+  ROOM_TYPES,
+  SOCIAL_LEVELS,
+} from '../lib/labels';
+import { BULGARIA_BOUNDS } from '../lib/map';
+import { MAX_STAY_MONTHS } from '../lib/stay';
 
 type JsonObject = Record<string, unknown>;
 type PathItem = Record<string, JsonObject>;
@@ -21,6 +38,14 @@ const nullableDateTimeSchema: JsonObject = {
 const nullableStringSchema: JsonObject = { type: ['string', 'null'] };
 const nullableIntegerSchema: JsonObject = { type: ['integer', 'null'] };
 const nullableNumberSchema: JsonObject = { type: ['number', 'null'] };
+
+/** Mirrors `isAllowedImageUrl` (`lib/images.ts`): only photos uploaded through `/api/uploads`. */
+const uploadedImageUrlSchema: JsonObject = {
+  type: 'string',
+  format: 'uri',
+  maxLength: 2048,
+  description: `An https URL on \`${imageHosts.uploads}\`, as returned by an upload. External image URLs are rejected.`,
+};
 
 const listingStatusSchema: JsonObject = {
   type: 'string',
@@ -43,6 +68,14 @@ const reviewerRoleSchema: JsonObject = {
   enum: ['TENANT', 'OWNER'],
 };
 
+const roomTypeSchema: JsonObject = { type: 'string', enum: ROOM_TYPES };
+const profileTraitSchema: JsonObject = { type: 'string', enum: [...PROFILE_TRAITS] };
+const staySchema: JsonObject = { type: 'integer', minimum: 1, maximum: MAX_STAY_MONTHS };
+const nullableStaySchema: JsonObject = { ...staySchema, type: ['integer', 'null'] };
+const calendarDateSchema: JsonObject = { type: 'string', format: 'date' };
+
+const CONTACT_MASKING_NOTE = `For signed-out callers, phone numbers and email addresses in owner-written text are replaced with \`${API_CONTACT_PLACEHOLDER}\`.`;
+
 const listingWritableProperties: Record<string, JsonObject> = {
   title: { type: 'string', minLength: 3, maxLength: 120 },
   description: { type: 'string', minLength: 20, maxLength: 5000 },
@@ -64,9 +97,8 @@ const listingWritableProperties: Record<string, JsonObject> = {
   },
   currency: {
     type: 'string',
-    minLength: 3,
-    maxLength: 3,
-    example: 'BGN',
+    enum: [PLATFORM_CURRENCY],
+    description: 'Case-insensitive on input. Only the platform currency is accepted.',
   },
   bedroomCount: { type: 'integer', minimum: 0, maximum: 20 },
   bathroomCount: { type: 'integer', minimum: 0, maximum: 20 },
@@ -74,8 +106,30 @@ const listingWritableProperties: Record<string, JsonObject> = {
   sizeSqm: { type: 'integer', minimum: 1, maximum: 5000 },
   floor: { type: 'integer', minimum: -5, maximum: 200 },
   totalFloors: { type: 'integer', minimum: 0, maximum: 200 },
-  latitude: { type: 'number', minimum: -90, maximum: 90 },
-  longitude: { type: 'number', minimum: -180, maximum: 180 },
+  latitude: {
+    type: ['number', 'null'],
+    minimum: BULGARIA_BOUNDS.minLat,
+    maximum: BULGARIA_BOUNDS.maxLat,
+    description: 'The map pin, in Bulgaria. `null` removes it.',
+  },
+  longitude: {
+    type: ['number', 'null'],
+    minimum: BULGARIA_BOUNDS.minLng,
+    maximum: BULGARIA_BOUNDS.maxLng,
+  },
+  roomType: {
+    anyOf: [roomTypeSchema, { type: 'null' }],
+    description: 'The room on offer; `null` is the whole property.',
+  },
+  privateBathroom: { type: 'boolean' },
+  couplesAllowed: { type: 'boolean' },
+  smokingAllowed: { type: 'boolean' },
+  minStayMonths: {
+    ...nullableStaySchema,
+    description: 'Must not exceed `maxStayMonths` (checked against the stored value on update).',
+  },
+  maxStayMonths: nullableStaySchema,
+  household: schemaRef('ListingHousehold'),
   isFurnished: { type: 'boolean' },
   internetIncluded: { type: 'boolean' },
   utilitiesIncluded: { type: 'boolean' },
@@ -134,7 +188,7 @@ const components: JsonObject = {
       additionalProperties: false,
       required: ['url', 'alt'],
       properties: {
-        url: { type: 'string', format: 'uri', maxLength: 2048 },
+        url: uploadedImageUrlSchema,
         alt: { type: 'string', minLength: 1, maxLength: 160 },
         sortOrder: { type: 'integer', minimum: 0, maximum: 50 },
       },
@@ -151,6 +205,25 @@ const components: JsonObject = {
         sortOrder: { type: 'integer' },
         createdAt: dateTimeSchema,
         updatedAt: dateTimeSchema,
+      },
+    },
+    ListingHousehold: {
+      type: 'object',
+      additionalProperties: false,
+      description: 'Who already lives there. Every field is optional.',
+      properties: {
+        size: { type: 'integer', minimum: 0, maximum: 20 },
+        genders: { type: 'string', enum: [...HOUSEHOLD_GENDERS] },
+        ageMin: { type: 'integer', minimum: 16, maximum: 99 },
+        ageMax: { type: 'integer', minimum: 16, maximum: 99 },
+        occupation: { type: 'string', enum: [...HOUSEHOLD_OCCUPATIONS] },
+        smokers: { type: 'boolean' },
+        pets: { type: 'boolean' },
+        cleanliness: { type: 'string', enum: [...CLEANLINESS_LEVELS] },
+        social: { type: 'string', enum: [...SOCIAL_LEVELS] },
+        guests: { type: 'string', enum: [...GUEST_FREQUENCIES] },
+        preferredAgeMin: { type: 'integer', minimum: 16, maximum: 99 },
+        preferredAgeMax: { type: 'integer', minimum: 16, maximum: 99 },
       },
     },
     ListingRecord: {
@@ -184,6 +257,13 @@ const components: JsonObject = {
         'petsAllowed',
         'nearMetro',
         'roommateFriendly',
+        'roomType',
+        'privateBathroom',
+        'couplesAllowed',
+        'smokingAllowed',
+        'minStayMonths',
+        'maxStayMonths',
+        'household',
         'availableFrom',
         'amenities',
         'rules',
@@ -204,7 +284,7 @@ const components: JsonObject = {
         addressLine: nullableStringSchema,
         monthlyRentCents: { type: 'integer' },
         depositCents: nullableIntegerSchema,
-        currency: { type: 'string' },
+        currency: { type: 'string', enum: [PLATFORM_CURRENCY] },
         bedroomCount: { type: 'integer' },
         bathroomCount: { type: 'integer' },
         maxOccupants: { type: 'integer' },
@@ -220,6 +300,13 @@ const components: JsonObject = {
         petsAllowed: { type: 'boolean' },
         nearMetro: { type: 'boolean' },
         roommateFriendly: { type: 'boolean' },
+        roomType: { anyOf: [roomTypeSchema, { type: 'null' }] },
+        privateBathroom: { type: 'boolean' },
+        couplesAllowed: { type: 'boolean' },
+        smokingAllowed: { type: 'boolean' },
+        minStayMonths: nullableIntegerSchema,
+        maxStayMonths: nullableIntegerSchema,
+        household: schemaRef('ListingHousehold'),
         availableFrom: nullableDateTimeSchema,
         amenities: { type: 'array', items: { type: 'string' } },
         rules: { type: 'array', items: { type: 'string' } },
@@ -291,7 +378,7 @@ const components: JsonObject = {
         },
         currency: {
           ...listingWritableProperties.currency,
-          default: 'BGN',
+          default: PLATFORM_CURRENCY,
         },
         isFurnished: { type: 'boolean', default: false },
         internetIncluded: { type: 'boolean', default: false },
@@ -299,6 +386,10 @@ const components: JsonObject = {
         petsAllowed: { type: 'boolean', default: false },
         nearMetro: { type: 'boolean', default: false },
         roommateFriendly: { type: 'boolean', default: false },
+        privateBathroom: { type: 'boolean', default: false },
+        couplesAllowed: { type: 'boolean', default: false },
+        smokingAllowed: { type: 'boolean', default: false },
+        household: { ...schemaRef('ListingHousehold'), default: {} },
         amenities: {
           ...listingWritableProperties.amenities,
           default: [],
@@ -355,16 +446,36 @@ const components: JsonObject = {
       additionalProperties: false,
       properties: {
         displayName: { type: 'string', minLength: 2, maxLength: 120 },
-        bio: { type: 'string', maxLength: 2000 },
-        phoneNumber: { type: 'string', minLength: 3, maxLength: 40 },
-        citySlug: { type: 'string', minLength: 2, maxLength: 80 },
-        neighborhoodSlug: { type: 'string', minLength: 2, maxLength: 100 },
-        avatarUrl: { type: 'string', format: 'uri', maxLength: 2048 },
+        bio: { type: ['string', 'null'], maxLength: 2000, description: '`null` clears it.' },
+        phoneNumber: {
+          type: ['string', 'null'],
+          minLength: 3,
+          maxLength: 40,
+          description: '`null` clears it.',
+        },
+        citySlug: {
+          type: ['string', 'null'],
+          minLength: 2,
+          maxLength: 80,
+          description: '`null` clears it.',
+        },
+        neighborhoodSlug: {
+          type: ['string', 'null'],
+          minLength: 2,
+          maxLength: 100,
+          description: '`null` clears it.',
+        },
+        avatarUrl: {
+          anyOf: [uploadedImageUrlSchema, { type: 'null' }],
+          description:
+            'An uploaded photo URL (see `POST /api/uploads`); `null` removes the photo.',
+        },
         publicContactAllowed: { type: 'boolean' },
         traits: {
           type: 'array',
-          maxItems: 50,
-          items: { type: 'string', minLength: 1, maxLength: 80 },
+          maxItems: PROFILE_TRAITS.length,
+          items: profileTraitSchema,
+          description: 'Lifestyle tags. Stored once each, in vocabulary order.',
         },
         languages: {
           type: 'array',
@@ -372,6 +483,29 @@ const components: JsonObject = {
           items: { type: 'string', minLength: 1, maxLength: 80 },
         },
         roommatePreferences: schemaRef('RoommatePreferences'),
+        lookingForRoom: {
+          type: 'boolean',
+          description: 'Publishes a "room wanted" post: owners can then message this profile directly.',
+        },
+        moveInDate: { anyOf: [calendarDateSchema, { type: 'null' }] },
+        stayMonths: nullableStaySchema,
+        wantedNeighborhoods: {
+          type: 'array',
+          maxItems: 20,
+          items: { type: 'string', minLength: 2, maxLength: 100 },
+          description:
+            'Neighborhood slugs in the profile city (`INVALID_NEIGHBORHOOD` otherwise). A city change without a new list clears them.',
+        },
+      },
+    },
+    RoomWantedFields: {
+      type: 'object',
+      required: ['lookingForRoom', 'moveInDate', 'stayMonths', 'wantedNeighborhoods'],
+      properties: {
+        lookingForRoom: { type: 'boolean' },
+        moveInDate: { anyOf: [calendarDateSchema, { type: 'null' }] },
+        stayMonths: nullableIntegerSchema,
+        wantedNeighborhoods: { type: 'array', items: { type: 'string' } },
       },
     },
     UserProfileRecord: {
@@ -390,9 +524,6 @@ const components: JsonObject = {
         'phoneVerified',
         'identityVerified',
         'publicContactAllowed',
-        'responseTimeMinutes',
-        'responseRate',
-        'successfulRentals',
         'traits',
         'languages',
         'roommatePreferences',
@@ -413,9 +544,6 @@ const components: JsonObject = {
         phoneVerified: { type: 'boolean' },
         identityVerified: { type: 'boolean' },
         publicContactAllowed: { type: 'boolean' },
-        responseTimeMinutes: { type: 'integer' },
-        responseRate: { type: 'integer' },
-        successfulRentals: { type: 'integer' },
         traits: { type: 'array', items: { type: 'string' } },
         languages: { type: 'array', items: { type: 'string' } },
         roommatePreferences: schemaRef('RoommatePreferences'),
@@ -447,12 +575,13 @@ const components: JsonObject = {
         'emailVerified',
         'phoneVerified',
         'identityVerified',
-        'responseTimeMinutes',
-        'responseRate',
-        'successfulRentals',
         'traits',
         'languages',
         'roommatePreferences',
+        'lookingForRoom',
+        'moveInDate',
+        'stayMonths',
+        'wantedNeighborhoods',
         'joinedAt',
         'activeListingCount',
         'reviews',
@@ -468,12 +597,13 @@ const components: JsonObject = {
         emailVerified: { type: 'boolean' },
         phoneVerified: { type: 'boolean' },
         identityVerified: { type: 'boolean' },
-        responseTimeMinutes: { type: 'integer' },
-        responseRate: { type: 'integer' },
-        successfulRentals: { type: 'integer' },
-        traits: { type: 'array', items: { type: 'string' } },
+        traits: { type: 'array', items: profileTraitSchema },
         languages: { type: 'array', items: { type: 'string' } },
         roommatePreferences: schemaRef('RoommatePreferences'),
+        lookingForRoom: { type: 'boolean' },
+        moveInDate: { anyOf: [calendarDateSchema, { type: 'null' }] },
+        stayMonths: nullableIntegerSchema,
+        wantedNeighborhoods: { type: 'array', items: { type: 'string' } },
         joinedAt: nullableDateTimeSchema,
         activeListingCount: { type: 'integer', minimum: 0 },
         reviews: schemaRef('ReviewSummary'),
@@ -491,47 +621,6 @@ const components: JsonObject = {
         profile: {
           anyOf: [schemaRef('UserProfileRecord'), { type: 'null' }],
         },
-      },
-    },
-    CreateSavedSearchInput: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['name', 'filters'],
-      properties: {
-        name: { type: 'string', minLength: 2, maxLength: 120 },
-        filters: { type: 'object', additionalProperties: true },
-        notificationsEnabled: { type: 'boolean', default: true },
-      },
-    },
-    UpdateSavedSearchInput: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        name: { type: 'string', minLength: 2, maxLength: 120 },
-        filters: { type: 'object', additionalProperties: true },
-        notificationsEnabled: { type: 'boolean' },
-      },
-    },
-    SavedSearch: {
-      type: 'object',
-      additionalProperties: false,
-      required: [
-        'id',
-        'userId',
-        'name',
-        'filters',
-        'notificationsEnabled',
-        'createdAt',
-        'updatedAt',
-      ],
-      properties: {
-        id: { type: 'string' },
-        userId: { type: 'string' },
-        name: { type: 'string' },
-        filters: { type: 'object', additionalProperties: true },
-        notificationsEnabled: { type: 'boolean' },
-        createdAt: dateTimeSchema,
-        updatedAt: dateTimeSchema,
       },
     },
     ViewingRequest: {
@@ -564,10 +653,27 @@ const components: JsonObject = {
         schemaRef('ViewingRequest'),
         {
           type: 'object',
-          required: ['listingTitle', 'requesterName'],
+          required: [
+            'listingTitle',
+            'listingCitySlug',
+            'listingNeighborhoodSlug',
+            'listingMonthlyRentCents',
+            'listingCurrency',
+            'listingCoverImageUrl',
+            'requesterName',
+            'ownerName',
+            'ownerImage',
+          ],
           properties: {
             listingTitle: { type: 'string' },
+            listingCitySlug: { type: 'string' },
+            listingNeighborhoodSlug: nullableStringSchema,
+            listingMonthlyRentCents: { type: 'integer' },
+            listingCurrency: { type: 'string' },
+            listingCoverImageUrl: nullableStringSchema,
             requesterName: { type: 'string' },
+            ownerName: { type: 'string' },
+            ownerImage: nullableStringSchema,
           },
         },
       ],
@@ -682,8 +788,12 @@ const components: JsonObject = {
       properties: {
         listingId: { type: 'string', minLength: 1 },
         reportedUserId: { type: 'string', minLength: 1 },
-        reason: { type: 'string', minLength: 3, maxLength: 120 },
-        details: { type: 'string', maxLength: 2000 },
+        reason: { type: 'string', enum: [...REPORT_REASONS] },
+        details: {
+          type: 'string',
+          maxLength: 2000,
+          description: 'Required when reason is OTHER.',
+        },
       },
     },
     Report: {
@@ -718,10 +828,24 @@ const components: JsonObject = {
     CreateConversationInput: {
       type: 'object',
       additionalProperties: false,
-      required: ['listingId'],
+      description:
+        'Either `{ listingId }` to ask a listing owner about their listing, or `{ recipientId, message, listingId? }` to write to someone with a "room wanted" post, optionally offering one of your own listings.',
+      anyOf: [{ required: ['listingId'] }, { required: ['recipientId', 'message'] }],
       properties: {
         listingId: { type: 'string', minLength: 1 },
+        recipientId: { type: 'string', minLength: 1 },
         message: { type: 'string', minLength: 1, maxLength: 2000 },
+      },
+    },
+    BlockedUser: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['userId', 'name', 'image', 'blockedAt'],
+      properties: {
+        userId: { type: 'string' },
+        name: { type: 'string' },
+        image: nullableStringSchema,
+        blockedAt: dateTimeSchema,
       },
     },
     Conversation: {
@@ -811,6 +935,18 @@ const dataResponse = (description: string, data: JsonObject): JsonObject =>
 const apiErrorResponse = (description: string): JsonObject =>
   jsonResponse(description, schemaRef('ApiError'));
 
+const rateLimitedResponse: JsonObject = {
+  ...apiErrorResponse(
+    'Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.',
+  ),
+  headers: {
+    'Retry-After': {
+      description: 'Seconds until the rate-limit window resets.',
+      schema: { type: 'integer', minimum: 1 },
+    },
+  },
+};
+
 const errorDescriptions: Record<number, string> = {
   400: 'Invalid JSON, invalid parameters, failed validation, or invalid operation.',
   401: 'A valid session cookie is required.',
@@ -818,6 +954,7 @@ const errorDescriptions: Record<number, string> = {
   404: 'The requested resource was not found.',
   409: 'The operation conflicts with the current resource state.',
   500: 'An unexpected server error occurred.',
+  503: 'The feature is not configured on this deployment.',
 };
 
 const responseSet = (
@@ -881,11 +1018,102 @@ const applicationPaths: Record<string, PathItem> = {
       }),
     },
   },
+  '/api/me/blocks': {
+    get: {
+      tags: ['Blocks'],
+      operationId: 'listBlockedUsers',
+      summary: 'List the people you blocked',
+      description: 'Newest first. Who blocked the caller is never disclosed.',
+      security: cookieSecurity,
+      responses: responseSet(
+        {
+          '200': dataResponse('Blocked users.', {
+            type: 'object',
+            additionalProperties: false,
+            required: ['items'],
+            properties: { items: { type: 'array', items: schemaRef('BlockedUser') } },
+          }),
+        },
+        [401],
+      ),
+    },
+  },
+  '/api/me/export': {
+    get: {
+      tags: ['Session'],
+      operationId: 'exportCurrentUserData',
+      summary: "Download all of the current user's data",
+      description:
+        'GDPR access and portability: a JSON attachment (`stay-bg-data-YYYY-MM-DD.json`) with the account, profile, listings, saved listings and profiles, viewing requests, reviews, reports filed, conversations with messages, and sessions. Passwords, tokens and other secrets are never included. Not wrapped in `{ data }`.',
+      security: cookieSecurity,
+      responses: responseSet(
+        {
+          '200': {
+            description: 'The export, sent as a file download.',
+            headers: {
+              'Content-Disposition': {
+                description: 'Always `attachment` with a dated filename.',
+                schema: { type: 'string' },
+              },
+            },
+            content: { 'application/json': { schema: { type: 'object' } } },
+          },
+        },
+        [401],
+      ),
+    },
+  },
+  '/api/uploads': {
+    post: {
+      tags: ['Uploads'],
+      operationId: 'createUploadToken',
+      summary: 'Get a client token for a direct photo upload',
+      description: `Implements the token half of the Vercel Blob client-upload protocol (\`@vercel/blob/client\`); the browser then uploads straight to Blob storage. The pathname must start with \`listings/\` or \`avatars/\`. The token allows ${IMAGE_UPLOAD.contentTypes.join(', ')} up to ${IMAGE_UPLOAD.maxBytes / 1024 / 1024} MB. The response is the Blob protocol body, not wrapped in \`{ data }\`.`,
+      security: cookieSecurity,
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              required: ['type', 'payload'],
+              properties: {
+                type: { type: 'string', enum: ['blob.generate-client-token'] },
+                payload: {
+                  type: 'object',
+                  required: ['pathname'],
+                  properties: {
+                    pathname: { type: 'string', example: 'listings/living-room.jpg' },
+                    clientPayload: { type: ['string', 'null'] },
+                    multipart: { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: responseSet(
+        {
+          '200': jsonResponse('A short-lived upload token.', {
+            type: 'object',
+            required: ['type', 'clientToken'],
+            properties: {
+              type: { type: 'string', enum: ['blob.generate-client-token'] },
+              clientToken: { type: 'string' },
+            },
+          }),
+        },
+        [400, 401, 503],
+      ),
+    },
+  },
   '/api/listings': {
     get: {
       tags: ['Listings'],
       operationId: 'listListings',
       summary: 'Search published listings',
+      description: CONTACT_MASKING_NOTE,
       security: [],
       parameters: [
         {
@@ -959,6 +1187,21 @@ const applicationPaths: Record<string, PathItem> = {
             'Returns listings available on or before this date, plus listings with no availability date.',
           schema: dateTimeSchema,
         },
+        {
+          name: 'roomType',
+          in: 'query',
+          description: 'Comma-separated room types.',
+          style: 'form',
+          explode: false,
+          schema: { type: 'array', minItems: 1, maxItems: 3, items: roomTypeSchema },
+        },
+        {
+          name: 'stayMonths',
+          in: 'query',
+          description:
+            "The seeker's planned stay: listings whose minimum and maximum stay admit it. A bound the owner did not set admits any stay.",
+          schema: staySchema,
+        },
         ...[
           'isVerified',
           'isFurnished',
@@ -967,6 +1210,9 @@ const applicationPaths: Record<string, PathItem> = {
           'petsAllowed',
           'nearMetro',
           'roommateFriendly',
+          'privateBathroom',
+          'couplesAllowed',
+          'smokingAllowed',
         ].map((name) => ({
           name,
           in: 'query',
@@ -1029,6 +1275,7 @@ const applicationPaths: Record<string, PathItem> = {
       tags: ['Listings'],
       operationId: 'getListing',
       summary: 'Get a published listing',
+      description: CONTACT_MASKING_NOTE,
       security: [],
       parameters: [idParameter('Listing ID.')],
       responses: responseSet(
@@ -1156,6 +1403,7 @@ const applicationPaths: Record<string, PathItem> = {
       tags: ['Profiles'],
       operationId: 'getProfile',
       summary: 'Get a public profile',
+      description: CONTACT_MASKING_NOTE,
       security: [],
       parameters: [idParameter('Profile user ID.')],
       responses: responseSet(
@@ -1267,6 +1515,37 @@ const applicationPaths: Record<string, PathItem> = {
       responses: responseSet({ '204': { description: 'Saved profile removed.' } }, [401]),
     },
   },
+  '/api/profiles/{id}/block': {
+    post: {
+      tags: ['Blocks', 'Profiles'],
+      operationId: 'blockUser',
+      summary: 'Block a user',
+      description:
+        'Idempotent. While either person has blocked the other, neither can start a conversation, send a message, request a viewing or reveal the other\'s phone number (`403 USER_BLOCKED`). The blocked person is not notified.',
+      security: cookieSecurity,
+      parameters: [idParameter('User ID to block.')],
+      responses: responseSet(
+        {
+          '200': dataResponse('User blocked.', {
+            type: 'object',
+            additionalProperties: false,
+            required: ['blocked'],
+            properties: { blocked: { type: 'boolean', const: true } },
+          }),
+        },
+        [400, 401, 404],
+      ),
+    },
+    delete: {
+      tags: ['Blocks', 'Profiles'],
+      operationId: 'unblockUser',
+      summary: 'Unblock a user',
+      description: 'Idempotent: unblocking someone who is not blocked still succeeds.',
+      security: cookieSecurity,
+      parameters: [idParameter('User ID to unblock.')],
+      responses: responseSet({ '204': { description: 'User unblocked.' } }, [401]),
+    },
+  },
   '/api/favorites': {
     get: {
       tags: ['Favorites'],
@@ -1287,65 +1566,6 @@ const applicationPaths: Record<string, PathItem> = {
         },
         [401],
       ),
-    },
-  },
-  '/api/saved-searches': {
-    get: {
-      tags: ['Saved searches'],
-      operationId: 'listSavedSearches',
-      summary: 'List the signed-in user’s saved searches',
-      security: cookieSecurity,
-      responses: responseSet(
-        {
-          '200': dataResponse('Saved searches.', {
-            type: 'object',
-            additionalProperties: false,
-            required: ['items'],
-            properties: {
-              items: { type: 'array', items: schemaRef('SavedSearch') },
-            },
-          }),
-        },
-        [401],
-      ),
-    },
-    post: {
-      tags: ['Saved searches'],
-      operationId: 'createSavedSearch',
-      summary: 'Create a saved search',
-      security: cookieSecurity,
-      requestBody: jsonBody('CreateSavedSearchInput'),
-      responses: responseSet(
-        {
-          '201': dataResponse('Saved search created.', schemaRef('SavedSearch')),
-        },
-        [400, 401],
-      ),
-    },
-  },
-  '/api/saved-searches/{id}': {
-    patch: {
-      tags: ['Saved searches'],
-      operationId: 'updateSavedSearch',
-      summary: 'Update an owned saved search',
-      security: cookieSecurity,
-      parameters: [idParameter('Saved search ID.')],
-      requestBody: jsonBody('UpdateSavedSearchInput'),
-      responses: responseSet(
-        {
-          '200': dataResponse('Saved search updated.', schemaRef('SavedSearch')),
-        },
-        [400, 401, 404],
-      ),
-    },
-    delete: {
-      tags: ['Saved searches'],
-      operationId: 'deleteSavedSearch',
-      summary: 'Delete an owned saved search',
-      description: 'Idempotent: deleting a missing or non-owned saved search still succeeds.',
-      security: cookieSecurity,
-      parameters: [idParameter('Saved search ID.')],
-      responses: responseSet({ '204': { description: 'Saved search deleted.' } }, [401]),
     },
   },
   '/api/viewing-requests': {
@@ -1456,16 +1676,16 @@ const applicationPaths: Record<string, PathItem> = {
     post: {
       tags: ['Conversations'],
       operationId: 'createConversation',
-      summary: 'Start or retrieve a listing conversation',
+      summary: 'Start or retrieve a conversation',
       description:
-        'Returns the existing conversation when the same user already has one for the listing. Listing owners cannot message their own listing.',
+        'One thread per pair of people per listing (or per pair with no listing): an existing one is returned. Writing without a listing, or offering your own, needs the recipient to have a "room wanted" post (`403 RECIPIENT_NOT_LOOKING`). A block either way returns `403 USER_BLOCKED`.',
       security: cookieSecurity,
       requestBody: jsonBody('CreateConversationInput'),
       responses: responseSet(
         {
           '201': dataResponse('Conversation returned.', schemaRef('Conversation')),
         },
-        [400, 401, 404],
+        [400, 401, 403, 404],
       ),
     },
   },
@@ -1525,6 +1745,52 @@ const applicationPaths: Record<string, PathItem> = {
 };
 
 /**
+ * Operations that call `enforceRateLimit` (`lib/server/rate-limit.ts`), so each can
+ * answer 429. Listed by operation id and checked below, so a renamed operation fails
+ * generation instead of silently losing its 429.
+ */
+const RATE_LIMITED_OPERATIONS = new Set([
+  'exportCurrentUserData',
+  'createUploadToken',
+  'createListing',
+  'updateListing',
+  'archiveListing',
+  'favoriteListing',
+  'unfavoriteListing',
+  'createViewingRequest',
+  'updateProfile',
+  'favoriteProfile',
+  'unfavoriteProfile',
+  'blockUser',
+  'unblockUser',
+  'updateViewingRequest',
+  'createReview',
+  'createReport',
+  'createConversation',
+  'createMessage',
+]);
+
+function addRateLimitResponses(paths: Record<string, PathItem>) {
+  const seen = new Set<string>();
+
+  for (const pathItem of Object.values(paths)) {
+    for (const operation of Object.values(pathItem)) {
+      const id = operation.operationId as string;
+      if (!RATE_LIMITED_OPERATIONS.has(id)) continue;
+
+      const responses = operation.responses as Record<string, JsonObject>;
+      responses['429'] = rateLimitedResponse;
+      seen.add(id);
+    }
+  }
+
+  const missing = [...RATE_LIMITED_OPERATIONS].filter((id) => !seen.has(id));
+  if (missing.length > 0) {
+    throw new Error(`Rate-limited operations not found: ${missing.join(', ')}`);
+  }
+}
+
+/**
  * Better Auth owns a catch-all App Router handler. Its package already ships
  * exact OpenAPI metadata for the installed version, so derive that section
  * instead of hand-copying route schemas that would drift after an upgrade.
@@ -1538,8 +1804,23 @@ async function getAuthenticationPaths() {
     appName: 'Stay.bg',
     baseURL: 'http://localhost:3000',
     secret: 'openapi-generation-only-secret-at-least-32-characters',
+    // Callbacks are no-ops: only their presence changes which routes Better Auth mounts.
     emailAndPassword: {
       enabled: true,
+      minPasswordLength: PASSWORD_MIN_LENGTH,
+      maxPasswordLength: PASSWORD_MAX_LENGTH,
+      requireEmailVerification: true,
+      sendResetPassword: async () => {},
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendVerificationEmail: async () => {},
+    },
+    user: {
+      additionalFields: {
+        locale: { type: 'string', required: false, defaultValue: 'bg', input: true },
+      },
+      deleteUser: { enabled: true },
     },
     plugins: [nextCookies()],
   });
@@ -1570,11 +1851,6 @@ async function getAuthenticationPaths() {
     '/link-social',
     '/refresh-token',
     '/get-access-token',
-    '/request-password-reset',
-    '/reset-password/{token}',
-    '/reset-password',
-    '/verify-email',
-    '/send-verification-email',
   ]);
 
   for (const [path, pathItem] of Object.entries(authSpec.paths)) {
@@ -1590,7 +1866,7 @@ async function getAuthenticationPaths() {
       const generatedDescription =
         typeof operation.description === 'string' ? operation.description : undefined;
       const configurationNote = configurationDependentPaths.has(path)
-        ? ' This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.'
+        ? ' This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.'
         : '';
 
       normalizedItem[method] = {
@@ -1620,6 +1896,7 @@ async function getAuthenticationPaths() {
 }
 
 async function main() {
+  addRateLimitResponses(applicationPaths);
   const authentication = await getAuthenticationPaths();
   const componentSchemas = components.schemas as Record<string, JsonObject>;
 
@@ -1629,7 +1906,7 @@ async function main() {
       title: 'Stay.bg Backend API',
       version: '0.1.0',
       description:
-        'OpenAPI documentation for the Stay.bg Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes.',
+        'OpenAPI documentation for the Stay.bg Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes. Admin routes (`/api/admin/*` and the Better Auth admin plugin) are intentionally excluded; they return 404 to non-admins and are documented in docs/README.backend.md.',
     },
     servers: [
       {
@@ -1641,17 +1918,18 @@ async function main() {
       {
         name: 'Authentication',
         description:
-          'Better Auth core endpoints. Email/password sign-up and sign-in are enabled. Routes involving social providers, verification email delivery, or password-reset email delivery are mounted by Better Auth but require additional callbacks/providers that are not currently configured.',
+          'Better Auth core endpoints. Email/password sign-up and sign-in are enabled; sign-in requires a verified email address. Verification and password-reset emails are sent through Resend. Social-provider routes are mounted by Better Auth but no provider is configured.',
       },
-      { name: 'Session', description: 'Application-level session lookup.' },
+      { name: 'Session', description: 'Application-level session lookup and data export.' },
+      { name: 'Uploads', description: 'Direct-to-storage photo uploads.' },
       { name: 'Listings' },
       { name: 'Profiles' },
       { name: 'Favorites' },
-      { name: 'Saved searches' },
       { name: 'Viewing requests' },
       { name: 'Reviews' },
       { name: 'Reports' },
       { name: 'Conversations' },
+      { name: 'Blocks' },
     ],
     paths: {
       ...applicationPaths,

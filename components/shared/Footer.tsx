@@ -4,6 +4,7 @@ import type { ComponentType, SVGProps } from 'react';
 import { Heart } from 'lucide-react';
 import { caveat } from '@/lib/fonts';
 import type { Locale } from '@/lib/i18n';
+import { routes } from '@/lib/routes';
 
 /**
  * Structure only — the headings and labels are message keys resolved at render time,
@@ -13,7 +14,7 @@ const FOOTER_COLUMNS = [
   {
     heading: 'explore',
     links: [
-      { label: 'findRoom', href: '/find-room' },
+      { label: 'findRoom', href: routes.areas },
       { label: 'findRoommate', href: '/find-roommate' },
     ],
   },
@@ -25,7 +26,8 @@ const FOOTER_COLUMNS = [
     heading: 'support',
     links: [
       { label: 'helpCenter', href: '/help' },
-      { label: 'safetyTips', href: '/safety' },
+      { label: 'safetyTips', href: routes.safety },
+      { label: 'templates', href: routes.templates },
     ],
   },
   {
@@ -33,6 +35,9 @@ const FOOTER_COLUMNS = [
     links: [
       { label: 'aboutUs', href: '/about' },
       { label: 'contact', href: '/contact' },
+      // Locale-aware: these pages exist under every locale prefix.
+      { label: 'privacy', href: routes.privacy },
+      { label: 'terms', href: routes.terms },
     ],
   },
 ] as const;
@@ -127,7 +132,7 @@ export async function Footer({ locale }: { locale: Locale }) {
                 {column.links.map((link) => (
                   <li key={link.label}>
                     <Link
-                      href={link.href}
+                      href={typeof link.href === 'function' ? link.href(locale) : link.href}
                       className="text-[13px] leading-5 text-brand-muted transition hover:text-brand-terracotta"
                     >
                       {t(link.label)}

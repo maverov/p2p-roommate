@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, asc, desc, eq, gt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, ne, or, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 
@@ -11,13 +11,32 @@ import {
   listings,
   messages,
   user,
+  userBlocks,
+  userProfiles,
 } from '@/db/schema';
+import { assertNotBlocked } from '@/features/blocks/server/repository';
 import { ApiError } from '@/lib/server/api';
 
-export const createConversationInputSchema = z.object({
-  listingId: z.string().min(1),
-  message: z.string().trim().min(1).max(2000).optional(),
-});
+/**
+ * Two ways to start a thread:
+ * - `{ listingId }` asks a listing's owner about it (the original flow);
+ * - `{ recipientId, listingId? }` writes to someone with a "room wanted" post,
+ *   optionally about one of the sender's own listings.
+ */
+export const createConversationInputSchema = z
+  .object({
+    listingId: z.string().min(1).optional(),
+    recipientId: z.string().min(1).optional(),
+    message: z.string().trim().min(1).max(2000).optional(),
+  })
+  .refine((input) => input.listingId || input.recipientId, {
+    message: 'Provide a listingId or a recipientId.',
+    path: ['listingId'],
+  })
+  .refine((input) => !input.recipientId || input.message, {
+    message: 'A message to a person starts with a message.',
+    path: ['message'],
+  });
 
 export const createMessageInputSchema = z.object({
   body: z.string().trim().min(1).max(2000),
@@ -209,34 +228,39 @@ export async function createConversation(
   requesterId: string,
   input: CreateConversationInput,
 ) {
-  const [listing] = await db
-    .select({
-      id: listings.id,
-      ownerId: listings.ownerId,
-      status: listings.status,
-    })
-    .from(listings)
-    .where(and(eq(listings.id, input.listingId), eq(listings.status, 'PUBLISHED')))
-    .limit(1);
+  const listing = input.listingId ? await getPublishedListingOrThrow(input.listingId) : null;
+  const recipientId = input.recipientId ?? listing!.ownerId;
 
-  if (!listing) {
-    throw new ApiError(404, 'LISTING_NOT_FOUND', 'Listing was not found.');
+  if (recipientId === requesterId) {
+    throw listing && !input.recipientId
+      ? new ApiError(
+          400,
+          'CANNOT_MESSAGE_OWN_LISTING',
+          'You cannot start a conversation with your own listing.',
+        )
+      : new ApiError(400, 'CANNOT_MESSAGE_SELF', 'You cannot message yourself.');
   }
 
-  if (listing.ownerId === requesterId) {
+  if (listing && listing.ownerId !== recipientId && listing.ownerId !== requesterId) {
     throw new ApiError(
       400,
-      'CANNOT_MESSAGE_OWN_LISTING',
-      'You cannot start a conversation with your own listing.',
+      'LISTING_NOT_RELATED',
+      'The listing must belong to you or to the person you are writing to.',
     );
   }
 
-  /*
-   * Deduplicate: if this requester already has a thread for this listing,
-   * return it instead of creating a second one. The combination of listingId +
-   * requester-as-participant is a unique key because listings have exactly one
-   * owner and a requester can only appear once per listing thread.
-   */
+  await assertNotBlocked(requesterId, recipientId);
+
+  // Asking about the recipient's own listing is always allowed. Anything else — a
+  // plain message, or offering the sender's listing — needs a "room wanted" post.
+  if (!listing || listing.ownerId === requesterId) {
+    await assertLookingForRoom(recipientId);
+  }
+
+  const listingId = listing?.id ?? null;
+  const recipientParticipant = alias(conversationParticipants, 'recipient_participant');
+
+  // One thread per pair of people per listing (or per pair with no listing).
   const [existing] = await db
     .select({ id: conversations.id })
     .from(conversations)
@@ -247,20 +271,31 @@ export async function createConversation(
         eq(conversationParticipants.userId, requesterId),
       ),
     )
-    .where(eq(conversations.listingId, input.listingId))
+    .innerJoin(
+      recipientParticipant,
+      and(
+        eq(recipientParticipant.conversationId, conversations.id),
+        eq(recipientParticipant.userId, recipientId),
+      ),
+    )
+    .where(listingId ? eq(conversations.listingId, listingId) : isNull(conversations.listingId))
     .limit(1);
 
   if (existing) {
-    return getConversationForUserOrThrow(existing.id, requesterId);
+    return {
+      conversation: await getConversationForUserOrThrow(existing.id, requesterId),
+      firstMessageId: null,
+    };
   }
 
   const conversationId = crypto.randomUUID();
+  const firstMessageId = input.message ? crypto.randomUUID() : null;
   const now = new Date();
 
   await db.transaction(async (tx) => {
     await tx.insert(conversations).values({
       id: conversationId,
-      listingId: listing.id,
+      listingId,
     });
 
     await tx.insert(conversationParticipants).values([
@@ -271,13 +306,13 @@ export async function createConversation(
       },
       {
         conversationId,
-        userId: listing.ownerId,
+        userId: recipientId,
       },
     ]);
 
-    if (input.message) {
+    if (input.message && firstMessageId) {
       await tx.insert(messages).values({
-        id: crypto.randomUUID(),
+        id: firstMessageId,
         conversationId,
         senderId: requesterId,
         body: input.message,
@@ -285,7 +320,11 @@ export async function createConversation(
     }
   });
 
-  return getConversationForUserOrThrow(conversationId, requesterId);
+  return {
+    conversation: await getConversationForUserOrThrow(conversationId, requesterId),
+    /** Set only when this call created a message, so the caller knows what to notify about. */
+    firstMessageId,
+  };
 }
 
 export async function listConversationMessages(
@@ -332,6 +371,7 @@ export async function createMessage(
   input: CreateMessageInput,
 ) {
   await assertConversationParticipant(conversationId, userId);
+  await assertConversationNotBlocked(conversationId, userId);
 
   const [message] = await db
     .insert(messages)
@@ -349,6 +389,74 @@ export async function createMessage(
     .where(eq(conversations.id, conversationId));
 
   return message;
+}
+
+async function getPublishedListingOrThrow(listingId: string) {
+  const [listing] = await db
+    .select({ id: listings.id, ownerId: listings.ownerId })
+    .from(listings)
+    .where(and(eq(listings.id, listingId), eq(listings.status, 'PUBLISHED')))
+    .limit(1);
+
+  if (!listing) {
+    throw new ApiError(404, 'LISTING_NOT_FOUND', 'Listing was not found.');
+  }
+
+  return listing;
+}
+
+async function assertLookingForRoom(userId: string) {
+  const [profile] = await db
+    .select({ userId: userProfiles.userId })
+    .from(userProfiles)
+    .innerJoin(user, eq(user.id, userProfiles.userId))
+    .where(
+      and(
+        eq(userProfiles.userId, userId),
+        eq(userProfiles.lookingForRoom, true),
+        eq(user.banned, false),
+      ),
+    )
+    .limit(1);
+
+  if (!profile) {
+    throw new ApiError(
+      403,
+      'RECIPIENT_NOT_LOOKING',
+      'You can message this person only about one of their listings.',
+    );
+  }
+}
+
+/** A block between the sender and anyone else in the thread closes it to new messages. */
+async function assertConversationNotBlocked(conversationId: string, userId: string) {
+  const [block] = await db
+    .select({ blockerId: userBlocks.blockerId })
+    .from(conversationParticipants)
+    .innerJoin(
+      userBlocks,
+      or(
+        and(
+          eq(userBlocks.blockerId, userId),
+          eq(userBlocks.blockedId, conversationParticipants.userId),
+        ),
+        and(
+          eq(userBlocks.blockerId, conversationParticipants.userId),
+          eq(userBlocks.blockedId, userId),
+        ),
+      ),
+    )
+    .where(
+      and(
+        eq(conversationParticipants.conversationId, conversationId),
+        ne(conversationParticipants.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (block) {
+    throw new ApiError(403, 'USER_BLOCKED', 'You cannot contact this person.');
+  }
 }
 
 async function getConversationForUserOrThrow(conversationId: string, userId: string) {

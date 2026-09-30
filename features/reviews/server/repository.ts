@@ -68,6 +68,24 @@ export async function createReview(reviewerId: string, input: CreateReviewInput)
   }
 }
 
+/**
+ * Everything a user has already reviewed, so review prompts can disappear once used.
+ * One indexed scan of the reviewer's own rows — bounded by how many reviews one person writes.
+ */
+export async function listReviewedTargets(reviewerId: string) {
+  const rows = await db
+    .select({ listingId: reviews.listingId, targetUserId: reviews.targetUserId })
+    .from(reviews)
+    .where(eq(reviews.reviewerId, reviewerId));
+
+  return {
+    listingIds: new Set(rows.flatMap((row) => (row.listingId ? [row.listingId] : []))),
+    userIds: new Set(rows.flatMap((row) => (row.targetUserId ? [row.targetUserId] : []))),
+  };
+}
+
+export type ReviewedTargets = Awaited<ReturnType<typeof listReviewedTargets>>;
+
 export async function listUserReviews(userId: string, query: ListReviewsQuery) {
   const offset = (query.page - 1) * query.perPage;
   const where = and(

@@ -4,6 +4,7 @@ import {
   listMessagesQuerySchema,
   listConversationMessages,
 } from '@/features/conversations/server/repository';
+import { notifyNewMessage } from '@/features/notifications/server/notify';
 import {
   apiCreated,
   apiOk,
@@ -12,6 +13,8 @@ import {
   parseSearchParams,
   requireCurrentUser,
 } from '@/lib/server/api';
+import { runInBackground } from '@/lib/server/background';
+import { enforceRateLimit } from '@/lib/server/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,8 +44,11 @@ export async function GET(request: Request, { params }: MessagesRouteContext) {
 export async function POST(request: Request, { params }: MessagesRouteContext) {
   return handleApiRoute(async () => {
     const user = await requireCurrentUser(request);
+    await enforceRateLimit('sendMessage', user.id);
     const input = await parseJsonBody(request, createMessageInputSchema);
     const message = await createMessage(params.id, user.id, input);
+
+    runInBackground(notifyNewMessage(message.id), 'notify new message');
 
     return apiCreated(message);
   });

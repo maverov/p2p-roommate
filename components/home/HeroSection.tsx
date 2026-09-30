@@ -1,16 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import { HeroSearch } from './HeroSearch';
-import { Cormorant_Garamond } from 'next/font/google';
 
+import { cormorant } from '@/lib/fonts';
 import type { Locale } from '@/lib/i18n';
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['600', '700'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
 
 // Organic outline of the hero photo, in objectBoundingBox units so it scales with
 // the element rather than being pinned to a fixed pixel size. Every side is a

@@ -3,22 +3,21 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { Metadata } from 'next';
-import {
-  BadgeCheck,
-  CalendarDays,
-  Languages,
-  MapPin,
-  ShieldCheck,
-  Sparkles,
-} from 'lucide-react';
+import { BadgeCheck, CalendarDays, Languages, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 
 import { Avatar } from '@/components/shared/Avatar';
 import { Rating } from '@/components/shared/Rating';
 import { StateMessage } from '@/components/shared/StateMessage';
+import { BlockUserButton } from '@/features/blocks/components/BlockUserButton';
+import { ContactUnavailable } from '@/features/blocks/components/ContactUnavailable';
+import { getBlockState } from '@/features/blocks/server/repository';
+import { blockNotice } from '@/features/blocks/server/notice';
 import { ListingCard } from '@/features/listings/components/ListingCard';
 import { getSavedListingIds } from '@/features/listings/server/repository';
 import { ContactProfilePanel } from '@/features/profiles/components/ContactProfilePanel';
+import { RoomWantedCard } from '@/features/profiles/components/RoomWantedCard';
 import { SaveProfileButton } from '@/features/profiles/components/SaveProfileButton';
+import { ReportButton } from '@/features/reports/components/ReportButton';
 import { parseRoommatePreferences } from '@/features/profiles/schemas';
 import {
   getPublicProfile,
@@ -27,28 +26,20 @@ import {
 } from '@/features/profiles/server/repository';
 import { listUserReviews } from '@/features/reviews/server/repository';
 import { getCityLabel, getNeighborhoodLabel } from '@/lib/areas';
-import {
-  formatDate,
-  formatMoneyFromCents,
-  formatMonthYear,
-  responseTimeParts,
-} from '@/lib/format';
+import { PLATFORM_CURRENCY } from '@/lib/currency';
+import { formatDate, formatMoneyFromCents, formatMonthYear } from '@/lib/format';
 import { isLocale, localeTag, openGraphLocale, type Locale } from '@/lib/i18n';
+import { VERIFICATION_BADGES } from '@/lib/feature-flags';
 import { BreadcrumbJsonLd, ProfileJsonLd } from '@/lib/jsonld';
 import { routes } from '@/lib/routes';
 import { safeQuery, tryQuery } from '@/lib/server/safe';
+import { pageContactMasker } from '@/lib/server/contact-visibility';
 import { getServerUser } from '@/lib/server/session';
 import { cn } from '@/utils';
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 const REVIEWS_PER_PAGE = 8;
-
-/**
- * Roommate budgets are stored as bare cents with no currency, and every listing
- * on the platform is priced in BGN, so that is what they are rendered in.
- */
-const PREFERENCE_CURRENCY = 'BGN';
 
 const PROFILE_TABS = ['about', 'listings', 'reviews', 'preferences'] as const;
 
@@ -85,9 +76,7 @@ type ProfilePageProps = {
  * `generateMetadata` and the page body both need the profile; `cache` collapses
  * that into a single query per request.
  */
-const loadProfile = cache((id: string) =>
-  tryQuery(getPublicProfile(id), `profile ${id}`),
-);
+const loadProfile = cache((id: string) => tryQuery(getPublicProfile(id), `profile ${id}`));
 
 export async function generateMetadata({
   params,
@@ -101,7 +90,8 @@ export async function generateMetadata({
     return { title: t('notFound'), robots: { index: false } };
   }
 
-  const profile = outcome.data;
+  // Metadata is for crawlers, which are never signed in.
+  const profile = (await pageContactMasker(locale, false)).profile(outcome.data);
   // The root layout's `%s | Stay.bg` template brands `metadata.title` for us, but
   // Open Graph and Twitter titles bypass that template, so they get it spelled out.
   const title = profile.displayName;
@@ -130,7 +120,9 @@ export async function generateMetadata({
       url,
       type: 'profile',
       locale: openGraphLocale[locale],
-      images: profile.avatarUrl ? [{ url: profile.avatarUrl, alt: profile.displayName }] : undefined,
+      images: profile.avatarUrl
+        ? [{ url: profile.avatarUrl, alt: profile.displayName }]
+        : undefined,
     },
   };
 }
@@ -168,15 +160,18 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
     );
   }
 
-  const profile = outcome.data;
+  const viewer = await getServerUser();
+  const mask = await pageContactMasker(locale, Boolean(viewer));
+  const profile = mask.profile(outcome.data);
   const tab = resolveTab(searchParams.tab);
   const reviewsPage = resolvePage(searchParams.page);
-  const viewer = await getServerUser();
   const isOwnProfile = viewer?.id === profile.userId;
 
   // The listing list feeds both the listings tab and the contact panel's picker,
   // so it is fetched on every tab; the rest is scoped to the tab being rendered.
-  const [listings, reviews, savedProfile] = await Promise.all([
+  const canOfferListing = Boolean(viewer) && !isOwnProfile && profile.lookingForRoom;
+
+  const [listingRows, reviews, savedProfile, viewerListings, blockState] = await Promise.all([
     safeQuery(listProfileListings(profile.userId), `profile listings ${profile.userId}`),
     tab === 'reviews'
       ? safeQuery(
@@ -187,7 +182,16 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
     viewer && !isOwnProfile
       ? safeQuery(isProfileSaved(viewer.id, profile.userId), 'saved profile')
       : null,
+    // Someone looking for a room can be offered one of the viewer's own listings.
+    canOfferListing && viewer
+      ? safeQuery(listProfileListings(viewer.id), `viewer listings ${viewer.id}`)
+      : null,
+    viewer && !isOwnProfile
+      ? safeQuery(getBlockState(viewer.id, profile.userId), 'block state')
+      : null,
   ]);
+  const listings = listingRows?.map(mask.listing) ?? null;
+  const contactNotice = await blockNotice(blockState, profile.displayName, locale);
 
   const savedListingIds =
     tab === 'listings' && viewer && listings && listings.length > 0
@@ -204,15 +208,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
   const neighborhood = getNeighborhoodLabel(profile.citySlug, profile.neighborhoodSlug, locale);
   const location = profile.citySlug ? [neighborhood, city].filter(Boolean).join(', ') : null;
 
-  const stats = [
-    { label: t('stats.activeListings'), value: String(profile.activeListingCount) },
-    {
-      label: t('stats.respondsIn'),
-      value: await responseTime(profile.responseTimeMinutes, locale),
-    },
-    { label: t('stats.responseRate'), value: `${profile.responseRate}%` },
-    { label: t('stats.successfulRentals'), value: String(profile.successfulRentals) },
-  ];
+  const stats = [{ label: t('stats.activeListings'), value: String(profile.activeListingCount) }];
 
   const breadcrumbItems = [
     { name: 'Stay.bg', url: `${appUrl}${routes.home(locale)}` },
@@ -256,7 +252,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
               <h1 className="flex flex-wrap items-center gap-2 font-serif text-[32px] font-medium leading-[1.15] tracking-[-0.02em] text-brand-ink sm:text-[36px]">
                 {profile.displayName}
 
-                {profile.isVerified && (
+                {VERIFICATION_BADGES && profile.isVerified && (
                   <BadgeCheck
                     aria-label={t('common.verified')}
                     className="text-brand-olive"
@@ -352,9 +348,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                 />
               )}
 
-              {tab === 'preferences' && (
-                <PreferencesTab locale={locale} profile={profile} />
-              )}
+              {tab === 'preferences' && <PreferencesTab locale={locale} profile={profile} />}
             </div>
           </div>
 
@@ -363,17 +357,28 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
               <h2 className="text-[16px] font-bold text-brand-ink">{t('contact.heading')}</h2>
 
               <div className="mt-4 grid gap-2">
-                <ContactProfilePanel
-                  isAuthenticated={Boolean(viewer)}
-                  isOwnProfile={isOwnProfile}
-                  listings={
-                    listings
-                      ? listings.map((listing) => ({ id: listing.id, title: listing.title }))
-                      : null
-                  }
-                  locale={locale}
-                  profileUserId={profile.userId}
-                />
+                {contactNotice ? (
+                  <ContactUnavailable message={contactNotice} />
+                ) : (
+                  <ContactProfilePanel
+                    isAuthenticated={Boolean(viewer)}
+                    isOwnProfile={isOwnProfile}
+                    listings={
+                      listings
+                        ? listings.map((listing) => ({ id: listing.id, title: listing.title }))
+                        : null
+                    }
+                    locale={locale}
+                    lookingForRoom={profile.lookingForRoom}
+                    profileUserId={profile.userId}
+                    viewerListings={
+                      viewerListings?.map((listing) => ({
+                        id: listing.id,
+                        title: listing.title,
+                      })) ?? []
+                    }
+                  />
+                )}
 
                 {!isOwnProfile && (
                   <SaveProfileButton
@@ -385,6 +390,22 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                   />
                 )}
               </div>
+
+              {!isOwnProfile && (
+                <div className="mt-4 flex flex-wrap items-start justify-center gap-x-5 gap-y-2">
+                  <ReportButton
+                    isAuthenticated={Boolean(viewer)}
+                    subject={{ reportedUserId: profile.userId }}
+                  />
+                  {viewer && blockState && (
+                    <BlockUserButton
+                      blocked={blockState.blockedByViewer}
+                      displayName={profile.displayName}
+                      userId={profile.userId}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </aside>
         </div>
@@ -403,17 +424,9 @@ async function profileTranslations(locale: Locale) {
   return getTranslations({ locale, namespace: 'profiles' });
 }
 
-/** Picks the unit, then lets the catalogue's plural rules do the wording. */
-async function responseTime(minutes: number, locale: Locale) {
-  const tCommon = await getTranslations({ locale, namespace: 'common' });
-  const { unit, value } = responseTimeParts(minutes);
-
-  return tCommon(`duration.${unit}`, { value });
-}
-
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-brand-cream text-brand-ink" id="main-content">
+    <main className="min-h-screen bg-brand-cream text-brand-ink">
       <div className="mx-auto w-full max-w-[1400px] px-6 pb-16 pt-6 lg:px-10">{children}</div>
     </main>
   );
@@ -421,6 +434,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
 
 async function AboutTab({ locale, profile }: { locale: Locale; profile: PublicProfile }) {
   const t = await profileTranslations(locale);
+  const tEnums = await getTranslations({ locale, namespace: 'enums' });
 
   const verifications = [
     profile.isVerified && t('about.profileVerified'),
@@ -429,8 +443,22 @@ async function AboutTab({ locale, profile }: { locale: Locale; profile: PublicPr
     profile.emailVerified && t('about.emailVerified'),
   ].filter((item): item is string => Boolean(item));
 
+  const preferences = parseRoommatePreferences(profile.roommatePreferences);
+
   return (
     <div className="grid gap-8">
+      {profile.lookingForRoom && (
+        <RoomWantedCard
+          budgetMaxCents={preferences.budgetMaxCents}
+          budgetMinCents={preferences.budgetMinCents}
+          citySlug={profile.citySlug}
+          locale={locale}
+          moveInDate={profile.moveInDate}
+          stayMonths={profile.stayMonths}
+          wantedNeighborhoods={profile.wantedNeighborhoods}
+        />
+      )}
+
       <section>
         <h2 className="text-[18px] font-bold text-brand-ink">{t('about.heading')}</h2>
 
@@ -461,7 +489,7 @@ async function AboutTab({ locale, profile }: { locale: Locale; profile: PublicPr
                 className="rounded-full border border-brand-border bg-white px-3 py-1.5 text-[13px] text-brand-ink"
                 key={trait}
               >
-                {trait}
+                {tEnums(`profileTrait.${trait}`)}
               </li>
             ))}
           </ul>
@@ -485,30 +513,32 @@ async function AboutTab({ locale, profile }: { locale: Locale; profile: PublicPr
         </section>
       )}
 
-      <section>
-        <h3 className="flex items-center gap-2 text-[16px] font-bold text-brand-ink">
-          <ShieldCheck aria-hidden="true" size={16} strokeWidth={1.9} />
-          {t('about.verification')}
-        </h3>
+      {VERIFICATION_BADGES && (
+        <section>
+          <h3 className="flex items-center gap-2 text-[16px] font-bold text-brand-ink">
+            <ShieldCheck aria-hidden="true" size={16} strokeWidth={1.9} />
+            {t('about.verification')}
+          </h3>
 
-        {verifications.length > 0 ? (
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {verifications.map((item) => (
-              <li
-                className="flex items-center gap-1.5 rounded-full bg-[#f2f4e2] px-3 py-1.5 text-[13px] font-bold text-brand-olive"
-                key={item}
-              >
-                <BadgeCheck aria-hidden="true" size={14} strokeWidth={2.2} />
-                {item}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-[14px] leading-6 text-brand-muted">
-            {t('about.notVerifiedYet')}
-          </p>
-        )}
-      </section>
+          {verifications.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {verifications.map((item) => (
+                <li
+                  className="flex items-center gap-1.5 rounded-full bg-[#f2f4e2] px-3 py-1.5 text-[13px] font-bold text-brand-olive"
+                  key={item}
+                >
+                  <BadgeCheck aria-hidden="true" size={14} strokeWidth={2.2} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-[14px] leading-6 text-brand-muted">
+              {t('about.notVerifiedYet')}
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -640,17 +670,11 @@ async function ReviewsTab({
   );
 }
 
-async function PreferencesTab({
-  locale,
-  profile,
-}: {
-  locale: Locale;
-  profile: PublicProfile;
-}) {
+async function PreferencesTab({ locale, profile }: { locale: Locale; profile: PublicProfile }) {
   const t = await profileTranslations(locale);
   const tEnums = await getTranslations({ locale, namespace: 'enums' });
   const preferences = parseRoommatePreferences(profile.roommatePreferences);
-  const money = (cents: number) => formatMoneyFromCents(cents, PREFERENCE_CURRENCY, locale);
+  const money = (cents: number) => formatMoneyFromCents(cents, PLATFORM_CURRENCY, locale);
 
   // The column is free-form JSON, so a swapped min/max still renders as a sane
   // range rather than "35 – 22".

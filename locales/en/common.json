@@ -8,7 +8,9 @@
     "saved": "Saved",
     "profile": "Profile",
     "myListings": "My listings",
-    "viewingRequests": "Viewing requests",
+    "appliedListings": "Applied Listings",
+    "settings": "Settings",
+    "admin": "Admin panel",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
@@ -30,16 +32,68 @@
     "safetyTips": "Safety Tips",
     "aboutUs": "About us",
     "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms",
     "madeWith": "Made with",
-    "inBulgaria": "in Bulgaria"
+    "inBulgaria": "in Bulgaria",
+    "templates": "Rental templates"
   },
   "actions": {
     "browseListings": "Browse listings",
     "findRoommate": "Find a roommate"
   },
-  "duration": {
-    "minutes": "{value, plural, one {# minute} other {# minutes}}",
-    "hours": "{value, plural, one {# hour} other {# hours}}",
-    "days": "{value, plural, one {# day} other {# days}}"
+  "report": {
+    "listingTrigger": "Report this listing",
+    "userTrigger": "Report this user",
+    "signInToReport": "Sign in to report",
+    "intro": "Reports are private. The person you report is not told who sent it.",
+    "reasonLegend": "What is wrong?",
+    "details": "Details",
+    "detailsOptional": "Details (optional)",
+    "detailsPlaceholder": "Anything that helps us check, e.g. what was said or asked for.",
+    "detailsRequired": "Please describe the problem.",
+    "submit": "Send report",
+    "cancel": "Cancel",
+    "close": "Close",
+    "successTitle": "Thank you",
+    "successBody": "We will review your report and act on it if it breaks our rules.",
+    "alreadyReported": "You have already reported this. We are looking into it.",
+    "failed": "The report could not be sent. Try again."
+  },
+  "upload": {
+    "uploading": "Uploading… {percent}%",
+    "type": "Choose a JPG, PNG, WebP or AVIF photo.",
+    "size": "The photo is larger than {mb} MB.",
+    "notConfigured": "Photo uploads are not set up yet.",
+    "rateLimited": "You uploaded many photos in a short time. Try again shortly.",
+    "failed": "The photo was not uploaded. Please try again."
+  },
+  "loading": "Loading…",
+  "stay": {
+    "months": "{count, plural, one {# month} other {# months}}",
+    "years": "{count, plural, one {# year} other {# years}}"
+  },
+  "contactHidden": "[contact hidden]",
+  "contactHiddenHint": "Phone numbers and emails are visible to signed-in users only.",
+  "contactHiddenSignIn": "Sign in to see them",
+  "block": {
+    "trigger": "Block",
+    "unblock": "Unblock",
+    "confirmTitle": "Block {name}?",
+    "confirmBody": "Neither of you will be able to message the other, request viewings or see phone numbers. {name} is not notified. You can unblock them any time in Settings.",
+    "confirm": "Block",
+    "cancel": "Cancel",
+    "close": "Close",
+    "failed": "That did not work. Try again.",
+    "blockedByYou": "You blocked {name}. Unblock them to get in touch again.",
+    "unavailable": "You cannot contact this person."
+  },
+  "safety": {
+    "reminder": "Never pay before a viewing.",
+    "link": "Safety tips"
+  },
+  "match": {
+    "label": "{score}% match",
+    "hint": "How well this fits your profile: budget, area, dates and lifestyle."
   }
 }

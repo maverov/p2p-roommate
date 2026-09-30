@@ -6,9 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
 import { CITY_IDS, cityLabels, getGroupedNeighborhoods, isCityId } from '@/lib/areas';
+import { VERIFICATION_BADGES } from '@/lib/feature-flags';
 import type { Locale } from '@/lib/i18n';
-import { PROPERTY_TYPES, ROOMMATE_PREFERENCES } from '@/lib/labels';
+import { PROPERTY_TYPES, ROOM_TYPES, ROOMMATE_PREFERENCES } from '@/lib/labels';
 import { routes } from '@/lib/routes';
+import { STAY_MONTH_OPTIONS, stayLabel } from '@/lib/stay';
 import { cn } from '@/utils';
 
 type ListingFiltersProps = {
@@ -28,9 +30,14 @@ const FLAG_LABEL_KEYS = {
   petsAllowed: 'detail.included.pets',
   nearMetro: 'detail.included.nearMetro',
   roommateFriendly: 'detail.included.roommateFriendly',
+  privateBathroom: 'detail.included.privateBathroom',
+  couplesAllowed: 'detail.included.couples',
+  smokingAllowed: 'detail.included.smoking',
 } as const;
 
-const FLAG_FILTERS = Object.keys(FLAG_LABEL_KEYS) as Array<keyof typeof FLAG_LABEL_KEYS>;
+const FLAG_FILTERS = (Object.keys(FLAG_LABEL_KEYS) as Array<keyof typeof FLAG_LABEL_KEYS>).filter(
+  (flag) => VERIFICATION_BADGES || flag !== 'isVerified',
+);
 
 const FIELD =
   'w-full rounded-[10px] border border-brand-border bg-brand-chip px-3 py-2 text-[14px] text-brand-ink outline-none transition placeholder:text-brand-muted/70 focus:border-brand-terracotta focus:bg-white';
@@ -51,6 +58,7 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
   const t = useTranslations('listings.search');
   const tListings = useTranslations('listings');
   const tEnums = useTranslations('enums');
+  const tCommon = useTranslations('common');
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
@@ -99,15 +107,16 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
       }
     });
 
-  const csvValues = (key: string) =>
-    new Set(params.get(key)?.split(',').filter(Boolean) ?? []);
+  const csvValues = (key: string) => new Set(params.get(key)?.split(',').filter(Boolean) ?? []);
 
   const citySlug = params.get('citySlug') ?? '';
   const neighborhoodGroups = isCityId(citySlug) ? getGroupedNeighborhoods(citySlug) : [];
   const selectedNeighborhoods = csvValues('neighborhoodSlug');
   const selectedPropertyTypes = csvValues('propertyType');
+  const selectedRoomTypes = csvValues('roomType');
+  const view = params.get('view');
   const hasFilters = Array.from(params.keys()).some(
-    (key) => key !== 'sort' && key !== 'page',
+    (key) => key !== 'sort' && key !== 'page' && key !== 'view',
   );
 
   return (
@@ -137,7 +146,8 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
           {hasFilters && (
             <button
               className="flex items-center gap-1 text-[13px] font-medium text-brand-terracotta hover:underline"
-              onClick={() => commit(new URLSearchParams())}
+              // Clearing filters keeps the list/map view the person picked.
+              onClick={() => commit(new URLSearchParams(view ? { view } : {}))}
               type="button"
             >
               <X aria-hidden="true" size={13} strokeWidth={2.2} />
@@ -218,6 +228,19 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
                 key={type}
                 label={tEnums(`propertyType.${type}`)}
                 onChange={() => toggleCsv('propertyType', type)}
+              />
+            ))}
+          </div>
+        </Group>
+
+        <Group label={t('roomType')}>
+          <div className="grid gap-1.5">
+            {ROOM_TYPES.map((type) => (
+              <CheckboxRow
+                checked={selectedRoomTypes.has(type)}
+                key={type}
+                label={tEnums(`roomType.${type}`)}
+                onChange={() => toggleCsv('roomType', type)}
               />
             ))}
           </div>
@@ -305,6 +328,25 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
           />
         </Group>
 
+        <Group label={t('stay')}>
+          <select
+            className={FIELD}
+            onChange={(event) => setSingle('stayMonths', event.target.value)}
+            value={params.get('stayMonths') ?? ''}
+          >
+            <option value="">{t('anyStay')}</option>
+            {STAY_MONTH_OPTIONS.map((months) => {
+              const { unit, count } = stayLabel(months);
+
+              return (
+                <option key={months} value={months}>
+                  {tCommon(`stay.${unit}`, { count })}
+                </option>
+              );
+            })}
+          </select>
+        </Group>
+
         <Group label={t('features')}>
           <div className="grid gap-1.5">
             {FLAG_FILTERS.map((flag) => (
@@ -312,9 +354,7 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
                 checked={params.get(flag) === 'true'}
                 key={flag}
                 label={tListings(FLAG_LABEL_KEYS[flag])}
-                onChange={() =>
-                  setSingle(flag, params.get(flag) === 'true' ? '' : 'true')
-                }
+                onChange={() => setSingle(flag, params.get(flag) === 'true' ? '' : 'true')}
               />
             ))}
           </div>
