@@ -1,0 +1,81 @@
+STAY.BG LAUNCH CHECKLIST
+Last checked: 1 October 2026
+
+WHERE THINGS STAND
+The code is ready. Every CI step passes locally: type check, lint, i18n,
+57 unit tests, migration checks and a production build.
+What's left is mostly accounts, content and setup, not code.
+
+Estimate: 1-2 days of setup, plus the lawyer's review of the legal text.
+The legal review will probably take longest.
+
+
+MUST DO BEFORE LAUNCH
+
+[ ] 1. Commit and push the code
+       About 264 changed files have never been committed. If the disk fails,
+       weeks of work are lost. CI also only runs after a push.
+
+[ ] 2. Privacy policy and terms
+       Both pages are drafts with placeholder text. GDPR requires a real
+       privacy policy before the site collects personal data.
+       Start this first: the lawyer is the longest step.
+
+[ ] 3. Email (Resend)
+       - Verify the sending domain (add the DNS records Resend gives you)
+       - Set RESEND_API_KEY and EMAIL_FROM
+       Blocker: sign-up requires email verification, so without email
+       nobody can create an account.
+
+[ ] 4. Photo uploads (Vercel Blob)
+       - Create the Blob storage
+       - Set BLOB_READ_WRITE_TOKEN
+       Without it, owners cannot add photos.
+
+[ ] 5. Production database
+       - Choose a managed Postgres that includes connection pooling and
+         automatic backups (one provider can cover both)
+       - Use its pooled connection URL for DATABASE_URL, and set
+         DATABASE_POOL_MAX=1
+       - Apply migrations:          pnpm db:migrate
+       - Make both founders admins: pnpm admin:set-role <email> admin
+
+[ ] 6. Hosting settings
+       - BETTER_AUTH_SECRET: a new random value, 32+ characters
+       - BETTER_AUTH_URL and NEXT_PUBLIC_APP_URL: the real domain
+
+[ ] 7. Map tiles
+       Set NEXT_PUBLIC_MAP_TILE_URL (and NEXT_PUBLIC_MAP_ATTRIBUTION) for a
+       tile provider. The default uses OpenStreetMap's own servers, which
+       allow development and light use only.
+
+[ ] 8. Favicon and share image
+       The site points to these files, but they don't exist yet:
+         public/favicon.ico
+         public/favicon-16x16.png
+         public/apple-touch-icon.png
+         public/og-image.png   (1200 x 630, shown when a link is shared)
+       Every page asks for the missing favicon, and shared links show no
+       image. Once the files are there, wiring them in takes minutes.
+
+[ ] 9. Error monitoring
+       So you find out when something breaks in production.
+
+
+RECOMMENDED (NOT BLOCKING)
+
+[ ] Admin step 4c: user and listing management
+    Unban users, verify profiles, restore archived listings. Today these
+    need direct database access. About half a day of work.
+
+[ ] Google and Facebook sign-in (optional)
+    Set GOOGLE_CLIENT_ID/SECRET and FACEBOOK_CLIENT_ID/SECRET. The buttons
+    stay hidden until both keys for a provider are set.
+
+
+WORTH RECONSIDERING
+
+[ ] Home page testimonials
+    They are made up. Fake consumer reviews are a banned practice under EU
+    consumer law, which Bulgaria has adopted. Replace or remove them before
+    going live.

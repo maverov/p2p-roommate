@@ -45,8 +45,7 @@ features/your-feature/
 ├── components/
 ├── schemas/
 ├── server/
-├── hooks/      (optional)
-└── index.ts
+└── hooks/      (optional)
 ```
 
 What each folder is for:
@@ -55,7 +54,9 @@ What each folder is for:
 - `schemas/`: request and input validation
 - `server/`: database and server logic
 - `hooks/`: optional client hooks
-- `index.ts`: exports for easy imports
+
+Create only the folders the feature needs, and import its modules by path. Only `auth`
+has an `index.ts` barrel (see [README.architecture.md](README.architecture.md#feature-modules)).
 
 Step-by-step:
 
@@ -73,8 +74,10 @@ Use this simple pattern:
 
 1. Read and validate input.
 2. Check auth if needed.
-3. Call feature server logic.
-4. Return JSON.
+3. For writes, call `enforceRateLimit(bucket, user.id)` right after the auth check.
+4. Call feature server logic.
+5. Send emails or other side effects with `runInBackground(...)`, after the write.
+6. Return JSON.
 
 ```ts
 import { apiOk, handleApiRoute, parseSearchParams } from '@/lib/server/api';
@@ -90,7 +93,50 @@ export async function GET(request: Request) {
 }
 ```
 
+A write route, from `app/api/viewing-requests/[id]/route.ts`:
+
+```ts
+export async function PATCH(request: Request, { params }: ViewingRequestRouteContext) {
+  return handleApiRoute(async () => {
+    const user = await requireCurrentUser(request);
+    await enforceRateLimit('updateViewingRequest', user.id);
+    const input = await parseJsonBody(request, updateViewingRequestInputSchema);
+    const viewingRequest = await updateViewingRequest(params.id, user.id, input);
+
+    runInBackground(
+      notifyViewingRequestStatus(viewingRequest.id, input.status),
+      'notify viewing request status',
+    );
+
+    return apiOk(viewingRequest);
+  });
+}
+```
+
 For full endpoint docs, see [README.backend.md](README.backend.md).
+
+## Sending an email
+
+1. Add the copy to `locales/<locale>/emails.json` for every locale.
+2. Add a function to `features/notifications/server/notify.ts`: load the recipient's
+   `locale`, get `emailTranslator(emailLocale(recipient.locale))`, and pass the parts to
+   `renderEmail`, which builds the HTML and text versions and escapes every value.
+3. Call it from the route through `runInBackground`, so a slow or failing provider never
+   blocks the response.
+
+Locally, without `RESEND_API_KEY`, the email is printed to the dev server console.
+
+## Photos and images
+
+- Upload photos with `PhotoUploadButton` (or `uploadImage()` from
+  `features/uploads/upload-image.ts`), passing the `listings` or `avatars` purpose. It
+  checks type and size in the browser, then uploads straight to Vercel Blob.
+- Any schema that accepts a user-supplied image URL must refine it with
+  `isAllowedImageUrl` (`lib/images.ts`), which accepts uploads (and the seed image host
+  outside production) only.
+- `next/image` and the CSP accept only the hosts in `lib/image-hosts.json`. An image the
+  site itself references from another host goes under `site` there; never widen what
+  `isAllowedImageUrl` accepts for that.
 
 ## Getting data on pages (recommended first choice)
 
@@ -99,7 +145,7 @@ This is usually simpler and faster than calling `/api` from the browser for init
 
 ## Making network requests from components
 
-For client-side requests, use [api-client.ts](C:/Users/PC/Desktop/p2p-roommate/lib/api-client.ts) with React Query.
+For client-side requests, use [api-client.ts](../lib/api-client.ts) with React Query.
 
 ```tsx
 'use client';
@@ -158,6 +204,7 @@ Keep these in mind:
 
 Related docs:
 
+- [README.architecture.md](README.architecture.md)
 - [README.translations.md](README.translations.md)
 - [README.accessibility.md](README.accessibility.md)
 - [README.seo.md](README.seo.md)
@@ -165,22 +212,25 @@ Related docs:
 
 ## Forms (React Hook Form + Zod)
 
-Use this for forms with validation:
+Use this for forms with validation. The auth schemas are built from the active
+translator, so validation messages come from the catalogue, and their length rules come
+from `lib/auth-rules.ts`, the same constants Better Auth enforces on the server.
+
+From `features/auth/components/LoginForm.tsx`:
 
 ```tsx
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
+import { createLoginSchema, type LoginInput } from '@/features/auth/schemas';
 
-type LoginInput = z.infer<typeof loginSchema>;
-
+const t = useTranslations('auth');
+const schema = useMemo(() => createLoginSchema(t), [t]);
 const form = useForm<LoginInput>({
-  resolver: zodResolver(loginSchema),
+  defaultValues: { email: '', password: '' },
+  resolver: zodResolver(schema),
 });
 ```
 
@@ -195,12 +245,6 @@ Default choice:
 
 - Prefer Tailwind utility classes first.
 - Use CSS Modules only when a component needs more complex styling.
-
-## shadcn/ui quick command
-
-```powershell
-pnpm dlx shadcn@latest add button
-```
 
 ## Real examples from this codebase (technology by technology)
 
@@ -309,7 +353,7 @@ From `db/index.ts`:
 const client =
   globalForDb.postgresClient ??
   postgres(serverEnv.DATABASE_URL, {
-    max: 10,
+    max: serverEnv.DATABASE_POOL_MAX,
     prepare: false,
   });
 ```
@@ -349,7 +393,7 @@ const [rows, totalRows] = await Promise.all([
 **Runs on:** server.
 **Use this pattern when:** adding/changing auth configuration or wiring auth routes.
 
-From `lib/auth.ts`:
+From `lib/auth.ts` (abridged):
 
 ```ts
 export const auth = betterAuth({
@@ -362,8 +406,34 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: PASSWORD_MIN_LENGTH,
+    maxPasswordLength: PASSWORD_MAX_LENGTH,
+    // No session until the address is confirmed, so nobody can sign up as someone else.
+    requireEmailVerification: true,
+    revokeSessionsOnPasswordReset: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    sendResetPassword: ({ user, url }) => sendPasswordResetEmail(user, url),
   },
-  plugins: [nextCookies()],
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 24 * 60 * 60,
+    sendVerificationEmail: ({ user, url }) => sendVerificationEmail(user, url),
+  },
+  user: {
+    additionalFields: {
+      locale: { type: 'string', required: false, defaultValue: defaultLocale, input: true },
+    },
+    deleteUser: { enabled: true /* beforeDelete / afterDelete remove Blob uploads */ },
+  },
+  // In memory (the default) every serverless instance would count separately.
+  rateLimit: { storage: 'database', window: 60, max: 100 },
+  advanced: {
+    backgroundTasks: { handler: (promise) => waitUntil(promise) },
+  },
+  // `nextCookies` must stay last so it can set cookies for every other plugin's responses.
+  plugins: [admin(), nextCookies()],
 });
 ```
 
@@ -383,7 +453,11 @@ From `features/listings/schemas/index.ts`:
 
 ```ts
 export const listingImageInputSchema = z.object({
-  url: z.string().url().max(2048),
+  url: z
+    .string()
+    .url()
+    .max(2048)
+    .refine(isAllowedImageUrl, 'Upload the photo; external image URLs are not accepted.'),
   alt: z.string().trim().min(1).max(160),
   sortOrder: z.number().int().min(0).max(50).optional(),
 });
@@ -415,16 +489,37 @@ const toggle = useMutation({
 });
 ```
 
+## Unit tests (Vitest)
+
+Tests sit next to the module they cover (`lib/images.test.ts`,
+`features/listings/schemas/index.test.ts`) and run with `pnpm test`. They run in Node
+(`vitest.config.mts`), with `@/` resolved and `server-only` replaced by an empty stub
+(`test/server-only.ts`), so server modules can be imported directly. There is no test
+database: mock `@/db` and test the pure parts, as `lib/server/rate-limit.test.ts` does.
+
+```ts
+import { describe, expect, it } from 'vitest';
+
+import { isAllowedImageUrl } from './images';
+
+describe('isAllowedImageUrl', () => {
+  it('rejects hosts outside the allowlist', () => {
+    expect(isAllowedImageUrl('https://example.com/photo.jpg')).toBe(false);
+  });
+});
+```
+
 ## Quick checklist before PR
 
 1. Feature files are in the right place.
-2. API input is validated.
+2. API input is validated, and new write routes are rate-limited.
 3. `bg` and `en` translation keys were added/updated.
 4. Loading, empty, and error UI states exist.
-5. Run these commands:
+5. Run these commands (CI runs all of them, plus the migration checks):
    - `pnpm type-check`
    - `pnpm lint`
    - `pnpm i18n:check`
+   - `pnpm test`
    - `pnpm build` (for bigger changes)
 
 ## Beginner quick start (copy this flow)
@@ -437,18 +532,18 @@ When you add a feature, use this order:
 4. Add or update `app/api/...` route.
 5. Build UI in `components/` and page in `app/[locale]/...`.
 6. Add translation keys in `locales/bg` and `locales/en`.
-7. Run checks (`type-check`, `lint`, `i18n:check`, `build`).
+7. Run checks (`type-check`, `lint`, `i18n:check`, `test`, `build`).
 
 ## Best way to start learning this project
 
 If you are new to the project, use this order:
 
-1. Read [README.md](C:/Users/PC/Desktop/p2p-roommate/README.md) for the big picture.
-2. Read [docs/README.development.md](C:/Users/PC/Desktop/p2p-roommate/docs/README.development.md) to understand how features are added.
-3. Read [docs/README.data-flow.md](C:/Users/PC/Desktop/p2p-roommate/docs/README.data-flow.md) to see how data moves through the app.
-4. Open [app/](C:/Users/PC/Desktop/p2p-roommate/app) to understand routes and pages.
-5. Open [features/](C:/Users/PC/Desktop/p2p-roommate/features) to see how product logic is organized.
-6. Open [components/](C:/Users/PC/Desktop/p2p-roommate/components) to see shared and reusable UI.
+1. Read [README.md](../README.md) for the big picture, then get the app running with [README.setup.md](README.setup.md).
+2. Read [README.architecture.md](README.architecture.md) for the folder layout and rules, and this guide for how features are added.
+3. Read [README.data-flow.md](README.data-flow.md) to see how data moves through the app.
+4. Open [app/](../app) to understand routes and pages.
+5. Open [features/](../features) to see how product logic is organized.
+6. Open [components/](../components) to see shared and reusable UI.
 7. Read one full feature from start to finish:
    - page in `app/[locale]/...`
    - feature UI in `features/<feature>/components`
@@ -459,10 +554,10 @@ If you are new to the project, use this order:
 
 Good files to study first:
 
-- [app/[locale]/page.tsx](C:/Users/PC/Desktop/p2p-roommate/app/[locale]/page.tsx)
-- [components/home/FeaturedListings.tsx](C:/Users/PC/Desktop/p2p-roommate/components/home/FeaturedListings.tsx)
-- [features/listings/server/repository.ts](C:/Users/PC/Desktop/p2p-roommate/features/listings/server/repository.ts)
-- [features/listings/schemas/index.ts](C:/Users/PC/Desktop/p2p-roommate/features/listings/schemas/index.ts)
-- [features/listings/components/SaveListingButton.tsx](C:/Users/PC/Desktop/p2p-roommate/features/listings/components/SaveListingButton.tsx)
+- [app/[locale]/page.tsx](../app/[locale]/page.tsx)
+- [components/home/FeaturedListings.tsx](../components/home/FeaturedListings.tsx)
+- [features/listings/server/repository.ts](../features/listings/server/repository.ts)
+- [features/listings/schemas/index.ts](../features/listings/schemas/index.ts)
+- [features/listings/components/SaveListingButton.tsx](../features/listings/components/SaveListingButton.tsx)
 
 Tip: do not try to understand every folder at once. Follow one feature end-to-end first, then the rest of the project will make much more sense.

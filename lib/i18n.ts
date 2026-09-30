@@ -3,6 +3,13 @@ export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = 'bg';
 export const localeCookieName = 'NEXT_LOCALE';
 
+/**
+ * Every date and time is shown in Bulgarian time, whatever the server's clock (UTC on
+ * Vercel) or the formatting side (server render, client, email). Without it a 15:00
+ * viewing renders as 12:00 in anything formatted on a UTC server.
+ */
+export const APP_TIME_ZONE = 'Europe/Sofia';
+
 export function isLocale(locale: string): locale is Locale {
   return locales.includes(locale as Locale);
 }

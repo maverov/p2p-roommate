@@ -1,9 +1,11 @@
 import 'server-only';
 
-import { and, desc, eq, or } from 'drizzle-orm';
+import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db';
-import { listings, user, viewingRequests } from '@/db/schema';
+import { listingImages, listings, user, viewingRequests } from '@/db/schema';
+import { assertNotBlocked } from '@/features/blocks/server/repository';
 import { ApiError } from '@/lib/server/api';
 
 import type {
@@ -11,6 +13,17 @@ import type {
   ListViewingRequestsQuery,
   UpdateViewingRequestInput,
 } from '../schemas';
+
+const requester = alias(user, 'requester');
+const owner = alias(user, 'owner');
+
+// Same ordering as the listing gallery, so the thumbnail matches the listing's cover photo.
+const listingCoverImageUrl = sql<string | null>`(
+  select ${listingImages.url} from ${listingImages}
+  where ${listingImages.listingId} = ${listings.id}
+  order by ${listingImages.sortOrder}, ${listingImages.createdAt}
+  limit 1
+)`;
 
 export async function createViewingRequest(
   listingId: string,
@@ -38,6 +51,8 @@ export async function createViewingRequest(
       'You cannot request a viewing for your own listing.',
     );
   }
+
+  await assertNotBlocked(requesterId, listing.ownerId);
 
   const [request] = await db
     .insert(viewingRequests)
@@ -80,14 +95,25 @@ export async function listViewingRequests(
       createdAt: viewingRequests.createdAt,
       updatedAt: viewingRequests.updatedAt,
       listingTitle: listings.title,
-      requesterName: user.name,
+      listingCitySlug: listings.citySlug,
+      listingNeighborhoodSlug: listings.neighborhoodSlug,
+      listingMonthlyRentCents: listings.monthlyRentCents,
+      listingCurrency: listings.currency,
+      listingCoverImageUrl,
+      requesterName: requester.name,
+      requesterImage: requester.image,
+      ownerName: owner.name,
+      ownerImage: owner.image,
     })
     .from(viewingRequests)
     .innerJoin(listings, eq(viewingRequests.listingId, listings.id))
-    .innerJoin(user, eq(viewingRequests.requesterId, user.id))
+    .innerJoin(requester, eq(viewingRequests.requesterId, requester.id))
+    .innerJoin(owner, eq(viewingRequests.ownerId, owner.id))
     .where(roleWhere)
     .orderBy(desc(viewingRequests.createdAt));
 }
+
+export type ViewingRequestListItem = Awaited<ReturnType<typeof listViewingRequests>>[number];
 
 export async function updateViewingRequest(
   id: string,

@@ -5,7 +5,11 @@ import type { Metadata } from 'next';
 import { ChevronLeft } from 'lucide-react';
 
 import { Avatar } from '@/components/shared/Avatar';
+import { SafetyReminder } from '@/components/shared/SafetyReminder';
 import { StateMessage } from '@/components/shared/StateMessage';
+import { BlockUserButton } from '@/features/blocks/components/BlockUserButton';
+import { getBlockState } from '@/features/blocks/server/repository';
+import { blockNotice } from '@/features/blocks/server/notice';
 import { MessageThread } from '@/features/conversations/components/MessageThread';
 import {
   getConversationDetails,
@@ -69,10 +73,11 @@ export default async function ConversationThreadPage({ params }: ThreadPageProps
    */
   await markConversationRead(params.id, user.id);
 
-  const initialMessages = await safeQuery(
-    listConversationMessages(params.id, user.id),
-    `messages ${params.id}`,
-  );
+  const [initialMessages, blockState] = await Promise.all([
+    safeQuery(listConversationMessages(params.id, user.id), `messages ${params.id}`),
+    safeQuery(getBlockState(user.id, conversation.otherUserId), 'block state'),
+  ]);
+  const closedNotice = await blockNotice(blockState, conversation.otherUserName, locale);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col px-4 py-6 lg:px-6">
@@ -108,6 +113,16 @@ export default async function ConversationThreadPage({ params }: ThreadPageProps
             <p className="text-[13px] text-brand-muted">{t('thread.directConversation')}</p>
           )}
         </div>
+
+        {blockState && (
+          <div className="shrink-0">
+            <BlockUserButton
+              blocked={blockState.blockedByViewer}
+              displayName={conversation.otherUserName}
+              userId={conversation.otherUserId}
+            />
+          </div>
+        )}
       </div>
 
       {/* Thread body */}
@@ -122,6 +137,7 @@ export default async function ConversationThreadPage({ params }: ThreadPageProps
           </div>
         ) : (
           <MessageThread
+            closedNotice={closedNotice}
             conversationId={params.id}
             currentUserId={user.id}
             currentUserName={user.name}
@@ -130,6 +146,8 @@ export default async function ConversationThreadPage({ params }: ThreadPageProps
           />
         )}
       </div>
+
+      <SafetyReminder locale={locale} />
     </main>
   );
 }

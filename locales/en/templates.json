@@ -1,0 +1,240 @@
+{
+  "metaTitle": "Rental agreement, handover protocol and house rules templates",
+  "metaDescription": "Free templates for renting a room or flat in Bulgaria: a rental agreement, a handover protocol and house rules. Fill in, print and sign.",
+  "title": "Rental templates",
+  "intro": "Free templates to fill in, print and sign with the other side. Read them carefully and adapt them to your situation.",
+  "disclaimer": "These templates are a starting point, not legal advice. For a large amount, a long term or unusual conditions, ask a lawyer. Stay.bg is not a party to the agreement.",
+  "versionNote": "If you can, sign the Bulgarian version (switch the language at the top) or a bilingual copy. This English version helps both sides understand it.",
+  "print": "Print or save as PDF",
+  "printHint": "Choose “Save as PDF” in the print dialog if you want a file.",
+  "back": "All templates",
+  "open": "Open template",
+  "docs": {
+    "lease": {
+      "title": "Rental agreement",
+      "summary": "For a room or a whole flat: parties, term, rent, deposit, bills, obligations and termination.",
+      "metaDescription": "Free rental agreement template for a room or flat in Bulgaria: rent, deposit, bills, term and termination. Fill in and print.",
+      "preamble": "Today, ______, in ______, the parties below entered into this rental agreement.",
+      "sections": {
+        "parties": {
+          "title": "Parties",
+          "clauses": {
+            "landlord": "LANDLORD: ______________________, personal ID number (ЕГН) ______________, ID card no. ______________, address: ______________________, phone: ______________.",
+            "tenant": "TENANT: ______________________, personal ID number (ЕГН/ЛНЧ) ______________, ID card / passport no. ______________, address: ______________________, phone: ______________."
+          }
+        },
+        "subject": {
+          "title": "Subject",
+          "clauses": {
+            "property": "The landlord lets to the tenant, for temporary use against payment, ______________ (a room / the whole flat) at ______________, street / estate ______________ no. ____, entrance ____, floor ____, flat ____.",
+            "common": "The tenant may also use the shared parts of the home: ______________________ (kitchen, bathroom, living room, balcony, etc.).",
+            "ownership": "The landlord declares that they own the property or are entitled to let it under ______________________ (title deed / power of attorney / the owner’s consent).",
+            "condition": "The property is handed over with the furniture and in the condition described in the handover protocol, which forms part of this agreement."
+          }
+        },
+        "term": {
+          "title": "Term",
+          "clauses": {
+            "length": "This agreement is for ____ months, from ______________ to ______________.",
+            "extension": "If the tenant keeps using the property after the term ends, with the landlord’s knowledge and without objection, the agreement continues for an indefinite term."
+          }
+        },
+        "rent": {
+          "title": "Rent and bills",
+          "clauses": {
+            "amount": "The monthly rent is ______________ EUR, payable by the ____ day of each month.",
+            "method": "Rent is paid by bank transfer to IBAN ______________________ in the name of ______________________, or in cash against a signed receipt.",
+            "utilities": "Electricity, water, heating, internet and the building fee ______________________ (are included in the rent / are paid by the tenant according to the meters / are split as follows: ______________).",
+            "change": "The rent can only be changed by a written agreement between the parties."
+          }
+        },
+        "deposit": {
+          "title": "Deposit",
+          "clauses": {
+            "amount": "On signing, the tenant pays a deposit of ______________ EUR, for which the landlord issues a receipt.",
+            "return": "The deposit is returned within ____ days of the property being vacated, less unpaid rent and bills and the cost of damage beyond normal wear and tear recorded in the handover protocol.",
+            "lastMonth": "The deposit is not used to pay the last month’s rent unless the parties agree to this in writing."
+          }
+        },
+        "landlord": {
+          "title": "The landlord’s obligations",
+          "clauses": {
+            "handover": "To hand over the property fit to live in and to ensure its undisturbed use for the whole term.",
+            "repairs": "To pay for repairs and damage not caused by ordinary use or by the tenant’s fault.",
+            "visits": "To visit the property only by prior arrangement with the tenant, except in an emergency."
+          }
+        },
+        "tenant": {
+          "title": "The tenant’s obligations",
+          "clauses": {
+            "pay": "To pay the rent and bills on time.",
+            "care": "To use the property with care and for its purpose, and to follow the house rules and the rules of the building.",
+            "minor": "To pay for minor repairs arising from ordinary use.",
+            "sublet": "Not to sublet all or part of the property or move anyone in permanently without the landlord’s written consent.",
+            "notify": "To tell the landlord straight away about any damage or emergency.",
+            "return": "On leaving, to return the property in the condition it was received, allowing for normal wear and tear."
+          }
+        },
+        "termination": {
+          "title": "Termination",
+          "clauses": {
+            "expiry": "The agreement ends when the term expires or by mutual written agreement.",
+            "notice": "Either party may end the agreement with ____ days’ written notice (at least 30).",
+            "default": "The landlord may end the agreement without notice if the tenant is more than ____ days late with the rent.",
+            "protocol": "On termination, the parties sign a handover protocol for the return of the property and settle the deposit."
+          }
+        },
+        "final": {
+          "title": "Final provisions",
+          "clauses": {
+            "changes": "Changes to this agreement are valid only in writing and signed by both parties.",
+            "law": "Matters not covered here are governed by the Bulgarian Obligations and Contracts Act.",
+            "copies": "This agreement is made and signed in two identical copies, one for each party."
+          }
+        }
+      },
+      "signatures": {
+        "landlord": "Landlord",
+        "tenant": "Tenant"
+      }
+    },
+    "handover": {
+      "title": "Handover protocol",
+      "summary": "Signed on moving in and on moving out: meter readings, keys, furniture and the condition of the property.",
+      "metaDescription": "Free handover protocol template for a rental in Bulgaria: meter readings, keys, furniture and notes on the condition of the property.",
+      "preamble": "Attached to the rental agreement of ______________. Today, ______________, the parties signed this protocol on ______________ (moving in / moving out).",
+      "sections": {
+        "details": {
+          "title": "Details",
+          "fields": {
+            "address": "Property address",
+            "handedOver": "Handed over by",
+            "received": "Received by"
+          }
+        },
+        "meters": {
+          "title": "Meter readings",
+          "table": {
+            "columns": {
+              "meter": "Meter",
+              "number": "Meter no.",
+              "reading": "Reading"
+            },
+            "rows": {
+              "electricityDay": "Electricity — day rate",
+              "electricityNight": "Electricity — night rate",
+              "coldWater": "Water — cold",
+              "hotWater": "Water — hot",
+              "heating": "Heat meter / radiator allocators",
+              "gas": "Gas"
+            }
+          }
+        },
+        "keys": {
+          "title": "Keys",
+          "table": {
+            "columns": {
+              "key": "Key",
+              "count": "Number"
+            },
+            "rows": {
+              "front": "Front door of the flat",
+              "building": "Building entrance (key / fob)",
+              "room": "Room",
+              "mailbox": "Mailbox",
+              "storage": "Basement / attic",
+              "remote": "Remote (garage / parking)"
+            }
+          }
+        },
+        "inventory": {
+          "title": "Furniture and appliances",
+          "table": {
+            "columns": {
+              "room": "Room",
+              "item": "Item",
+              "count": "Number",
+              "condition": "Condition"
+            }
+          }
+        },
+        "notes": {
+          "title": "Notes and damage",
+          "writeIn": "Describe any damage, anything missing and anything that does not work. Photos taken today are attached to this protocol."
+        }
+      },
+      "signatures": {
+        "handedOver": "Handed over by",
+        "received": "Received by"
+      }
+    },
+    "houseRules": {
+      "title": "House rules",
+      "summary": "For flatmates: quiet hours, cleaning, guests, shared bills, smoking and pets.",
+      "metaDescription": "Free house rules template for flatmates: quiet hours, a cleaning rota, guests and shared bills.",
+      "preamble": "House rules for ______________________, agreed on ______________ by everyone who lives here.",
+      "sections": {
+        "quiet": {
+          "title": "Quiet",
+          "clauses": {
+            "hours": "Quiet hours: from ____ to ____ on weekdays and from ____ to ____ at weekends.",
+            "volume": "Music, TV and phone calls in shared spaces are kept at a moderate volume."
+          }
+        },
+        "cleaning": {
+          "title": "Cleaning",
+          "clauses": {
+            "rota": "Shared spaces (kitchen, bathroom, hallway) are cleaned on a rota: ______________________.",
+            "dishes": "Dishes are washed within ____ hours of use.",
+            "bins": "Rubbish goes out ______________; recycling is ______________."
+          }
+        },
+        "guests": {
+          "title": "Guests",
+          "clauses": {
+            "overnight": "Overnight guests: up to ____ nights a week, after letting the others know.",
+            "partners": "A partner who stays permanently moves in only with everyone’s agreement and the landlord’s."
+          }
+        },
+        "bills": {
+          "title": "Shared bills",
+          "clauses": {
+            "split": "Electricity, water, heating and internet are split ______________ (equally / by use) and paid by the ____ of each month to ______________.",
+            "supplies": "Shared supplies (cleaning products, toilet paper, etc.) are bought ______________ (from a shared fund of ____ EUR a month / in turns)."
+          }
+        },
+        "kitchen": {
+          "title": "Kitchen and food",
+          "clauses": {
+            "shelves": "Everyone has their own shelf in the fridge and cupboard; ask before taking someone else’s food.",
+            "clean": "The hob, microwave and sink are cleaned straight after use."
+          }
+        },
+        "smoking": {
+          "title": "Smoking and pets",
+          "clauses": {
+            "smoking": "Smoking is ______________ (not allowed in the flat / allowed on the balcony only).",
+            "pets": "Pets: ______________________."
+          }
+        },
+        "safety": {
+          "title": "Security and energy",
+          "clauses": {
+            "door": "The front door is always locked; keys are never given to anyone else.",
+            "energy": "Windows are not left open with the heating on; appliances are switched off when you go out."
+          }
+        },
+        "moving": {
+          "title": "Disagreements and moving out",
+          "clauses": {
+            "talk": "Problems are raised directly and early. If we cannot agree, ______________________.",
+            "leaving": "Anyone moving out tells the others ____ days in advance."
+          }
+        }
+      },
+      "signatures": {
+        "resident": "Name and signature"
+      }
+    }
+  }
+}

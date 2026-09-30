@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { favorites } from '@/db/schema';
 import { getPublishedListingById } from '@/features/listings/server/repository';
 import { ApiError, apiNoContent, apiOk, handleApiRoute, requireCurrentUser } from '@/lib/server/api';
+import { enforceRateLimit } from '@/lib/server/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,7 @@ type FavoriteRouteContext = {
 export async function POST(request: Request, { params }: FavoriteRouteContext) {
   return handleApiRoute(async () => {
     const user = await requireCurrentUser(request);
+    await enforceRateLimit('favorite', user.id);
     const listing = await getPublishedListingById(params.id);
 
     if (!listing) {
@@ -38,6 +40,7 @@ export async function POST(request: Request, { params }: FavoriteRouteContext) {
 export async function DELETE(request: Request, { params }: FavoriteRouteContext) {
   return handleApiRoute(async () => {
     const user = await requireCurrentUser(request);
+    await enforceRateLimit('favorite', user.id);
 
     await db
       .delete(favorites)

@@ -3,8 +3,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BedDouble, Maximize2, ShieldCheck, UsersRound } from 'lucide-react';
 
+import { MatchBadge } from '@/features/compatibility/components/MatchBadge';
 import { SaveListingButton } from '@/features/listings/components/SaveListingButton';
 import { getCityLabel, getNeighborhoodLabel } from '@/lib/areas';
+import { VERIFICATION_BADGES } from '@/lib/feature-flags';
 import { formatMoneyFromCents } from '@/lib/format';
 import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
@@ -37,6 +39,8 @@ type ListingCardProps = {
   isAuthenticated?: boolean;
   /** Set on the first row of cards so the LCP image is not lazy-loaded. */
   priority?: boolean;
+  /** The viewer's compatibility with the listing (`scoreListing`), when there is one. */
+  matchScore?: number | null;
   sizes?: string;
   className?: string;
 };
@@ -54,17 +58,14 @@ export async function ListingCard({
   isSaved = false,
   listing,
   locale,
+  matchScore = null,
   priority = false,
   sizes = '(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw',
 }: ListingCardProps) {
   const t = await getTranslations({ locale, namespace: 'listings' });
   const tEnums = await getTranslations({ locale, namespace: 'enums' });
   const cover = listing.images[0];
-  const neighborhood = getNeighborhoodLabel(
-    listing.citySlug,
-    listing.neighborhoodSlug,
-    locale,
-  );
+  const neighborhood = getNeighborhoodLabel(listing.citySlug, listing.neighborhoodSlug, locale);
   const city = getCityLabel(listing.citySlug, locale);
   const location = neighborhood ? `${neighborhood}, ${city}` : city;
 
@@ -100,11 +101,15 @@ export async function ListingCard({
               </span>
             )}
 
-            {listing.isVerified && (
+            {VERIFICATION_BADGES && listing.isVerified && (
               <span className="flex items-center gap-1 rounded bg-[#cdd465] px-2 py-1 text-[10px] font-bold text-brand-ink">
                 <ShieldCheck aria-hidden="true" size={11} strokeWidth={2.4} />
                 {t('common.verified')}
               </span>
+            )}
+
+            {matchScore !== null && (
+              <MatchBadge locale={locale} score={matchScore} variant="overlay" />
             )}
           </div>
 
@@ -123,9 +128,7 @@ export async function ListingCard({
             {listing.title}
           </h3>
 
-          <p className="mt-0.5 line-clamp-1 text-[13px] leading-5 text-brand-muted">
-            {location}
-          </p>
+          <p className="mt-0.5 line-clamp-1 text-[13px] leading-5 text-brand-muted">{location}</p>
 
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] leading-4 text-brand-muted">
             <span>{tEnums(`propertyType.${listing.propertyType}`)}</span>

@@ -4,11 +4,20 @@ interface JsonLdProps {
   data: Record<string, any>;
 }
 
+/**
+ * `JSON.stringify` leaves `<` untouched, so user text containing `</script>` (a listing
+ * title, a profile bio) would close the tag and run as HTML. `<` is the same
+ * character to every JSON parser, so the structured data is unchanged.
+ */
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
 export function JsonLd({ data }: JsonLdProps): ReactNode {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
       suppressHydrationWarning
     />
   );

@@ -3,7 +3,7 @@
   "info": {
     "title": "Stay.bg Backend API",
     "version": "0.1.0",
-    "description": "OpenAPI documentation for the Stay.bg Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes."
+    "description": "OpenAPI documentation for the Stay.bg Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes. Admin routes (`/api/admin/*` and the Better Auth admin plugin) are intentionally excluded; they return 404 to non-admins and are documented in docs/README.backend.md."
   },
   "servers": [
     {
@@ -14,11 +14,15 @@
   "tags": [
     {
       "name": "Authentication",
-      "description": "Better Auth core endpoints. Email/password sign-up and sign-in are enabled. Routes involving social providers, verification email delivery, or password-reset email delivery are mounted by Better Auth but require additional callbacks/providers that are not currently configured."
+      "description": "Better Auth core endpoints. Email/password sign-up and sign-in are enabled; sign-in requires a verified email address. Verification and password-reset emails are sent through Resend. Social-provider routes are mounted by Better Auth but no provider is configured."
     },
     {
       "name": "Session",
-      "description": "Application-level session lookup."
+      "description": "Application-level session lookup and data export."
+    },
+    {
+      "name": "Uploads",
+      "description": "Direct-to-storage photo uploads."
     },
     {
       "name": "Listings"
@@ -28,9 +32,6 @@
     },
     {
       "name": "Favorites"
-    },
-    {
-      "name": "Saved searches"
     },
     {
       "name": "Viewing requests"
@@ -43,6 +44,9 @@
     },
     {
       "name": "Conversations"
+    },
+    {
+      "name": "Blocks"
     }
   ],
   "paths": {
@@ -95,6 +99,292 @@
         }
       }
     },
+    "/api/me/blocks": {
+      "get": {
+        "tags": [
+          "Blocks"
+        ],
+        "operationId": "listBlockedUsers",
+        "summary": "List the people you blocked",
+        "description": "Newest first. Who blocked the caller is never disclosed.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Blocked users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "items"
+                      ],
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/BlockedUser"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A valid session cookie is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected server error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/export": {
+      "get": {
+        "tags": [
+          "Session"
+        ],
+        "operationId": "exportCurrentUserData",
+        "summary": "Download all of the current user's data",
+        "description": "GDPR access and portability: a JSON attachment (`stay-bg-data-YYYY-MM-DD.json`) with the account, profile, listings, saved listings and profiles, viewing requests, reviews, reports filed, conversations with messages, and sessions. Passwords, tokens and other secrets are never included. Not wrapped in `{ data }`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The export, sent as a file download.",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Always `attachment` with a dated filename.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A valid session cookie is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected server error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/uploads": {
+      "post": {
+        "tags": [
+          "Uploads"
+        ],
+        "operationId": "createUploadToken",
+        "summary": "Get a client token for a direct photo upload",
+        "description": "Implements the token half of the Vercel Blob client-upload protocol (`@vercel/blob/client`); the browser then uploads straight to Blob storage. The pathname must start with `listings/` or `avatars/`. The token allows image/jpeg, image/png, image/webp, image/avif up to 10 MB. The response is the Blob protocol body, not wrapped in `{ data }`.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "payload"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "blob.generate-client-token"
+                    ]
+                  },
+                  "payload": {
+                    "type": "object",
+                    "required": [
+                      "pathname"
+                    ],
+                    "properties": {
+                      "pathname": {
+                        "type": "string",
+                        "example": "listings/living-room.jpg"
+                      },
+                      "clientPayload": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "multipart": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A short-lived upload token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "type",
+                    "clientToken"
+                  ],
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "blob.generate-client-token"
+                      ]
+                    },
+                    "clientToken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A valid session cookie is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected server error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The feature is not configured on this deployment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/listings": {
       "get": {
         "tags": [
@@ -102,6 +392,7 @@
         ],
         "operationId": "listListings",
         "summary": "Search published listings",
+        "description": "For signed-out callers, phone numbers and email addresses in owner-written text are replaced with `[contact details hidden: sign in to see them]`.",
         "security": [],
         "parameters": [
           {
@@ -221,6 +512,36 @@
             }
           },
           {
+            "name": "roomType",
+            "in": "query",
+            "description": "Comma-separated room types.",
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "SINGLE",
+                  "DOUBLE",
+                  "SHARED"
+                ]
+              }
+            }
+          },
+          {
+            "name": "stayMonths",
+            "in": "query",
+            "description": "The seeker's planned stay: listings whose minimum and maximum stay admit it. A bound the owner did not set admits any stay.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60
+            }
+          },
+          {
             "name": "isVerified",
             "in": "query",
             "description": "Accepts `true`, `false`, `1`, or `0`.",
@@ -270,6 +591,30 @@
           },
           {
             "name": "roommateFriendly",
+            "in": "query",
+            "description": "Accepts `true`, `false`, `1`, or `0`.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "privateBathroom",
+            "in": "query",
+            "description": "Accepts `true`, `false`, `1`, or `0`.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "couplesAllowed",
+            "in": "query",
+            "description": "Accepts `true`, `false`, `1`, or `0`.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "smokingAllowed",
             "in": "query",
             "description": "Accepts `true`, `false`, `1`, or `0`.",
             "schema": {
@@ -413,6 +758,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -433,6 +797,7 @@
         ],
         "operationId": "getListing",
         "summary": "Get a published listing",
+        "description": "For signed-out callers, phone numbers and email addresses in owner-written text are replaced with `[contact details hidden: sign in to see them]`.",
         "security": [],
         "parameters": [
           {
@@ -571,6 +936,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -627,6 +1011,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -719,6 +1122,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -765,6 +1187,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -1045,6 +1486,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -1065,6 +1525,7 @@
         ],
         "operationId": "getProfile",
         "summary": "Get a public profile",
+        "description": "For signed-out callers, phone numbers and email addresses in owner-written text are replaced with `[contact details hidden: sign in to see them]`.",
         "security": [],
         "parameters": [
           {
@@ -1210,6 +1671,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -1560,6 +2040,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -1607,6 +2106,213 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected server error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/profiles/{id}/block": {
+      "post": {
+        "tags": [
+          "Blocks",
+          "Profiles"
+        ],
+        "operationId": "blockUser",
+        "summary": "Block a user",
+        "description": "Idempotent. While either person has blocked the other, neither can start a conversation, send a message, request a viewing or reveal the other's phone number (`403 USER_BLOCKED`). The blocked person is not notified.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID to block.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User blocked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "blocked"
+                      ],
+                      "properties": {
+                        "blocked": {
+                          "type": "boolean",
+                          "const": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "A valid session cookie is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The requested resource was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "An unexpected server error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Blocks",
+          "Profiles"
+        ],
+        "operationId": "unblockUser",
+        "summary": "Unblock a user",
+        "description": "Idempotent: unblocking someone who is not blocked still succeeds.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "User ID to unblock.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User unblocked."
+          },
+          "401": {
+            "description": "A valid session cookie is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -1674,293 +2380,6 @@
                 }
               }
             }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/saved-searches": {
-      "get": {
-        "tags": [
-          "Saved searches"
-        ],
-        "operationId": "listSavedSearches",
-        "summary": "List the signed-in user’s saved searches",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Saved searches.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "items"
-                      ],
-                      "properties": {
-                        "items": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/SavedSearch"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Saved searches"
-        ],
-        "operationId": "createSavedSearch",
-        "summary": "Create a saved search",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSavedSearchInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Saved search created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/SavedSearch"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/saved-searches/{id}": {
-      "patch": {
-        "tags": [
-          "Saved searches"
-        ],
-        "operationId": "updateSavedSearch",
-        "summary": "Update an owned saved search",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Saved search ID.",
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSavedSearchInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Saved search updated.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/SavedSearch"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource was not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Saved searches"
-        ],
-        "operationId": "deleteSavedSearch",
-        "summary": "Delete an owned saved search",
-        "description": "Idempotent: deleting a missing or non-owned saved search still succeeds.",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Saved search ID.",
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Saved search deleted."
           },
           "401": {
             "description": "A valid session cookie is required.",
@@ -2182,6 +2601,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -2288,6 +2726,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -2369,6 +2826,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -2457,8 +2933,8 @@
           "Conversations"
         ],
         "operationId": "createConversation",
-        "summary": "Start or retrieve a listing conversation",
-        "description": "Returns the existing conversation when the same user already has one for the listing. Listing owners cannot message their own listing.",
+        "summary": "Start or retrieve a conversation",
+        "description": "One thread per pair of people per listing (or per pair with no listing): an existing one is returned. Writing without a listing, or offering your own, needs the recipient to have a \"room wanted\" post (`403 RECIPIENT_NOT_LOOKING`). A block either way returns `403 USER_BLOCKED`.",
         "security": [
           {
             "cookieAuth": []
@@ -2514,12 +2990,41 @@
               }
             }
           },
+          "403": {
+            "description": "The signed-in user is not allowed to perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The requested resource was not found.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             }
@@ -2735,6 +3240,25 @@
               }
             }
           },
+          "429": {
+            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
           "500": {
             "description": "An unexpected server error occurred.",
             "content": {
@@ -2753,7 +3277,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Sign in with a social provider This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Sign in with a social provider This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.",
         "operationId": "socialSignIn",
         "security": [],
         "parameters": [],
@@ -3038,7 +3562,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Better Auth core endpoint. This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Better Auth core endpoint. This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.",
         "security": [],
         "parameters": [
           {
@@ -3153,7 +3677,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Better Auth core endpoint. This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Better Auth core endpoint. This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.",
         "security": [],
         "parameters": [
           {
@@ -4122,7 +4646,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Reset the password for a user This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Reset the password for a user",
         "operationId": "resetPassword",
         "security": [],
         "parameters": [],
@@ -4416,7 +4940,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Verify the email of the user This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Verify the email of the user",
         "security": [],
         "parameters": [
           {
@@ -4567,7 +5091,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Send a verification email to the user This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Send a verification email to the user",
         "operationId": "sendVerificationEmail",
         "security": [],
         "parameters": [],
@@ -5549,7 +6073,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Send a password reset email to the user This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Send a password reset email to the user",
         "operationId": "requestPasswordReset",
         "security": [],
         "parameters": [],
@@ -5699,7 +6223,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Redirects the user to the callback URL with the token This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Redirects the user to the callback URL with the token",
         "operationId": "resetPasswordCallback",
         "security": [],
         "parameters": [
@@ -6399,7 +6923,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Link a social account to the user This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Link a social account to the user This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.",
         "operationId": "linkSocialAccount",
         "security": [
           {
@@ -7118,7 +7642,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Refresh the access token using a refresh token This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Refresh the access token using a refresh token This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.",
         "security": [
           {
             "cookieAuth": []
@@ -7274,7 +7798,7 @@
         "tags": [
           "Authentication"
         ],
-        "description": "Get a valid access token, doing a refresh if needed This core route is mounted, but it requires matching email-delivery or social-provider configuration to be useful; the current app config does not provide that integration.",
+        "description": "Get a valid access token, doing a refresh if needed This core route is mounted, but it needs a social sign-in provider, and the current app config enables none.",
         "security": [
           {
             "cookieAuth": []
@@ -7853,6 +8377,10 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "locale": {
+            "type": "string",
+            "default": "bg"
           }
         },
         "required": [
@@ -8059,7 +8587,8 @@
           "url": {
             "type": "string",
             "format": "uri",
-            "maxLength": 2048
+            "maxLength": 2048,
+            "description": "An https URL on `*.public.blob.vercel-storage.com`, as returned by an upload. External image URLs are rejected."
           },
           "alt": {
             "type": "string",
@@ -8112,6 +8641,84 @@
           }
         }
       },
+      "ListingHousehold": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Who already lives there. Every field is optional.",
+        "properties": {
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "genders": {
+            "type": "string",
+            "enum": [
+              "FEMALE",
+              "MALE",
+              "MIXED"
+            ]
+          },
+          "ageMin": {
+            "type": "integer",
+            "minimum": 16,
+            "maximum": 99
+          },
+          "ageMax": {
+            "type": "integer",
+            "minimum": 16,
+            "maximum": 99
+          },
+          "occupation": {
+            "type": "string",
+            "enum": [
+              "STUDENTS",
+              "PROFESSIONALS",
+              "MIXED"
+            ]
+          },
+          "smokers": {
+            "type": "boolean"
+          },
+          "pets": {
+            "type": "boolean"
+          },
+          "cleanliness": {
+            "type": "string",
+            "enum": [
+              "RELAXED",
+              "TIDY",
+              "VERY_TIDY"
+            ]
+          },
+          "social": {
+            "type": "string",
+            "enum": [
+              "QUIET",
+              "BALANCED",
+              "SOCIAL"
+            ]
+          },
+          "guests": {
+            "type": "string",
+            "enum": [
+              "RARELY",
+              "SOMETIMES",
+              "OFTEN"
+            ]
+          },
+          "preferredAgeMin": {
+            "type": "integer",
+            "minimum": 16,
+            "maximum": 99
+          },
+          "preferredAgeMax": {
+            "type": "integer",
+            "minimum": 16,
+            "maximum": 99
+          }
+        }
+      },
       "ListingRecord": {
         "type": "object",
         "required": [
@@ -8143,6 +8750,13 @@
           "petsAllowed",
           "nearMetro",
           "roommateFriendly",
+          "roomType",
+          "privateBathroom",
+          "couplesAllowed",
+          "smokingAllowed",
+          "minStayMonths",
+          "maxStayMonths",
+          "household",
           "availableFrom",
           "amenities",
           "rules",
@@ -8216,7 +8830,10 @@
             ]
           },
           "currency": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "EUR"
+            ]
           },
           "bedroomCount": {
             "type": "integer"
@@ -8277,6 +8894,45 @@
           },
           "roommateFriendly": {
             "type": "boolean"
+          },
+          "roomType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SINGLE",
+                  "DOUBLE",
+                  "SHARED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "privateBathroom": {
+            "type": "boolean"
+          },
+          "couplesAllowed": {
+            "type": "boolean"
+          },
+          "smokingAllowed": {
+            "type": "boolean"
+          },
+          "minStayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "maxStayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "household": {
+            "$ref": "#/components/schemas/ListingHousehold"
           },
           "availableFrom": {
             "type": [
@@ -8463,10 +9119,11 @@
           },
           "currency": {
             "type": "string",
-            "minLength": 3,
-            "maxLength": 3,
-            "example": "BGN",
-            "default": "BGN"
+            "enum": [
+              "EUR"
+            ],
+            "description": "Case-insensitive on input. Only the platform currency is accepted.",
+            "default": "EUR"
           },
           "bedroomCount": {
             "type": "integer",
@@ -8499,14 +9156,70 @@
             "maximum": 200
           },
           "latitude": {
-            "type": "number",
-            "minimum": -90,
-            "maximum": 90
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 41.2,
+            "maximum": 44.25,
+            "description": "The map pin, in Bulgaria. `null` removes it."
           },
           "longitude": {
-            "type": "number",
-            "minimum": -180,
-            "maximum": 180
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 22.35,
+            "maximum": 28.65
+          },
+          "roomType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SINGLE",
+                  "DOUBLE",
+                  "SHARED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The room on offer; `null` is the whole property."
+          },
+          "privateBathroom": {
+            "type": "boolean",
+            "default": false
+          },
+          "couplesAllowed": {
+            "type": "boolean",
+            "default": false
+          },
+          "smokingAllowed": {
+            "type": "boolean",
+            "default": false
+          },
+          "minStayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 60,
+            "description": "Must not exceed `maxStayMonths` (checked against the stored value on update)."
+          },
+          "maxStayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 60
+          },
+          "household": {
+            "$ref": "#/components/schemas/ListingHousehold",
+            "default": {}
           },
           "isFurnished": {
             "type": "boolean",
@@ -8635,9 +9348,10 @@
           },
           "currency": {
             "type": "string",
-            "minLength": 3,
-            "maxLength": 3,
-            "example": "BGN"
+            "enum": [
+              "EUR"
+            ],
+            "description": "Case-insensitive on input. Only the platform currency is accepted."
           },
           "bedroomCount": {
             "type": "integer",
@@ -8670,14 +9384,66 @@
             "maximum": 200
           },
           "latitude": {
-            "type": "number",
-            "minimum": -90,
-            "maximum": 90
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 41.2,
+            "maximum": 44.25,
+            "description": "The map pin, in Bulgaria. `null` removes it."
           },
           "longitude": {
-            "type": "number",
-            "minimum": -180,
-            "maximum": 180
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 22.35,
+            "maximum": 28.65
+          },
+          "roomType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SINGLE",
+                  "DOUBLE",
+                  "SHARED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The room on offer; `null` is the whole property."
+          },
+          "privateBathroom": {
+            "type": "boolean"
+          },
+          "couplesAllowed": {
+            "type": "boolean"
+          },
+          "smokingAllowed": {
+            "type": "boolean"
+          },
+          "minStayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 60,
+            "description": "Must not exceed `maxStayMonths` (checked against the stored value on update)."
+          },
+          "maxStayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 60
+          },
+          "household": {
+            "$ref": "#/components/schemas/ListingHousehold"
           },
           "isFurnished": {
             "type": "boolean"
@@ -8820,40 +9586,79 @@
             "maxLength": 120
           },
           "bio": {
-            "type": "string",
-            "maxLength": 2000
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000,
+            "description": "`null` clears it."
           },
           "phoneNumber": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 3,
-            "maxLength": 40
+            "maxLength": 40,
+            "description": "`null` clears it."
           },
           "citySlug": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 2,
-            "maxLength": 80
+            "maxLength": 80,
+            "description": "`null` clears it."
           },
           "neighborhoodSlug": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "`null` clears it."
           },
           "avatarUrl": {
-            "type": "string",
-            "format": "uri",
-            "maxLength": 2048
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048,
+                "description": "An https URL on `*.public.blob.vercel-storage.com`, as returned by an upload. External image URLs are rejected."
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "An uploaded photo URL (see `POST /api/uploads`); `null` removes the photo."
           },
           "publicContactAllowed": {
             "type": "boolean"
           },
           "traits": {
             "type": "array",
-            "maxItems": 50,
+            "maxItems": 13,
             "items": {
               "type": "string",
-              "minLength": 1,
-              "maxLength": 80
-            }
+              "enum": [
+                "NON_SMOKER",
+                "STUDENT",
+                "PROFESSIONAL",
+                "WORKS_FROM_HOME",
+                "EARLY_BIRD",
+                "NIGHT_OWL",
+                "TIDY",
+                "QUIET",
+                "SOCIAL",
+                "PET_FRIENDLY",
+                "HAS_PET",
+                "VEGETARIAN",
+                "LGBTQ_FRIENDLY"
+              ]
+            },
+            "description": "Lifestyle tags. Stored once each, in vocabulary order."
           },
           "languages": {
             "type": "array",
@@ -8866,6 +9671,76 @@
           },
           "roommatePreferences": {
             "$ref": "#/components/schemas/RoommatePreferences"
+          },
+          "lookingForRoom": {
+            "type": "boolean",
+            "description": "Publishes a \"room wanted\" post: owners can then message this profile directly."
+          },
+          "moveInDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 60
+          },
+          "wantedNeighborhoods": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "description": "Neighborhood slugs in the profile city (`INVALID_NEIGHBORHOOD` otherwise). A city change without a new list clears them."
+          }
+        }
+      },
+      "RoomWantedFields": {
+        "type": "object",
+        "required": [
+          "lookingForRoom",
+          "moveInDate",
+          "stayMonths",
+          "wantedNeighborhoods"
+        ],
+        "properties": {
+          "lookingForRoom": {
+            "type": "boolean"
+          },
+          "moveInDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "wantedNeighborhoods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -8885,9 +9760,6 @@
           "phoneVerified",
           "identityVerified",
           "publicContactAllowed",
-          "responseTimeMinutes",
-          "responseRate",
-          "successfulRentals",
           "traits",
           "languages",
           "roommatePreferences",
@@ -8946,15 +9818,6 @@
           },
           "publicContactAllowed": {
             "type": "boolean"
-          },
-          "responseTimeMinutes": {
-            "type": "integer"
-          },
-          "responseRate": {
-            "type": "integer"
-          },
-          "successfulRentals": {
-            "type": "integer"
           },
           "traits": {
             "type": "array",
@@ -9021,12 +9884,13 @@
           "emailVerified",
           "phoneVerified",
           "identityVerified",
-          "responseTimeMinutes",
-          "responseRate",
-          "successfulRentals",
           "traits",
           "languages",
           "roommatePreferences",
+          "lookingForRoom",
+          "moveInDate",
+          "stayMonths",
+          "wantedNeighborhoods",
           "joinedAt",
           "activeListingCount",
           "reviews"
@@ -9074,19 +9938,25 @@
           "identityVerified": {
             "type": "boolean"
           },
-          "responseTimeMinutes": {
-            "type": "integer"
-          },
-          "responseRate": {
-            "type": "integer"
-          },
-          "successfulRentals": {
-            "type": "integer"
-          },
           "traits": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "NON_SMOKER",
+                "STUDENT",
+                "PROFESSIONAL",
+                "WORKS_FROM_HOME",
+                "EARLY_BIRD",
+                "NIGHT_OWL",
+                "TIDY",
+                "QUIET",
+                "SOCIAL",
+                "PET_FRIENDLY",
+                "HAS_PET",
+                "VEGETARIAN",
+                "LGBTQ_FRIENDLY"
+              ]
             }
           },
           "languages": {
@@ -9097,6 +9967,32 @@
           },
           "roommatePreferences": {
             "$ref": "#/components/schemas/RoommatePreferences"
+          },
+          "lookingForRoom": {
+            "type": "boolean"
+          },
+          "moveInDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stayMonths": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "wantedNeighborhoods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "joinedAt": {
             "type": [
@@ -9150,86 +10046,6 @@
                 "type": "null"
               }
             ]
-          }
-        }
-      },
-      "CreateSavedSearchInput": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "name",
-          "filters"
-        ],
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 120
-          },
-          "filters": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "notificationsEnabled": {
-            "type": "boolean",
-            "default": true
-          }
-        }
-      },
-      "UpdateSavedSearchInput": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 2,
-            "maxLength": 120
-          },
-          "filters": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "notificationsEnabled": {
-            "type": "boolean"
-          }
-        }
-      },
-      "SavedSearch": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "userId",
-          "name",
-          "filters",
-          "notificationsEnabled",
-          "createdAt",
-          "updatedAt"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "filters": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "notificationsEnabled": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
@@ -9297,14 +10113,51 @@
             "type": "object",
             "required": [
               "listingTitle",
-              "requesterName"
+              "listingCitySlug",
+              "listingNeighborhoodSlug",
+              "listingMonthlyRentCents",
+              "listingCurrency",
+              "listingCoverImageUrl",
+              "requesterName",
+              "ownerName",
+              "ownerImage"
             ],
             "properties": {
               "listingTitle": {
                 "type": "string"
               },
+              "listingCitySlug": {
+                "type": "string"
+              },
+              "listingNeighborhoodSlug": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "listingMonthlyRentCents": {
+                "type": "integer"
+              },
+              "listingCurrency": {
+                "type": "string"
+              },
+              "listingCoverImageUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "requesterName": {
                 "type": "string"
+              },
+              "ownerName": {
+                "type": "string"
+              },
+              "ownerImage": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }
@@ -9578,12 +10431,20 @@
           },
           "reason": {
             "type": "string",
-            "minLength": 3,
-            "maxLength": 120
+            "enum": [
+              "SCAM",
+              "MISLEADING",
+              "UNAVAILABLE",
+              "HARASSMENT",
+              "FAKE_PROFILE",
+              "INAPPROPRIATE",
+              "OTHER"
+            ]
           },
           "details": {
             "type": "string",
-            "maxLength": 2000
+            "maxLength": 2000,
+            "description": "Required when reason is OTHER."
           }
         }
       },
@@ -9651,11 +10512,26 @@
       "CreateConversationInput": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "listingId"
+        "description": "Either `{ listingId }` to ask a listing owner about their listing, or `{ recipientId, message, listingId? }` to write to someone with a \"room wanted\" post, optionally offering one of your own listings.",
+        "anyOf": [
+          {
+            "required": [
+              "listingId"
+            ]
+          },
+          {
+            "required": [
+              "recipientId",
+              "message"
+            ]
+          }
         ],
         "properties": {
           "listingId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recipientId": {
             "type": "string",
             "minLength": 1
           },
@@ -9663,6 +10539,34 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 2000
+          }
+        }
+      },
+      "BlockedUser": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "userId",
+          "name",
+          "image",
+          "blockedAt"
+        ],
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "blockedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

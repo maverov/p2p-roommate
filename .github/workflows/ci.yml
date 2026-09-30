@@ -14,6 +14,29 @@ jobs:
   verify:
     runs-on: ubuntu-latest
 
+    # A throwaway database: migrations must apply cleanly from zero, and the build
+    # prerenders pages (the sitemap, for one) that query it.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: stay
+          POSTGRES_PASSWORD: stay
+          POSTGRES_DB: stay_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stay"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://stay:stay@localhost:5432/stay_ci
+      BETTER_AUTH_SECRET: ci-only-secret-that-is-at-least-32-characters
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
     steps:
       - uses: actions/checkout@v4
 
@@ -37,3 +60,22 @@ jobs:
       # cannot: empty strings and ICU placeholder drift between locales.
       - name: i18n integrity
         run: pnpm i18n:check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Migrations apply from an empty database
+        run: pnpm db:migrate
+
+      - name: Migration history is consistent
+        run: pnpm db:check
+
+      # A schema.ts change without its generated migration would ship a column the
+      # database does not have.
+      - name: Schema has no unmigrated changes
+        run: |
+          pnpm db:generate
+          test -z "$(git status --porcelain db/migrations)"
+
+      - name: Production build
+        run: pnpm build

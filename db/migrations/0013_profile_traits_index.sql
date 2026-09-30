@@ -1,0 +1,1 @@
+CREATE INDEX "user_profile_traits_idx" ON "user_profile" USING gin ("traits");

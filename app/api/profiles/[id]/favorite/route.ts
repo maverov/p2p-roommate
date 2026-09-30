@@ -3,6 +3,7 @@ import {
   unsaveProfile,
 } from '@/features/profiles/server/repository';
 import { apiNoContent, apiOk, handleApiRoute, requireCurrentUser } from '@/lib/server/api';
+import { enforceRateLimit } from '@/lib/server/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,7 @@ export async function POST(
 ) {
   return handleApiRoute(async () => {
     const user = await requireCurrentUser(request);
+    await enforceRateLimit('favorite', user.id);
     const result = await saveProfile(user.id, params.id);
 
     return apiOk(result);
@@ -31,6 +33,7 @@ export async function DELETE(
 ) {
   return handleApiRoute(async () => {
     const user = await requireCurrentUser(request);
+    await enforceRateLimit('favorite', user.id);
 
     await unsaveProfile(user.id, params.id);
 

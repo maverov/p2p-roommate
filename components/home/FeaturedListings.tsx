@@ -8,9 +8,11 @@ import {
   getSavedListingIds,
   listPublishedListings,
 } from '@/features/listings/server/repository';
+import { VERIFICATION_BADGES } from '@/lib/feature-flags';
 import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
 import { safeQuery } from '@/lib/server/safe';
+import { pageContactMasker } from '@/lib/server/contact-visibility';
 import { getServerUser } from '@/lib/server/session';
 
 const FEATURED_COUNT = 5;
@@ -27,18 +29,21 @@ export default async function FeaturedListings({ locale }: FeaturedListingsProps
   const t = await getTranslations({ locale, namespace: 'home.featured' });
   const tSearch = await getTranslations({ locale, namespace: 'listings.search' });
 
-  const [viewer, results] = await Promise.all([
+  const [viewer, found] = await Promise.all([
     getServerUser(),
     safeQuery(
       listPublishedListings({
         sort: 'newest',
-        isVerified: true,
+        // Featured means verified once badges exist; until then, the newest listings.
+        isVerified: VERIFICATION_BADGES ? true : undefined,
         page: 1,
         perPage: FEATURED_COUNT,
       }),
       'featured listings',
     ),
   ]);
+  const mask = await pageContactMasker(locale, Boolean(viewer));
+  const results = found && { ...found, items: found.items.map(mask.listing) };
 
   const savedIds =
     viewer && results?.items.length

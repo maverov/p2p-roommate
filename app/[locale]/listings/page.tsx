@@ -2,23 +2,29 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, List, Map as MapIcon } from 'lucide-react';
 
 import { StateMessage } from '@/components/shared/StateMessage';
+import { scoreListing } from '@/features/compatibility/score';
+import { getCompatibilityProfile } from '@/features/compatibility/server/repository';
 import { ListingCard } from '@/features/listings/components/ListingCard';
 import { ListingFilters } from '@/features/listings/components/ListingFilters';
 import { ListingSortSelect } from '@/features/listings/components/ListingSortSelect';
-import { SaveSearchButton } from '@/features/listings/components/SaveSearchButton';
 import { listListingsQuerySchema } from '@/features/listings/schemas';
 import {
+  MAP_MARKER_LIMIT,
   getSavedListingIds,
   listPublishedListings,
+  listPublishedListingsForMap,
 } from '@/features/listings/server/repository';
-import { getCityLabel } from '@/lib/areas';
+import { ListingsMap, type MapListing } from '@/features/maps/components/ListingsMap';
+import { getCityLabel, getNeighborhoodLabel, isCityId } from '@/lib/areas';
 import { formatMoneyFromCents } from '@/lib/format';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { BreadcrumbJsonLd } from '@/lib/jsonld';
+import { CITY_CENTERS } from '@/lib/map';
 import { routes } from '@/lib/routes';
+import { pageContactMasker } from '@/lib/server/contact-visibility';
 import { safeQuery } from '@/lib/server/safe';
 import { getServerUser } from '@/lib/server/session';
 import { cn } from '@/utils';
@@ -40,9 +46,7 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'listings.search' });
   const tMeta = await getTranslations({ locale, namespace: 'metadata' });
   const citySlug = typeof searchParams.citySlug === 'string' ? searchParams.citySlug : null;
-  const title = citySlug
-    ? t('headingIn', { city: getCityLabel(citySlug, locale) })
-    : t('heading');
+  const title = citySlug ? t('headingIn', { city: getCityLabel(citySlug, locale) }) : t('heading');
 
   return {
     title,
@@ -66,24 +70,48 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
 
   const locale: Locale = params.locale;
   const t = await getTranslations({ locale, namespace: 'listings' });
-  const tEnums = await getTranslations({ locale, namespace: 'enums' });
 
   // An unparseable query (hand-edited URL, stale bookmark) falls back to the
   // default listing feed instead of erroring out.
   const parsed = listListingsQuerySchema.safeParse({ perPage: PER_PAGE, ...searchParams });
-  const query = parsed.success
-    ? parsed.data
-    : listListingsQuerySchema.parse({ perPage: PER_PAGE });
+  const query = parsed.success ? parsed.data : listListingsQuerySchema.parse({ perPage: PER_PAGE });
 
+  // The map is a second view of the same search, so it shares every filter and the sort.
+  const isMapView = searchParams.view === 'map';
   const viewer = await getServerUser();
-  const results = await safeQuery(listPublishedListings(query), 'listings search');
-  const savedIds =
-    viewer && results
-      ? await safeQuery(
-          getSavedListingIds(viewer.id, results.items.map((item) => item.id)),
-          'saved listings',
-        )
-      : null;
+  const [found, mapFound, mask] = await Promise.all([
+    isMapView ? null : safeQuery(listPublishedListings(query), 'listings search'),
+    isMapView ? safeQuery(listPublishedListingsForMap(query), 'listings map') : null,
+    pageContactMasker(locale, Boolean(viewer)),
+  ]);
+  const results = found && { ...found, items: found.items.map(mask.listing) };
+  const mapListings: MapListing[] =
+    mapFound?.items.map((item) => ({
+      id: item.id,
+      title: mask.text(item.title),
+      href: routes.listing(locale, item.id),
+      priceLabel: formatMoneyFromCents(item.monthlyRentCents, item.currency, locale),
+      areaLabel:
+        getNeighborhoodLabel(item.citySlug, item.neighborhoodSlug, locale) ??
+        getCityLabel(item.citySlug, locale),
+      latitude: item.latitude,
+      longitude: item.longitude,
+    })) ?? [];
+  const loaded = isMapView ? mapFound !== null : results !== null;
+  const total = (isMapView ? mapFound?.total : results?.total) ?? 0;
+  const [savedIds, seeker] =
+    viewer && results?.items.length
+      ? await Promise.all([
+          safeQuery(
+            getSavedListingIds(
+              viewer.id,
+              results.items.map((item) => item.id),
+            ),
+            'saved listings',
+          ),
+          safeQuery(getCompatibilityProfile(viewer.id), 'compatibility profile'),
+        ])
+      : [null, null];
 
   const city = query.citySlug ? getCityLabel(query.citySlug, locale) : null;
   const heading = city ? t('search.headingIn', { city }) : t('search.heading');
@@ -98,7 +126,7 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
     <>
       <BreadcrumbJsonLd items={breadcrumbItems} />
 
-      <main className="min-h-screen bg-brand-cream text-brand-ink" id="main-content">
+      <main className="min-h-screen bg-brand-cream text-brand-ink">
         <div className="mx-auto w-full max-w-[2000px] px-6 pb-16 pt-8 lg:px-10">
           <header className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -107,17 +135,12 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
               </h1>
 
               <p className="mt-2 text-[14px] text-brand-muted">
-                {results ? t('search.resultCount', { count: results.total }) : t('common.loadFailed')}
+                {loaded ? t('search.resultCount', { count: total }) : t('common.loadFailed')}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <SaveSearchButton
-                isAuthenticated={Boolean(viewer)}
-                locale={locale}
-                name={buildSearchName(heading, query, locale, t, tEnums)}
-              />
-
+              <ViewToggle isMapView={isMapView} locale={locale} searchParams={searchParams} />
               <ListingSortSelect locale={locale} value={query.sort} />
             </div>
           </header>
@@ -128,7 +151,7 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
             </aside>
 
             <section aria-live="polite" className="min-w-0">
-              {!results ? (
+              {!loaded ? (
                 <StateMessage
                   action={
                     <Link
@@ -142,7 +165,7 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
                   title={t('search.errorTitle')}
                   tone="error"
                 />
-              ) : results.items.length === 0 ? (
+              ) : total === 0 ? (
                 <StateMessage
                   action={
                     <Link
@@ -155,31 +178,57 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
                   body={t('search.emptyBody')}
                   title={t('search.empty')}
                 />
-              ) : (
+              ) : isMapView ? (
                 <>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                    {results.items.map((listing, index) => (
-                      <ListingCard
-                        isAuthenticated={Boolean(viewer)}
-                        isSaved={savedIds?.has(listing.id)}
-                        key={listing.id}
-                        listing={listing}
-                        locale={locale}
-                        priority={index < 4}
-                        sizes="(min-width: 1536px) 22vw, (min-width: 1280px) 30vw, (min-width: 640px) 45vw, 100vw"
-                      />
-                    ))}
-                  </div>
-
-                  {totalPages > 1 && (
-                    <Pagination
-                      locale={locale}
-                      page={results.page}
-                      searchParams={searchParams}
-                      totalPages={totalPages}
-                    />
+                  {mapListings.length < total && (
+                    <p className="mb-3 text-[13px] text-brand-muted">
+                      {mapListings.length === MAP_MARKER_LIMIT
+                        ? t('search.mapCapped', { shown: mapListings.length, total })
+                        : t('search.mapPartial', { shown: mapListings.length, total })}
+                    </p>
                   )}
+                  <ListingsMap
+                    center={
+                      query.citySlug && isCityId(query.citySlug)
+                        ? CITY_CENTERS[query.citySlug]
+                        : CITY_CENTERS.sofia
+                    }
+                    labels={{ region: t('search.mapLabel'), view: t('search.mapViewListing') }}
+                    listings={mapListings}
+                  />
                 </>
+              ) : (
+                results && (
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                      {results.items.map((listing, index) => (
+                        <ListingCard
+                          isAuthenticated={Boolean(viewer)}
+                          isSaved={savedIds?.has(listing.id)}
+                          key={listing.id}
+                          listing={listing}
+                          locale={locale}
+                          matchScore={
+                            seeker && listing.ownerId !== viewer?.id
+                              ? scoreListing(seeker, listing)
+                              : null
+                          }
+                          priority={index < 4}
+                          sizes="(min-width: 1536px) 22vw, (min-width: 1280px) 30vw, (min-width: 640px) 45vw, 100vw"
+                        />
+                      ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                      <Pagination
+                        locale={locale}
+                        page={results.page}
+                        searchParams={searchParams}
+                        totalPages={totalPages}
+                      />
+                    )}
+                  </>
+                )
               )}
             </section>
           </div>
@@ -189,33 +238,67 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
   );
 }
 
-/**
- * Default name for a saved search, e.g. "Обяви в София · Стая · до 700 лв".
- * The translators are passed in rather than resolved here so this stays a plain
- * function the page can call synchronously.
- */
-function buildSearchName(
-  heading: string,
-  query: ReturnType<typeof listListingsQuerySchema.parse>,
-  locale: Locale,
-  t: Awaited<ReturnType<typeof getTranslations<'listings'>>>,
-  tEnums: Awaited<ReturnType<typeof getTranslations<'enums'>>>,
-) {
-  const parts = [heading];
+const VIEW_LINK =
+  'flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[13px] font-bold transition';
 
-  if (query.propertyType?.length) {
-    parts.push(
-      query.propertyType.map((type) => tEnums(`propertyType.${type}`)).join(' / '),
-    );
-  }
+/** List and map are links, not client state: the view is part of a shareable search URL. */
+async function ViewToggle({
+  isMapView,
+  locale,
+  searchParams,
+}: {
+  isMapView: boolean;
+  locale: Locale;
+  searchParams: SearchPageProps['searchParams'];
+}) {
+  const t = await getTranslations({ locale, namespace: 'listings.search' });
 
-  if (query.maxRentCents) {
-    parts.push(
-      `${t('search.upTo')} ${formatMoneyFromCents(query.maxRentCents, 'BGN', locale)}`,
-    );
-  }
+  const hrefForView = (map: boolean) => {
+    const next = new URLSearchParams();
 
-  return parts.join(' · ').slice(0, 120);
+    for (const [key, value] of Object.entries(searchParams)) {
+      // The page number belongs to the list; the map has no pages.
+      if (typeof value === 'string' && key !== 'page' && key !== 'view') {
+        next.set(key, value);
+      }
+    }
+
+    if (map) next.set('view', 'map');
+
+    return routes.listings(locale, next.toString());
+  };
+
+  const views = [
+    { map: false, label: t('viewList'), icon: List },
+    { map: true, label: t('viewMap'), icon: MapIcon },
+  ];
+
+  return (
+    <nav
+      aria-label={t('viewLabel')}
+      className="flex rounded-[10px] border border-brand-border bg-white p-0.5"
+    >
+      {views.map(({ icon: Icon, label, map }) => {
+        const active = map === isMapView;
+
+        return (
+          <Link
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              VIEW_LINK,
+              active ? 'bg-brand-chip text-brand-ink' : 'text-brand-muted hover:text-brand-ink',
+            )}
+            href={hrefForView(map)}
+            key={label}
+            scroll={false}
+          >
+            <Icon aria-hidden="true" size={14} strokeWidth={2} />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
 
 const PAGINATION_LINK =

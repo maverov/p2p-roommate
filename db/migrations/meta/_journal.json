@@ -29,6 +29,83 @@
       "when": 1784834827999,
       "tag": "0003_spotty_harry_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790770876785,
+      "tag": "0004_data_integrity_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790771547559,
+      "tag": "0005_admin_plugin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790771979620,
+      "tag": "0006_report_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790774145338,
+      "tag": "0007_listing_currency_eur",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790776913389,
+      "tag": "0008_launch_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790780569890,
+      "tag": "0009_drop_saved_searches",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790783766112,
+      "tag": "0010_room_wanted",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790784232833,
+      "tag": "0011_listing_household",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790784980146,
+      "tag": "0012_user_block",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790785767952,
+      "tag": "0013_profile_traits_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790789232842,
+      "tag": "0014_drop_profile_stats",
+      "breakpoints": true
     }
   ]
 }

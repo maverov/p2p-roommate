@@ -1,0 +1,18 @@
+{
+  "write": {
+    "reviewListing": "Review the listing",
+    "reviewOwner": "Review {name}",
+    "reviewTenant": "Review {name}",
+    "rating": "Rating",
+    "stars": "{count, plural, one {# star} other {# stars}}",
+    "body": "Your review",
+    "bodyPlaceholder": "How did the viewing go? What should others know?",
+    "publicHint": "Reviews are public and show your name.",
+    "submit": "Post review",
+    "submitting": "Posting…",
+    "cancel": "Cancel",
+    "failed": "The review was not posted. Please try again.",
+    "rateLimited": "You have posted many reviews recently. Try again later.",
+    "notAllowed": "You can review only after an accepted viewing."
+  }
+}

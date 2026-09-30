@@ -9,6 +9,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   lte,
   ne,
@@ -17,6 +18,7 @@ import {
 
 import { db } from '@/db';
 import { favorites, listingImages, listings, user } from '@/db/schema';
+import { approximate } from '@/lib/map';
 import { ApiError } from '@/lib/server/api';
 
 import type {
@@ -93,6 +95,7 @@ export async function getPublishedListingById(id: string) {
 }
 
 export async function createListing(ownerId: string, input: CreateListingInput) {
+  assertStayRange(input.minStayMonths, input.maxStayMonths);
   const listingId = crypto.randomUUID();
   const now = new Date();
 
@@ -128,6 +131,10 @@ export async function updateListing(
 ) {
   const existing = await getOwnedListingOrThrow(listingId, ownerId);
   const { images, ...listingInput } = input;
+  assertStayRange(
+    input.minStayMonths !== undefined ? input.minStayMonths : existing.minStayMonths,
+    input.maxStayMonths !== undefined ? input.maxStayMonths : existing.maxStayMonths,
+  );
   const now = new Date();
   const nextStatus = listingInput.status ?? existing.status;
   const shouldPublish =
@@ -162,6 +169,17 @@ export async function updateListing(
   });
 
   return getOwnedListingOrThrow(listingId, ownerId);
+}
+
+/** A 400 instead of the `listing_stay_order` constraint's 500. */
+function assertStayRange(min: number | null | undefined, max: number | null | undefined) {
+  if (min != null && max != null && min > max) {
+    throw new ApiError(
+      400,
+      'INVALID_STAY_RANGE',
+      'The minimum stay cannot be longer than the maximum stay.',
+    );
+  }
 }
 
 export async function archiveListing(listingId: string, ownerId: string) {
@@ -240,6 +258,19 @@ export async function countPublishedListingsByCity() {
     .groupBy(listings.citySlug);
 
   return new Map(rows.map((row) => [row.citySlug, row.value]));
+}
+
+/**
+ * Published listing ids for the sitemap, newest first so a cap drops the oldest.
+ * Ordering by `published_at` walks `listing_status_published_idx` instead of sorting.
+ */
+export async function listPublishedListingsForSitemap(limit: number) {
+  return db
+    .select({ id: listings.id, updatedAt: listings.updatedAt })
+    .from(listings)
+    .where(eq(listings.status, 'PUBLISHED'))
+    .orderBy(desc(listings.publishedAt))
+    .limit(limit);
 }
 
 /**
@@ -366,6 +397,46 @@ function buildListingOrderBy(sort: ListingSort) {
   }
 }
 
+/** Past this many pins a map is unreadable: the answer is a narrower search, not more pins. */
+export const MAP_MARKER_LIMIT = 500;
+
+/**
+ * The search results as map markers: the same filters and order as the list, only the
+ * fields a marker needs, and coordinates rounded (`approximate`) so the exact point
+ * never leaves the server. `total` counts every match, pinned or not.
+ */
+export async function listPublishedListingsForMap(filters: ListListingsQuery) {
+  const where = buildPublishedListingWhere(filters);
+
+  const [rows, totalRows] = await Promise.all([
+    db
+      .select({
+        id: listings.id,
+        title: listings.title,
+        monthlyRentCents: listings.monthlyRentCents,
+        currency: listings.currency,
+        citySlug: listings.citySlug,
+        neighborhoodSlug: listings.neighborhoodSlug,
+        latitude: listings.latitude,
+        longitude: listings.longitude,
+      })
+      .from(listings)
+      .where(and(where, isNotNull(listings.latitude), isNotNull(listings.longitude)))
+      .orderBy(...buildListingOrderBy(filters.sort))
+      .limit(MAP_MARKER_LIMIT),
+    db.select({ value: count() }).from(listings).where(where),
+  ]);
+
+  return {
+    items: rows.map(({ latitude, longitude, ...row }) => ({
+      ...row,
+      latitude: approximate(latitude!),
+      longitude: approximate(longitude!),
+    })),
+    total: totalRows[0]?.value ?? 0,
+  };
+}
+
 function buildPublishedListingWhere(filters: ListListingsQuery) {
   const conditions = [eq(listings.status, 'PUBLISHED')];
 
@@ -383,6 +454,18 @@ function buildPublishedListingWhere(filters: ListListingsQuery) {
 
   if (filters.roommatePreference) {
     conditions.push(eq(listings.roommatePreference, filters.roommatePreference));
+  }
+
+  if (filters.roomType?.length) {
+    conditions.push(inArray(listings.roomType, filters.roomType));
+  }
+
+  if (filters.stayMonths !== undefined) {
+    // A missing bound means the owner did not set one, so it admits any stay.
+    conditions.push(
+      or(isNull(listings.minStayMonths), lte(listings.minStayMonths, filters.stayMonths))!,
+      or(isNull(listings.maxStayMonths), gte(listings.maxStayMonths, filters.stayMonths))!,
+    );
   }
 
   if (filters.minRentCents !== undefined) {
@@ -436,6 +519,18 @@ function buildPublishedListingWhere(filters: ListListingsQuery) {
 
   if (filters.roommateFriendly !== undefined) {
     conditions.push(eq(listings.roommateFriendly, filters.roommateFriendly));
+  }
+
+  if (filters.privateBathroom !== undefined) {
+    conditions.push(eq(listings.privateBathroom, filters.privateBathroom));
+  }
+
+  if (filters.couplesAllowed !== undefined) {
+    conditions.push(eq(listings.couplesAllowed, filters.couplesAllowed));
+  }
+
+  if (filters.smokingAllowed !== undefined) {
+    conditions.push(eq(listings.smokingAllowed, filters.smokingAllowed));
   }
 
   if (filters.q) {

@@ -57,7 +57,7 @@ export default async function HomePage({ params }: PageProps) {
     <>
       <OrganizationJsonLd appUrl={appUrl} />
       <BreadcrumbJsonLd items={breadcrumbItems} />
-      <main id="main-content" className="min-h-screen bg-brand-cream text-brand-ink">
+      <main className="min-h-screen bg-brand-cream text-brand-ink">
         <HeroSection locale={params.locale} />
         <PopularCities locale={params.locale} />
         <FeaturedListings locale={params.locale} />

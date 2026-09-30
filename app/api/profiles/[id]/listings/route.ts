@@ -1,5 +1,6 @@
 import { listProfileListings } from '@/features/profiles/server/repository';
-import { apiOk, handleApiRoute } from '@/lib/server/api';
+import { apiOk, getCurrentUser, handleApiRoute } from '@/lib/server/api';
+import { apiContactMasker } from '@/lib/server/contact-visibility';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,12 +12,15 @@ type ProfileListingsRouteContext = {
 };
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: ProfileListingsRouteContext,
 ) {
   return handleApiRoute(async () => {
-    const listings = await listProfileListings(params.id);
+    const [listings, viewer] = await Promise.all([
+      listProfileListings(params.id),
+      getCurrentUser(request),
+    ]);
 
-    return apiOk({ items: listings });
+    return apiOk({ items: listings.map(apiContactMasker(Boolean(viewer)).listing) });
   });
 }

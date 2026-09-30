@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarCheck, ChevronDown, Home, LogOut, User } from 'lucide-react';
+import { CalendarCheck, ChevronDown, Home, LogOut, Settings, ShieldCheck, User } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -10,6 +10,7 @@ import { Avatar } from '@/components/shared/Avatar';
 import { useSignOut, type SessionUser } from '@/features/auth';
 import { useDismiss } from '@/hooks';
 import type { Locale } from '@/lib/i18n';
+import { isAdmin } from '@/lib/roles';
 import { routes } from '@/lib/routes';
 import { cn } from '@/utils';
 
@@ -20,7 +21,6 @@ type UserMenuProps = {
 
 const ITEM_CLASSES =
   'flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[14px] font-medium text-brand-ink transition hover:bg-brand-chip hover:text-brand-terracotta';
-
 
 export function UserMenu({ user, locale }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +48,9 @@ export function UserMenu({ user, locale }: UserMenuProps) {
   const menuItems = [
     { href: routes.profile(locale, user.id), icon: User, label: t('profile') },
     { href: routes.myListings(locale), icon: Home, label: t('myListings') },
-    { href: routes.viewingRequests(locale), icon: CalendarCheck, label: t('viewingRequests') },
+    { href: routes.appliedListings(locale), icon: CalendarCheck, label: t('appliedListings') },
+    { href: routes.settings(locale), icon: Settings, label: t('settings') },
+    ...(isAdmin(user) ? [{ href: routes.admin(), icon: ShieldCheck, label: t('admin') }] : []),
   ];
 
   return (

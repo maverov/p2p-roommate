@@ -1,0 +1,35 @@
+{
+  "draftNotice": "Draft. This page is a structure for a lawyer to complete and is not final.",
+  "placeholder": "[Text to follow — to be supplied after legal review.]",
+  "privacy": {
+    "metaTitle": "Privacy Policy",
+    "title": "Privacy Policy",
+    "intro": "How Stay.bg collects, uses and protects your personal data.",
+    "sections": {
+      "controller": "Data controller and contact",
+      "data": "What data we collect",
+      "purposes": "Purposes and legal bases for processing",
+      "processors": "Recipients and processors (hosting, email, photo storage)",
+      "retention": "How long we keep data",
+      "rights": "Your rights (access, rectification, erasure, portability, objection)",
+      "cookies": "Cookies",
+      "complaints": "Right to complain to the Commission for Personal Data Protection"
+    }
+  },
+  "terms": {
+    "metaTitle": "Terms of Service",
+    "title": "Terms of Service",
+    "intro": "The rules for using Stay.bg.",
+    "sections": {
+      "service": "What the service is",
+      "accounts": "Accounts and responsibility for their content",
+      "listings": "Rules for listings and content",
+      "prohibited": "Prohibited conduct (fraud, agents, false listings)",
+      "moderation": "Reports, moderation and reasons for decisions",
+      "liability": "Liability",
+      "termination": "Suspension and termination of accounts",
+      "law": "Governing law and disputes",
+      "contact": "Contact"
+    }
+  }
+}

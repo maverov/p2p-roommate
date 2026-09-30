@@ -11,12 +11,17 @@
  *      which throws at render time rather than at build time;
  *   3. keys nobody reads any more, which quietly inflate every TMS invoice.
  *
+ * It also fails when a client component reads a namespace the layout does not send
+ * to the browser (`locales/client-namespaces.ts`) — that is a runtime crash otherwise.
+ *
  * (1) and (2) fail the run. (3) is reported as a warning: the call-site scan is
  * a regex over source text, so a key resolved through a lookup table can look
  * unused when it is not — failing on that would make the gate untrustworthy.
  */
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
+
+import { AUTH_CLIENT_NAMESPACES, CLIENT_NAMESPACES } from '../locales/client-namespaces';
 
 const ROOT = join(__dirname, '..');
 const LOCALES_DIR = join(ROOT, 'locales');
@@ -100,6 +105,17 @@ const ANY_TRANSLATOR =
 
 const FALLBACK_VARIABLE = 't';
 
+/**
+ * Project helpers returning a translator bound to a fixed namespace, for code that runs
+ * outside a request: `const t = emailTranslator(locale)` reads `emails.*`.
+ */
+const BOUND_TRANSLATORS: Record<string, string> = { emailTranslator: 'emails' };
+
+const BOUND_DECLARATIONS = Object.entries(BOUND_TRANSLATORS).map(([factory, namespace]) => ({
+  pattern: new RegExp(`const\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*${factory}\\(`, 'g'),
+  namespace,
+}));
+
 function sourceFiles(dir: string, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
@@ -134,10 +150,17 @@ function usage(): { keys: Set<string>; prefixes: string[] } {
       const source = readFileSync(file, 'utf8');
       const namespaces = new Map<string, Set<string>>();
 
-      for (const match of source.matchAll(DECLARATION)) {
-        const bound = namespaces.get(match[1]) ?? new Set<string>();
-        bound.add(match[2]);
-        namespaces.set(match[1], bound);
+      const declarations = [
+        ...[...source.matchAll(DECLARATION)].map((match) => [match[1], match[2]] as const),
+        ...BOUND_DECLARATIONS.flatMap(({ pattern, namespace }) =>
+          [...source.matchAll(pattern)].map((match) => [match[1], namespace] as const),
+        ),
+      ];
+
+      for (const [variable, namespace] of declarations) {
+        const bound = namespaces.get(variable) ?? new Set<string>();
+        bound.add(namespace);
+        namespaces.set(variable, bound);
       }
 
       const declared = new Set([...namespaces.values()].flatMap((set) => [...set]));
@@ -173,6 +196,34 @@ function usage(): { keys: Set<string>; prefixes: string[] } {
   }
 
   return { keys, prefixes };
+}
+
+/**
+ * Client files may only read namespaces their provider actually sends. Auth forms render
+ * under the `(auth)` layout, which sends `auth` alone; everything else under `[locale]`.
+ */
+function checkClientNamespaces() {
+  const translator = /useTranslations\(\s*['"]([^'".]+)/g;
+
+  for (const dir of SOURCE_DIRS) {
+    for (const file of sourceFiles(join(ROOT, dir))) {
+      const source = readFileSync(file, 'utf8');
+      if (!/^['"]use client['"]/.test(source.trimStart())) continue;
+
+      const path = relative(ROOT, file).split(sep).join('/');
+      const isAuth = path.startsWith('features/auth/') || path.startsWith('app/(auth)/');
+      const allowed: readonly string[] = isAuth ? AUTH_CLIENT_NAMESPACES : CLIENT_NAMESPACES;
+
+      for (const match of source.matchAll(translator)) {
+        if (!allowed.includes(match[1])) {
+          errors.push(
+            `${path}: client component reads "${match[1]}", which its provider does not send ` +
+              `(allowed: ${allowed.join(', ')})`,
+          );
+        }
+      }
+    }
+  }
 }
 
 /* ── checks ─────────────────────────────────────────────────────────────── */
@@ -224,6 +275,8 @@ for (const [locale, messages] of catalogues) {
     }
   }
 }
+
+checkClientNamespaces();
 
 const { keys: used, prefixes } = usage();
 

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { isAPIError } from 'better-auth/api';
 import { NextResponse } from 'next/server';
 import { ZodError, type ZodSchema } from 'zod';
 
@@ -17,13 +18,22 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly details?: unknown;
+  /** Extra response headers, e.g. `Retry-After` on a 429. */
+  readonly headers?: Record<string, string>;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    headers?: Record<string, string>,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.details = details;
+    this.headers = headers;
   }
 }
 
@@ -89,11 +99,11 @@ export async function handleApiRoute(
     return await handler();
   } catch (error) {
     if (error instanceof ApiError) {
-      return errorResponse(error.status, {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
+      return errorResponse(
+        error.status,
+        { code: error.code, message: error.message, details: error.details },
+        error.headers,
+      );
     }
 
     if (error instanceof ZodError) {
@@ -101,6 +111,14 @@ export async function handleApiRoute(
         code: 'VALIDATION_ERROR',
         message: 'Request validation failed.',
         details: error.issues,
+      });
+    }
+
+    // Errors thrown by `auth.api.*` calls, e.g. the admin plugin refusing a ban.
+    if (isAPIError(error)) {
+      return errorResponse(error.statusCode, {
+        code: error.body?.code ?? error.status.toString(),
+        message: error.body?.message ?? error.message,
       });
     }
 
@@ -116,6 +134,7 @@ export async function handleApiRoute(
 function errorResponse(
   status: number,
   error: ErrorBody['error'],
+  headers?: Record<string, string>,
 ): NextResponse<ErrorBody> {
-  return NextResponse.json({ error }, { status });
+  return NextResponse.json({ error }, { status, headers });
 }

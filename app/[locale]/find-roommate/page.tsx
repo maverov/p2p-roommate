@@ -6,18 +6,32 @@ import { notFound } from 'next/navigation';
 import type { Route } from 'next';
 
 import { StateMessage } from '@/components/shared/StateMessage';
+import { scoreProfiles } from '@/features/compatibility/score';
+import { getCompatibilityProfile } from '@/features/compatibility/server/repository';
 import { ProfileCard } from '@/features/profiles/components/ProfileCard';
+import { TraitCheckbox } from '@/features/profiles/components/TraitCheckbox';
+import { parseProfileTraits } from '@/features/profiles/schemas';
 import { listPublicProfiles } from '@/features/profiles/server/repository';
 import { CITY_IDS, cityLabels, isCityId } from '@/lib/areas';
 import { isLocale, type Locale } from '@/lib/i18n';
+import { PROFILE_TRAITS } from '@/lib/labels';
 import { routes } from '@/lib/routes';
+import { pageContactMasker } from '@/lib/server/contact-visibility';
 import { safeQuery } from '@/lib/server/safe';
+import { getServerUser } from '@/lib/server/session';
 
 const PER_PAGE = 24;
 
 type FindRoommatePageProps = {
   params: { locale: string };
-  searchParams: { citySlug?: string; q?: string; page?: string };
+  searchParams: {
+    citySlug?: string;
+    q?: string;
+    page?: string;
+    looking?: string;
+    /** Repeated (`traits=A&traits=B`, what the form sends) or comma-separated. */
+    traits?: string | string[];
+  };
 };
 
 export async function generateMetadata({ params }: FindRoommatePageProps): Promise<Metadata> {
@@ -27,23 +41,35 @@ export async function generateMetadata({ params }: FindRoommatePageProps): Promi
   return { title: t('heading') };
 }
 
-export default async function FindRoommatePage({
-  params,
-  searchParams,
-}: FindRoommatePageProps) {
+export default async function FindRoommatePage({ params, searchParams }: FindRoommatePageProps) {
   if (!isLocale(params.locale)) notFound();
 
   const locale: Locale = params.locale;
   const t = await getTranslations({ locale, namespace: 'profiles.search' });
+  const tEnums = await getTranslations({ locale, namespace: 'enums' });
 
   const citySlug = isCityId(searchParams.citySlug) ? searchParams.citySlug : undefined;
   const q = searchParams.q?.trim() || undefined;
+  const lookingForRoom = searchParams.looking === '1';
+  const traits = parseProfileTraits(
+    [searchParams.traits ?? []].flat().flatMap((value) => value.split(',')),
+  );
   const page = Math.max(1, Number(searchParams.page) || 1);
 
-  const result = await safeQuery(
-    listPublicProfiles({ citySlug, q, page, perPage: PER_PAGE }),
-    'find-roommate profiles',
-  );
+  const [found, viewer] = await Promise.all([
+    safeQuery(
+      listPublicProfiles({ citySlug, q, lookingForRoom, traits, page, perPage: PER_PAGE }),
+      'find-roommate profiles',
+    ),
+    getServerUser(),
+  ]);
+  const [mask, seeker] = await Promise.all([
+    pageContactMasker(locale, Boolean(viewer)),
+    viewer && found?.items.length
+      ? safeQuery(getCompatibilityProfile(viewer.id), 'compatibility profile')
+      : null,
+  ]);
+  const result = found && { ...found, items: found.items.map(mask.profile) };
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / PER_PAGE)) : 1;
 
@@ -54,6 +80,8 @@ export default async function FindRoommatePage({
     const nextPage = overrides.page ?? page;
     if (nextCity) sp.set('citySlug', nextCity);
     if (nextQ) sp.set('q', nextQ);
+    if (lookingForRoom) sp.set('looking', '1');
+    for (const trait of traits) sp.append('traits', trait);
     if (nextPage > 1) sp.set('page', String(nextPage));
     const qs = sp.toString();
     const base = routes.findRoommate(locale) as string;
@@ -100,6 +128,32 @@ export default async function FindRoommatePage({
             {t('keyword')}
           </button>
         </div>
+
+        <label className="flex w-full items-center gap-2 text-[14px] text-brand-ink">
+          <input
+            className="size-4 accent-brand-terracotta"
+            defaultChecked={lookingForRoom}
+            name="looking"
+            type="checkbox"
+            value="1"
+          />
+          {t('lookingOnly')}
+        </label>
+
+        <fieldset className="w-full">
+          <legend className="mb-2 text-[13px] font-bold text-brand-ink">{t('traits')}</legend>
+          <div className="flex flex-wrap gap-2">
+            {PROFILE_TRAITS.map((trait) => (
+              <TraitCheckbox
+                defaultChecked={traits.includes(trait)}
+                key={trait}
+                label={tEnums(`profileTrait.${trait}`)}
+                name="traits"
+                value={trait}
+              />
+            ))}
+          </div>
+        </fieldset>
       </form>
 
       {/* Result count */}
@@ -111,11 +165,7 @@ export default async function FindRoommatePage({
 
       <div className="mt-6">
         {result === null ? (
-          <StateMessage
-            tone="error"
-            title={t('errorTitle')}
-            body={t('errorBody')}
-          />
+          <StateMessage tone="error" title={t('errorTitle')} body={t('errorBody')} />
         ) : result.items.length === 0 ? (
           <StateMessage title={t('empty')} body={t('emptyBody')} />
         ) : (
@@ -124,6 +174,11 @@ export default async function FindRoommatePage({
               <ProfileCard
                 key={item.profileUserId}
                 locale={locale}
+                matchScore={
+                  seeker && item.profileUserId !== viewer?.id
+                    ? scoreProfiles(seeker, item.compatibility)
+                    : null
+                }
                 profile={{
                   profileUserId: item.profileUserId,
                   name: item.name ?? '',
@@ -131,6 +186,10 @@ export default async function FindRoommatePage({
                   citySlug: item.citySlug ?? null,
                   bio: item.bio ?? null,
                   createdAt: item.joinedAt ?? null,
+                  roomWanted: item.lookingForRoom
+                    ? { budgetMaxCents: item.budgetMaxCents, moveInDate: item.moveInDate }
+                    : null,
+                  traits: item.traits,
                 }}
               />
             ))}
@@ -150,7 +209,9 @@ export default async function FindRoommatePage({
               {t('previous')}
             </Link>
           )}
-          <span className="text-[14px] text-brand-muted">{t('pageOf', { page, total: totalPages })}</span>
+          <span className="text-[14px] text-brand-muted">
+            {t('pageOf', { page, total: totalPages })}
+          </span>
           {page < totalPages && (
             <Link
               href={buildHref({ page: page + 1 })}

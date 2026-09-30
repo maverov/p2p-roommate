@@ -72,6 +72,28 @@ export function getNeighborhoodLabel(
   return neighborhoodIndex[cityId].get(neighborhoodId)?.label[locale] ?? neighborhoodId;
 }
 
+/** The neighbourhood record (label, group), or `undefined` for a slug the city lacks. */
+export function getNeighborhood(cityId: CityId, neighborhoodId: string) {
+  return neighborhoodIndex[cityId].get(neighborhoodId);
+}
+
+/**
+ * "in Lozenets, Sofia" / "в Лозенец, София". Grammar rather than copy, so it lives here:
+ * Bulgarian writes "във" before a word starting with "в" or "ф".
+ */
+export function inPlace(locale: Locale, place: string) {
+  if (locale === "bg") {
+    return `${/^[вф]/i.test(place) ? "във" : "в"} ${place}`;
+  }
+
+  return `in ${place}`;
+}
+
+/** Whether `neighborhoodId` is one of `cityId`'s neighbourhoods. */
+export function isNeighborhoodInCity(cityId: CityId, neighborhoodId: string) {
+  return neighborhoodIndex[cityId].has(neighborhoodId);
+}
+
 /** Neighborhoods grouped for the filter sidebar, in the order groups are declared. */
 export function getGroupedNeighborhoods(cityId: CityId) {
   const groups = neighborhoodGroupsByCity[cityId];

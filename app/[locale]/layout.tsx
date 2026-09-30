@@ -4,8 +4,8 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Footer } from '@/components/shared/Footer';
 import { Navbar } from '@/components/shared/navbar/Navbar';
-import { isLocale, locales } from '@/lib/i18n';
-import { getMessages } from '@/locales';
+import { APP_TIME_ZONE, isLocale, locales } from '@/lib/i18n';
+import { getClientMessages } from '@/locales';
 
 export const dynamicParams = false;
 export const generateStaticParams = () => locales.map((locale) => ({ locale }));
@@ -27,16 +27,20 @@ export default async function LocaleLayout({
   // pages under this layout stay statically renderable.
   unstable_setRequestLocale(locale);
 
-  // The whole catalogue for the active locale crosses to the client. That is ~20 KB
-  // of JSON per locale today; if it grows materially, narrow this to the namespaces
-  // client components actually use rather than making every page pay for all of it.
-  const messages = getMessages(locale);
+  // Only the namespaces client components read cross to the browser; server-only copy
+  // (emails, legal pages, metadata) would otherwise ship with every page.
+  const messages = getClientMessages(locale);
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <Navbar locale={locale} />
+    <NextIntlClientProvider locale={locale} messages={messages} timeZone={APP_TIME_ZONE}>
+      {/* `contents` keeps the wrappers out of layout (and the navbar sticky); they only drop the chrome from printouts. */}
+      <div className="contents print:hidden">
+        <Navbar locale={locale} />
+      </div>
       {children}
-      <Footer locale={locale} />
+      <div className="contents print:hidden">
+        <Footer locale={locale} />
+      </div>
     </NextIntlClientProvider>
   );
 }

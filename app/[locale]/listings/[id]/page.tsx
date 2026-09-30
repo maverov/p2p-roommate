@@ -8,7 +8,9 @@ import {
   BedDouble,
   Building2,
   CalendarDays,
+  CalendarRange,
   Check,
+  DoorOpen,
   Droplets,
   Layers,
   MapPin,
@@ -19,11 +21,18 @@ import {
 
 import { Avatar } from '@/components/shared/Avatar';
 import { Rating } from '@/components/shared/Rating';
+import { SafetyReminder } from '@/components/shared/SafetyReminder';
 import { StateMessage } from '@/components/shared/StateMessage';
+import { ContactUnavailable } from '@/features/blocks/components/ContactUnavailable';
+import { getBlockState } from '@/features/blocks/server/repository';
+import { blockNotice } from '@/features/blocks/server/notice';
 import { ContactOwnerPanel } from '@/features/listings/components/ContactOwnerPanel';
+import { ApproximateLocationMap } from '@/features/maps/components/ApproximateLocationMap';
+import { HouseholdSection } from '@/features/listings/components/HouseholdSection';
 import { ListingCard } from '@/features/listings/components/ListingCard';
 import { ListingGallery } from '@/features/listings/components/ListingGallery';
 import { SaveListingButton } from '@/features/listings/components/SaveListingButton';
+import { ReportButton } from '@/features/reports/components/ReportButton';
 import {
   getPublishedListingById,
   getSavedListingIds,
@@ -31,19 +40,28 @@ import {
 } from '@/features/listings/server/repository';
 import { getPublicProfile } from '@/features/profiles/server/repository';
 import { listListingReviews } from '@/features/reviews/server/repository';
-import { getCityLabel, getNeighborhoodLabel } from '@/lib/areas';
+import {
+  getCityLabel,
+  getNeighborhoodLabel,
+  inPlace,
+  isCityId,
+  isNeighborhoodInCity,
+} from '@/lib/areas';
 import {
   depositInMonths,
   formatDate,
   formatMoneyFromCents,
   formatMonthYear,
-  responseTimeParts,
 } from '@/lib/format';
 import { isLocale, openGraphLocale, type Locale } from '@/lib/i18n';
+import { VERIFICATION_BADGES } from '@/lib/feature-flags';
 import { BreadcrumbJsonLd, ListingJsonLd } from '@/lib/jsonld';
+import { approximate } from '@/lib/map';
 import { routes } from '@/lib/routes';
 import { safeQuery } from '@/lib/server/safe';
+import { pageContactMasker } from '@/lib/server/contact-visibility';
 import { getServerUser } from '@/lib/server/session';
+import { stayLabel } from '@/lib/stay';
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -65,13 +83,16 @@ const loadListing = cache((id: string) => safeQuery(getPublishedListingById(id),
 
 export async function generateMetadata({ params }: ListingPageProps): Promise<Metadata> {
   const locale = isLocale(params.locale) ? params.locale : 'bg';
-  const listing = await loadListing(params.id);
+  const loaded = await loadListing(params.id);
 
-  if (!listing) {
+  if (!loaded) {
     const t = await getTranslations({ locale, namespace: 'listings.detail' });
 
     return { title: t('notFound'), robots: { index: false } };
   }
+
+  // Metadata is for crawlers, which are never signed in.
+  const listing = (await pageContactMasker(locale, false)).listing(loaded);
 
   const city = getCityLabel(listing.citySlug, locale);
   // The root layout's `%s | Stay.bg` template brands `metadata.title` for us, but
@@ -113,17 +134,21 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
   const t = await getTranslations({ locale, namespace: 'listings' });
   const tEnums = await getTranslations({ locale, namespace: 'enums' });
   const tCommon = await getTranslations({ locale, namespace: 'common' });
-  const listing = await loadListing(params.id);
+  const loaded = await loadListing(params.id);
 
-  if (!listing) {
+  if (!loaded) {
     notFound();
   }
 
   const viewer = await getServerUser();
+  // Phone numbers and emails in the owner's text are for signed-in viewers only.
+  const mask = await pageContactMasker(locale, Boolean(viewer));
+  const listing = mask.listing(loaded);
+  const contactsHidden = listing.description !== loaded.description;
   const isOwner = viewer?.id === listing.ownerId;
 
   // Enrichment runs in parallel and degrades independently of the main record.
-  const [reviews, similar, ownerProfile, savedIds] = await Promise.all([
+  const [reviews, similarRows, ownerRow, savedIds, blockState] = await Promise.all([
     safeQuery(
       listListingReviews(listing.id, { page: 1, perPage: REVIEWS_ON_PAGE }),
       'listing reviews',
@@ -133,7 +158,15 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
     viewer
       ? safeQuery(getSavedListingIds(viewer.id, [listing.id]), 'saved listings')
       : null,
+    viewer && !isOwner ? safeQuery(getBlockState(viewer.id, listing.ownerId), 'block state') : null,
   ]);
+  const similar = similarRows?.map(mask.listing) ?? null;
+  const ownerProfile = ownerRow ? mask.profile(ownerRow) : null;
+  const contactNotice = await blockNotice(
+    blockState,
+    ownerProfile?.displayName ?? listing.owner.name,
+    locale,
+  );
 
   const city = getCityLabel(listing.citySlug, locale);
   const neighborhood = getNeighborhoodLabel(listing.citySlug, listing.neighborhoodSlug, locale);
@@ -143,11 +176,30 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
   const availableNow =
     listing.availableFrom === null || listing.availableFrom.getTime() <= Date.now();
 
+  const stayText = (months: number) => {
+    const label = stayLabel(months);
+    return tCommon(`stay.${label.unit}`, { count: label.count });
+  };
+  const { minStayMonths: minStay, maxStayMonths: maxStay } = listing;
+  const stay =
+    minStay !== null && maxStay !== null
+      ? t('detail.stayRange', { min: stayText(minStay), max: stayText(maxStay) })
+      : minStay !== null
+        ? t('detail.stayAtLeast', { min: stayText(minStay) })
+        : maxStay !== null
+          ? t('detail.stayUpTo', { max: stayText(maxStay) })
+          : null;
+
   const facts = [
     {
       icon: Building2,
       label: t('detail.facts.propertyType'),
       value: tEnums(`propertyType.${listing.propertyType}`),
+    },
+    listing.roomType !== null && {
+      icon: DoorOpen,
+      label: t('detail.facts.roomType'),
+      value: tEnums(`roomType.${listing.roomType}`),
     },
     {
       icon: BedDouble,
@@ -177,6 +229,11 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
       label: t('detail.facts.occupants'),
       value: t('detail.facts.occupantsValue', { count: listing.maxOccupants }),
     },
+    stay !== null && {
+      icon: CalendarRange,
+      label: t('detail.facts.stay'),
+      value: stay,
+    },
   ].filter((fact): fact is { icon: typeof Building2; label: string; value: string } =>
     Boolean(fact),
   );
@@ -188,6 +245,9 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
     listing.petsAllowed && t('detail.included.pets'),
     listing.nearMetro && t('detail.included.nearMetro'),
     listing.roommateFriendly && t('detail.included.roommateFriendly'),
+    listing.privateBathroom && t('detail.included.privateBathroom'),
+    listing.couplesAllowed && t('detail.included.couples'),
+    listing.smokingAllowed && t('detail.included.smoking'),
   ].filter((term): term is string => Boolean(term));
 
   const breadcrumbItems = [
@@ -218,7 +278,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
       />
       <BreadcrumbJsonLd items={breadcrumbItems} />
 
-      <main className="min-h-screen bg-brand-cream text-brand-ink" id="main-content">
+      <main className="min-h-screen bg-brand-cream text-brand-ink">
         <div className="mx-auto w-full max-w-[1400px] px-6 pb-16 pt-6 lg:px-10">
           <nav aria-label="Breadcrumb" className="mb-4 text-[13px] text-brand-muted">
             <ol className="flex flex-wrap items-center gap-1.5">
@@ -272,7 +332,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                     />
                   )}
 
-                  {listing.isVerified && (
+                  {VERIFICATION_BADGES && listing.isVerified && (
                     <span className="flex items-center gap-1.5 rounded-full bg-[#f2f4e2] px-2.5 py-1 text-[12px] font-bold text-brand-olive">
                       <ShieldCheck aria-hidden="true" size={13} strokeWidth={2.4} />
                       {t('common.verified')}
@@ -325,7 +385,20 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                     <p key={paragraph}>{paragraph}</p>
                   ))}
                 </div>
+                {contactsHidden && (
+                  <p className="mt-3 text-[13px] text-brand-muted">
+                    {tCommon('contactHiddenHint')}{' '}
+                    <Link
+                      className="font-semibold text-brand-terracotta hover:underline"
+                      href={routes.login(routes.listing(locale, listing.id))}
+                    >
+                      {tCommon('contactHiddenSignIn')}
+                    </Link>
+                  </p>
+                )}
               </Section>
+
+              <HouseholdSection household={listing.household} locale={locale} />
 
               {(listing.amenities.length > 0 || listing.rules.length > 0) && (
                 <div className="mt-10 grid gap-8 sm:grid-cols-2">
@@ -350,6 +423,33 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                     {t('detail.locationNote')}
                   </p>
 
+                  {isCityId(listing.citySlug) && (
+                    <Link
+                      className="mt-2 inline-block text-[13px] font-bold text-brand-terracotta hover:underline"
+                      href={
+                        listing.neighborhoodSlug &&
+                        isNeighborhoodInCity(listing.citySlug, listing.neighborhoodSlug)
+                          ? routes.area(locale, listing.citySlug, listing.neighborhoodSlug)
+                          : routes.area(locale, listing.citySlug)
+                      }
+                    >
+                      {t('detail.moreInArea', {
+                        place: inPlace(locale, neighborhood ?? city),
+                      })}{' '}
+                      →
+                    </Link>
+                  )}
+
+                  {listing.latitude !== null && listing.longitude !== null && (
+                    <div className="mt-4">
+                      <ApproximateLocationMap
+                        label={t('detail.mapLabel')}
+                        latitude={approximate(listing.latitude)}
+                        longitude={approximate(listing.longitude)}
+                      />
+                    </div>
+                  )}
+
                   <p className="mt-3 text-[13px] text-brand-muted">
                     {t('detail.facts.roommatePreference')}:{' '}
                     <span className="font-bold text-brand-ink">
@@ -372,7 +472,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                       <div className="min-w-0 flex-1">
                         <p className="flex items-center gap-1.5 text-[16px] font-bold text-brand-ink">
                           {ownerProfile.displayName}
-                          {ownerProfile.isVerified && (
+                          {VERIFICATION_BADGES && ownerProfile.isVerified && (
                             <BadgeCheck
                               aria-label={t('common.verified')}
                               className="text-brand-olive"
@@ -399,26 +499,14 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                       </div>
                     </div>
 
-                    <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-brand-border pt-4 text-[13px] sm:grid-cols-4">
-                      <Stat
-                        label={t('detail.respondsIn')}
-                        value={responseTime(ownerProfile.responseTimeMinutes, tCommon)}
-                      />
-                      <Stat
-                        label={t('detail.responseRate')}
-                        value={`${ownerProfile.responseRate}%`}
-                      />
-                      <Stat
-                        label={t('detail.successfulRentals')}
-                        value={String(ownerProfile.successfulRentals)}
-                      />
-                      {ownerProfile.joinedAt && (
+                    {ownerProfile.joinedAt && (
+                      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-brand-border pt-4 text-[13px] sm:grid-cols-4">
                         <Stat
                           label={t('detail.memberSince')}
                           value={formatMonthYear(ownerProfile.joinedAt, locale)}
                         />
-                      )}
-                    </dl>
+                      </dl>
+                    )}
 
                     <Link
                       className="mt-4 inline-block text-[14px] font-bold text-brand-terracotta underline-offset-2 hover:underline"
@@ -518,13 +606,17 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                 </dl>
 
                 <div className="mt-5 grid gap-2">
-                  <ContactOwnerPanel
-                    isAuthenticated={Boolean(viewer)}
-                    isOwner={isOwner}
-                    listingId={listing.id}
-                    locale={locale}
-                    ownerId={listing.ownerId}
-                  />
+                  {contactNotice ? (
+                    <ContactUnavailable message={contactNotice} />
+                  ) : (
+                    <ContactOwnerPanel
+                      isAuthenticated={Boolean(viewer)}
+                      isOwner={isOwner}
+                      listingId={listing.id}
+                      locale={locale}
+                      ownerId={listing.ownerId}
+                    />
+                  )}
 
                   <SaveListingButton
                     initialSaved={savedIds?.has(listing.id) ?? false}
@@ -535,6 +627,15 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                     variant="inline"
                   />
                 </div>
+
+                {!isOwner && (
+                  <>
+                    <div className="mt-4 flex justify-center">
+                      <ReportButton isAuthenticated={Boolean(viewer)} subject={{ listingId: listing.id }} />
+                    </div>
+                    <SafetyReminder locale={locale} />
+                  </>
+                )}
               </div>
             </aside>
           </div>
@@ -562,16 +663,6 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
       </main>
     </>
   );
-}
-
-/** Picks the unit, then lets the catalogue's plural rules do the wording. */
-function responseTime(
-  minutes: number,
-  tCommon: Awaited<ReturnType<typeof getTranslations<'common'>>>,
-) {
-  const { unit, value } = responseTimeParts(minutes);
-
-  return tCommon(`duration.${unit}`, { value });
 }
 
 function Section({ children, title }: { children: React.ReactNode; title: string }) {

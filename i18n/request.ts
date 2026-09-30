@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getRequestConfig } from 'next-intl/server';
 
-import { isLocale } from '@/lib/i18n';
+import { APP_TIME_ZONE, isLocale } from '@/lib/i18n';
 import { getMessages } from '@/locales';
 
 /**
@@ -24,6 +24,6 @@ export default getRequestConfig(async ({ locale }) => {
     // Pinned so server and client render identical dates: without it the server
     // uses the host's zone (UTC on Vercel) and the browser uses the visitor's,
     // which produces hydration mismatches on any formatted date.
-    timeZone: 'Europe/Sofia',
+    timeZone: APP_TIME_ZONE,
   };
 });
