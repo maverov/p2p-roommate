@@ -1,8 +1,10 @@
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { Fragment } from 'react';
 import { CalendarDays, Heart, Home, Search, type LucideIcon } from 'lucide-react';
 import SquiggleUnderline from '@/components/ui/SquiggleUnderline';
 import type { Locale } from '@/lib/i18n';
+import { routes } from '@/lib/routes';
 
 /** Icon per step; the title and body come from `home.howItWorks.steps.<key>`. */
 const STEPS: ReadonlyArray<{ icon: LucideIcon; key: 'search' | 'connect' | 'moveIn' | 'feelAtHome' }> = [
@@ -47,6 +49,15 @@ export default async function HowItWorks({ locale }: { locale: Locale }) {
               </div>
             </Fragment>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href={routes.howItWorks(locale)}
+            className="text-md font-medium text-brand-ink transition hover:text-brand-terracotta"
+          >
+            {t('learnMore')} →
+          </Link>
         </div>
       </div>
     </section>

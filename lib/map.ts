@@ -15,6 +15,14 @@ export type LatLng = { latitude: number; longitude: number };
 export const CITY_CENTERS: Record<CityId, [number, number]> = {
   sofia: [42.6977, 23.3219],
   plovdiv: [42.1354, 24.7453],
+  varna: [43.2141, 27.9147],
+  burgas: [42.5048, 27.4626],
+  ruse: [43.8356, 25.9657],
+  'stara-zagora': [42.4258, 25.6345],
+  'veliko-tarnovo': [43.0757, 25.6172],
+  blagoevgrad: [42.0209, 23.0943],
+  pleven: [43.417, 24.6067],
+  haskovo: [41.9344, 25.5555],
 };
 
 export const BULGARIA_CENTER: [number, number] = [42.7339, 25.4858];

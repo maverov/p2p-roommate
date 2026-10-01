@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BedDouble, Maximize2, ShieldCheck, UsersRound } from 'lucide-react';
 
+import { Avatar } from '@/components/shared/Avatar';
 import { MatchBadge } from '@/features/compatibility/components/MatchBadge';
 import { SaveListingButton } from '@/features/listings/components/SaveListingButton';
 import { getCityLabel, getNeighborhoodLabel } from '@/lib/areas';
@@ -41,6 +42,8 @@ type ListingCardProps = {
   priority?: boolean;
   /** The viewer's compatibility with the listing (`scoreListing`), when there is one. */
   matchScore?: number | null;
+  /** Who lets the room, shown as a small avatar on the photo. Only the search results pass it. */
+  owner?: { name: string; image: string | null };
   sizes?: string;
   className?: string;
 };
@@ -59,6 +62,7 @@ export async function ListingCard({
   listing,
   locale,
   matchScore = null,
+  owner,
   priority = false,
   sizes = '(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw',
 }: ListingCardProps) {
@@ -121,6 +125,18 @@ export async function ListingCard({
             locale={locale}
             variant="overlay"
           />
+
+          {owner && (
+            <span className="absolute bottom-2.5 right-2.5">
+              <Avatar
+                className="border-2 border-white shadow-[0_2px_8px_rgba(0,0,0,0.25)]"
+                name={owner.name}
+                size={36}
+                src={owner.image}
+              />
+              <span className="sr-only">{t('common.listedBy', { name: owner.name })}</span>
+            </span>
+          )}
         </div>
 
         <div className="px-2 pb-2 pt-3">

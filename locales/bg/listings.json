@@ -7,7 +7,8 @@
     "saved": "Запазена",
     "signInToSave": "Влез, за да запазиш",
     "retry": "Опитай отново",
-    "loadFailed": "Данните не се заредиха."
+    "loadFailed": "Данните не се заредиха.",
+    "listedBy": "Публикувана от {name}"
   },
   "detail": {
     "photoCount": "{count, plural, one {# снимка} other {# снимки}}",

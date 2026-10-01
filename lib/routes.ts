@@ -1,5 +1,6 @@
 import type { Route } from 'next';
 
+import { AREA_KIND_SEGMENTS, type AreaKind } from '@/lib/areas/kinds';
 import { defaultLocale, isLocale, type Locale } from '@/lib/i18n';
 
 /**
@@ -41,11 +42,20 @@ export const routes = {
         ? `/${locale}/rooms/${citySlug}/${neighborhoodSlug}`
         : `/${locale}/rooms/${citySlug}`,
     ),
+  /** A city's page for one kind of home, e.g. `/bg/apartments/sofia`. */
+  areaKind: (locale: Locale, kind: AreaKind, citySlug: string) =>
+    route(`/${locale}/${AREA_KIND_SEGMENTS[kind]}/${citySlug}`),
   settings: (locale: Locale) => route(`/${locale}/settings`),
   privacy: (locale: Locale) => route(`/${locale}/privacy`),
   terms: (locale: Locale) => route(`/${locale}/terms`),
   safety: (locale: Locale) => route(`/${locale}/safety`),
   templates: (locale: Locale) => route(`/${locale}/templates`),
+  about: (locale: Locale) => route(`/${locale}/about`),
+  whyUs: (locale: Locale) => route(`/${locale}/why-stay`),
+  howItWorks: (locale: Locale) => route(`/${locale}/how-it-works`),
+  faq: (locale: Locale) => route(`/${locale}/faq`),
+  contact: (locale: Locale) => route(`/${locale}/contact`),
+  press: (locale: Locale) => route(`/${locale}/press`),
   template: (locale: Locale, slug: string) => route(`/${locale}/templates/${slug}`),
   login: (next?: string) => withNext('/login', next),
   signup: (next?: string) => withNext('/signup', next),

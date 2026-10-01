@@ -103,8 +103,6 @@
     "verified": "Проверен",
     "lookingOnly": "Само търсещи стая",
     "lookingBadge": "Търси стая",
-    "budgetUpTo": "до {max}",
-    "movingFrom": "от {date}",
     "traits": "Начин на живот"
   },
   "roomWanted": {

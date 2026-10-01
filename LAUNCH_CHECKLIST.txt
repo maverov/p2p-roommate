@@ -55,11 +55,22 @@ MUST DO BEFORE LAUNCH
          public/favicon-16x16.png
          public/apple-touch-icon.png
          public/og-image.png   (1200 x 630, shown when a link is shared)
+       Also add a square logo (at least 112 x 112) and the real social
+       accounts to OrganizationJsonLd in lib/jsonld.tsx, so Google can show
+       the logo. Both are left out until they exist.
        Every page asks for the missing favicon, and shared links show no
        image. Once the files are there, wiring them in takes minutes.
 
 [ ] 9. Error monitoring
        So you find out when something breaks in production.
+
+[ ] 10. Contact addresses
+       The Contact us and Press office pages show placeholder addresses
+       (support@, safety@, press@ and partners@stay.bg). Create the real
+       mailboxes, or change them in lib/company.ts, which updates every page.
+       Bulgarian e-commerce law (ЗЕТ, чл. 4) also requires the operator's
+       legal name, address and company number (ЕИК) on the site, usually on
+       Contact us or in the footer. None of that is shown yet.
 
 
 RECOMMENDED (NOT BLOCKING)
@@ -67,6 +78,15 @@ RECOMMENDED (NOT BLOCKING)
 [ ] Admin step 4c: user and listing management
     Unban users, verify profiles, restore archived listings. Today these
     need direct database access. About half a day of work.
+
+[ ] Press office content
+    Spokespeople, press releases, logo and photo downloads, and the hidden
+    "As featured in" section all come from features/company/press.ts. Each
+    one appears on its own as soon as you add an entry there.
+
+[ ] Read through the About pages
+    The "Why we built Stay.bg" story on the About page is written from the
+    product, not from your own founding story. Adjust it to yours.
 
 [ ] Google and Facebook sign-in (optional)
     Set GOOGLE_CLIENT_ID/SECRET and FACEBOOK_CLIENT_ID/SECRET. The buttons

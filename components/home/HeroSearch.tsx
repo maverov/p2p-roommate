@@ -2,9 +2,11 @@
 
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition, type ReactNode } from 'react';
+import { useId, useState, useTransition, type ReactNode } from 'react';
 import { ChevronDown, Home, MapPin, Search, UserRound, Wallet, AlertCircle } from 'lucide-react';
 
+import { CityCombobox } from '@/features/areas/components/CityCombobox';
+import { hasMetro, type CityId } from '@/lib/areas';
 import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
 
@@ -13,17 +15,15 @@ import { routes } from '@/lib/routes';
  * up in `home.search.*` and the query parameters in the maps below, so translating
  * a label can never silently change what the search actually filters on.
  */
-const CITIES = ['sofia', 'plovdiv', 'varna', 'burgas', 'haskovo'] as const;
 const PROPERTY_TYPES = ['room', 'apartment', 'roommate'] as const;
 const OCCUPANT_OPTIONS = ['1', '2', '3', '4', '5+'] as const;
 const FEATURE_FLAGS = ['furnished', 'petsOk', 'girlsOnly', 'nearMetro'] as const;
 
-type City = (typeof CITIES)[number];
 type PropertyType = (typeof PROPERTY_TYPES)[number];
 type Occupants = (typeof OCCUPANT_OPTIONS)[number];
 type FeatureFlag = (typeof FEATURE_FLAGS)[number];
 
-type ActiveDropdown = 'city' | 'propertyType' | 'occupants' | null;
+type ActiveDropdown = 'propertyType' | 'occupants' | null;
 
 /** `roommate` is not a property type — it maps onto the roommate-friendly flag. */
 const PROPERTY_TYPE_PARAMS: Record<PropertyType, Record<string, string>> = {
@@ -44,12 +44,15 @@ export function HeroSearch({ locale }: { locale: Locale }) {
   const router = useRouter();
   const [isLoading, startSearch] = useTransition();
   const [activeDropdown, setActiveDropdown] = useState<ActiveDropdown>(null);
-  const [city, setCity] = useState<City>('sofia');
+  const [city, setCity] = useState<CityId>('sofia');
   const [propertyType, setPropertyType] = useState<PropertyType>('room');
   const [budget, setBudget] = useState('');
   const [occupants, setOccupants] = useState<Occupants>('1');
   const [selectedFlags, setSelectedFlags] = useState<FeatureFlag[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // The metro chip only shows for a city with a metro, and a hidden chip never filters.
+  const availableFlags = FEATURE_FLAGS.filter((flag) => flag !== 'nearMetro' || hasMetro(city));
 
   const toggleDropdown = (dropdown: ActiveDropdown) => {
     setActiveDropdown((currentDropdown) => (currentDropdown === dropdown ? null : dropdown));
@@ -76,7 +79,12 @@ export function HeroSearch({ locale }: { locale: Locale }) {
       ...PROPERTY_TYPE_PARAMS[propertyType],
       // "5+" has no upper bound, so it filters on at least 5 occupants.
       maxOccupants: occupants.replace('+', ''),
-      ...Object.assign({}, ...selectedFlags.map((flag) => FLAG_PARAMS[flag])),
+      ...Object.assign(
+        {},
+        ...selectedFlags
+          .filter((flag) => availableFlags.includes(flag))
+          .map((flag) => FLAG_PARAMS[flag]),
+      ),
     });
 
     const maxRent = Number(budget);
@@ -94,18 +102,11 @@ export function HeroSearch({ locale }: { locale: Locale }) {
     <div className="relative z-30 mx-auto w-full max-w-[1560px] px-6 lg:px-10">
       <div className="rounded-[26px] bg-brand-surface px-4 py-4 shadow-[0_28px_70px_-12px_rgba(75,55,35,0.30)] md:px-6 md:py-5">
         <div className="grid grid-cols-1 md:grid-cols-[1.05fr_1fr_0.95fr_0.8fr_auto] md:items-center">
-          <SearchSelect
-            icon={<MapPin size={26} strokeWidth={1.8} />}
-            label={t('whereLabel')}
+          <CityField
+            locale={locale}
             value={city}
-            optionLabel={(option) => t(`cities.${option}`)}
-            isOpen={activeDropdown === 'city'}
-            options={CITIES}
-            onToggle={() => toggleDropdown('city')}
-            onSelect={(selectedCity) => {
-              setCity(selectedCity);
-              setActiveDropdown(null);
-            }}
+            onChange={setCity}
+            onOpen={() => setActiveDropdown(null)}
           />
 
           <SearchSelect
@@ -162,7 +163,7 @@ export function HeroSearch({ locale }: { locale: Locale }) {
       </div>
 
       <div className="mt-3 flex flex-wrap justify-start gap-2 md:justify-center">
-        {FEATURE_FLAGS.map((flag) => {
+        {availableFlags.map((flag) => {
           const isSelected = selectedFlags.includes(flag);
 
           return (
@@ -266,6 +267,52 @@ function SearchSelect<TOption extends string>({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Styled like the other fields, but typed into: the city list outgrows a plain picker. */
+function CityField({
+  locale,
+  value,
+  onChange,
+  onOpen,
+}: {
+  locale: Locale;
+  value: CityId;
+  onChange: (city: CityId) => void;
+  onOpen: () => void;
+}) {
+  const t = useTranslations('home.search');
+  const inputId = useId();
+
+  return (
+    <div className="relative flex min-w-0 items-center gap-4 border-b border-brand-border px-2 py-4 md:border-b-0 md:border-r md:px-6 md:py-2">
+      <span className="shrink-0 text-brand-olive" aria-hidden="true">
+        <MapPin size={26} strokeWidth={1.8} />
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <label htmlFor={inputId} className="block text-base font-bold leading-5 text-brand-ink">
+          {t('whereLabel')}
+        </label>
+
+        <CityCombobox
+          id={inputId}
+          locale={locale}
+          value={value}
+          // The hero has no "all cities" option, so the value is never empty.
+          onChange={(city) => city && onChange(city)}
+          onOpen={onOpen}
+          classNames={{
+            root: 'static',
+            input:
+              'mt-1 w-full truncate bg-transparent text-[15px] leading-5 text-brand-muted outline-none placeholder:text-brand-muted/70',
+            toggle: 'md:right-3.5',
+            popup: 'top-[calc(100%+12px)] w-56',
+          }}
+        />
+      </div>
     </div>
   );
 }

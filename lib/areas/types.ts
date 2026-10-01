@@ -4,7 +4,17 @@ import type { Locale } from "./locales";
 
 export type LocalizedString = Record<Locale, string>;
 
-export type CityId = "sofia" | "plovdiv";
+export type CityId =
+  | "sofia"
+  | "plovdiv"
+  | "varna"
+  | "burgas"
+  | "ruse"
+  | "stara-zagora"
+  | "veliko-tarnovo"
+  | "blagoevgrad"
+  | "pleven"
+  | "haskovo";
 
 export type NeighborhoodGroupId =
   | "center"

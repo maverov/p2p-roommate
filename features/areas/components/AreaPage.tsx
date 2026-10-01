@@ -7,10 +7,13 @@ import { ListingCard } from '@/features/listings/components/ListingCard';
 import { listListingsQuerySchema } from '@/features/listings/schemas';
 import { getSavedListingIds, listPublishedListings } from '@/features/listings/server/repository';
 import {
+  AREA_KINDS,
+  AREA_KIND_FILTERS,
   cityLabels,
   getGroupedNeighborhoods,
   getNeighborhood,
   inPlace,
+  type AreaKind,
   type CityId,
 } from '@/lib/areas';
 import { PLATFORM_CURRENCY } from '@/lib/currency';
@@ -28,6 +31,7 @@ import {
   countRoomSeekers,
   getAreaRentStats,
   getListingCountsByArea,
+  getListingCountsByKind,
 } from '../server/repository';
 
 import { AreaLinks, AreaPageShell, Breadcrumbs } from './area-ui';
@@ -41,8 +45,20 @@ const PRIMARY =
 const SECONDARY =
   'rounded-[10px] border border-brand-border bg-white px-4 py-2.5 text-[14px] font-bold text-brand-ink transition hover:border-brand-terracotta hover:text-brand-terracotta';
 
-/** A city page (`neighborhoodSlug` unset) or a neighbourhood page. Both are validated by the route. */
-export type AreaPageProps = { locale: Locale; citySlug: CityId; neighborhoodSlug?: string };
+/**
+ * A city page, a neighbourhood page, or a city page for one kind of home. All are
+ * validated by the route; kinds exist at city level only.
+ */
+export type AreaPageProps = { locale: Locale; citySlug: CityId } & (
+  { neighborhoodSlug?: string; kind?: never } | { neighborhoodSlug?: never; kind: AreaKind }
+);
+
+function areaPath({ citySlug, kind, neighborhoodSlug }: AreaPageProps) {
+  return (locale: Locale) =>
+    kind
+      ? routes.areaKind(locale, kind, citySlug)
+      : routes.area(locale, citySlug, neighborhoodSlug);
+}
 
 function describeArea({ citySlug, locale, neighborhoodSlug }: AreaPageProps) {
   const city = cityLabels[citySlug][locale];
@@ -53,27 +69,25 @@ function describeArea({ citySlug, locale, neighborhoodSlug }: AreaPageProps) {
 }
 
 export async function areaMetadata(props: AreaPageProps): Promise<Metadata> {
-  const { citySlug, locale, neighborhoodSlug } = props;
+  const { citySlug, kind, locale, neighborhoodSlug } = props;
   const t = await getTranslations({ locale, namespace: 'areas' });
   const { place } = describeArea(props);
-  const stats = await safeQuery(getAreaRentStats(citySlug, neighborhoodSlug), 'area stats');
-  const title = t('metaTitle', { place });
-  const description =
-    stats && stats.count > 0 && stats.medianRentCents !== null
-      ? t('metaDescription', {
-          count: stats.count,
-          place,
-          median: formatMoneyFromCents(stats.medianRentCents, PLATFORM_CURRENCY, locale),
-        })
+  const stats = await safeQuery(getAreaRentStats(citySlug, neighborhoodSlug, kind), 'area stats');
+  const title = kind ? t(`kinds.${kind}.metaTitle`, { place }) : t('metaTitle', { place });
+  const hasRent = stats && stats.count > 0 && stats.medianRentCents !== null;
+  const median = hasRent
+    ? formatMoneyFromCents(stats.medianRentCents!, PLATFORM_CURRENCY, locale)
+    : '';
+  const description = kind
+    ? hasRent
+      ? t(`kinds.${kind}.metaDescription`, { count: stats.count, place, median })
+      : t(`kinds.${kind}.metaDescriptionEmpty`, { place })
+    : hasRent
+      ? t('metaDescription', { count: stats.count, place, median })
       : t('metaDescriptionEmpty', { place });
 
   return {
-    ...pageMetadata({
-      title,
-      description,
-      locale,
-      path: (to) => routes.area(to, citySlug, neighborhoodSlug),
-    }),
+    ...pageMetadata({ title, description, locale, path: areaPath(props) }),
     // An area with nothing listed is thin content: reachable and followed, not indexed.
     // A failed lookup says nothing either way, so it leaves indexing alone.
     robots: stats?.count === 0 ? { index: false, follow: true } : undefined,
@@ -86,8 +100,9 @@ export async function areaMetadata(props: AreaPageProps): Promise<Metadata> {
  * links to neighbouring areas, so each page has content a crawler can tell apart.
  */
 export async function AreaPage(props: AreaPageProps) {
-  const { citySlug, locale, neighborhoodSlug } = props;
+  const { citySlug, kind, locale, neighborhoodSlug } = props;
   const area = describeArea(props);
+  const kindFilters = kind ? AREA_KIND_FILTERS[kind] : {};
   const [t, tListings, viewer] = await Promise.all([
     getTranslations({ locale, namespace: 'areas' }),
     getTranslations({ locale, namespace: 'listings' }),
@@ -96,13 +111,15 @@ export async function AreaPage(props: AreaPageProps) {
   const query = listListingsQuerySchema.parse({
     citySlug,
     neighborhoodSlug,
+    ...kindFilters,
     perPage: LATEST_COUNT,
   });
 
-  const [stats, found, counts, seekers, mask] = await Promise.all([
-    safeQuery(getAreaRentStats(citySlug, neighborhoodSlug), 'area stats'),
+  const [stats, found, counts, kindCounts, seekers, mask] = await Promise.all([
+    safeQuery(getAreaRentStats(citySlug, neighborhoodSlug, kind), 'area stats'),
     safeQuery(listPublishedListings(query), 'area listings'),
     safeQuery(getListingCountsByArea(), 'area counts'),
+    neighborhoodSlug ? null : safeQuery(getListingCountsByKind(), 'area kind counts'),
     safeQuery(countRoomSeekers({ citySlug, neighborhoodSlug }), 'area seekers'),
     pageContactMasker(locale, Boolean(viewer)),
   ]);
@@ -132,8 +149,29 @@ export async function AreaPage(props: AreaPageProps) {
             median: money(stats.medianRentCents),
           });
 
-  const searchParams = new URLSearchParams({ citySlug });
+  const searchParams = new URLSearchParams({ citySlug, ...kindFilters });
   if (neighborhoodSlug) searchParams.set('neighborhoodSlug', neighborhoodSlug);
+
+  // The city's other pages by kind, for the "browse by type" links (city level only).
+  const kindLinks = neighborhoodSlug
+    ? []
+    : [
+        ...(kind
+          ? [
+              {
+                href: routes.area(locale, citySlug),
+                label: t('allKinds'),
+                count: counts ? (counts.cities.get(citySlug) ?? 0) : null,
+              },
+            ]
+          : []),
+        ...AREA_KINDS.filter((other) => other !== kind).map((other) => ({
+          href: routes.areaKind(locale, other, citySlug),
+          label: t(`kinds.${other}.label`),
+          count: kindCounts ? (kindCounts[other].get(citySlug) ?? 0) : null,
+        })),
+        // A link to an empty page is a dead end; unknown counts (`null`) still link.
+      ].filter((link) => link.count !== 0);
 
   const countFor = (neighborhoodId: string) =>
     counts?.neighborhoods.get(areaKey(citySlug, neighborhoodId)) ?? 0;
@@ -161,6 +199,9 @@ export async function AreaPage(props: AreaPageProps) {
           },
         ]
       : []),
+    ...(kind
+      ? [{ name: t(`kinds.${kind}.label`), href: routes.areaKind(locale, kind, citySlug) }]
+      : []),
   ];
 
   return (
@@ -174,7 +215,9 @@ export async function AreaPage(props: AreaPageProps) {
 
         <header className="max-w-3xl">
           <h1 className="font-serif text-[34px] font-medium leading-[1.1] tracking-[-0.02em] text-brand-ink sm:text-[42px]">
-            {t('title', { place: area.place })}
+            {kind
+              ? t(`kinds.${kind}.title`, { place: area.place })
+              : t('title', { place: area.place })}
           </h1>
           {intro && <p className="mt-3 text-[16px] leading-7 text-brand-muted">{intro}</p>}
 
@@ -189,6 +232,18 @@ export async function AreaPage(props: AreaPageProps) {
             </Link>
           </div>
         </header>
+
+        {kindLinks.length > 0 && (
+          <nav aria-labelledby="area-kinds" className="mt-6 max-w-3xl">
+            <h2
+              className="mb-2 text-[13px] font-bold uppercase tracking-wide text-brand-muted"
+              id="area-kinds"
+            >
+              {t('byKind')}
+            </h2>
+            <AreaLinks items={kindLinks} locale={locale} />
+          </nav>
+        )}
 
         {seekers ? (
           <aside className="mt-6 flex max-w-3xl flex-wrap items-center justify-between gap-3 rounded-[15px] border border-brand-terracotta/30 bg-white px-5 py-4">

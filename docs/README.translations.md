@@ -22,8 +22,9 @@ formatting and routing, the message catalogue decides wording.
 | Locale switcher UI | `LocaleLinks` in `components/shared/navbar/NavbarClient.tsx` |
 | Integrity gate | `scripts/i18n-check.ts` → `pnpm i18n:check` |
 
-Namespaces: `auth`, `common`, `emails`, `enums`, `home`, `legal`, `listings`, `messages`,
-`metadata`, `profiles`, `reviews`, `saved`, `settings`. One file per namespace per locale.
+Namespaces: `areas`, `auth`, `common`, `company`, `emails`, `enums`, `home`, `legal`,
+`listings`, `messages`, `metadata`, `profiles`, `reviews`, `safety`, `saved`, `settings`,
+`templates`. One file per namespace per locale.
 
 `bg` is the default locale and the source of truth for the key space — product copy is
 written there first.

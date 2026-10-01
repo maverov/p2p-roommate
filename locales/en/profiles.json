@@ -103,8 +103,6 @@
     "verified": "Verified",
     "lookingOnly": "Only people looking for a room",
     "lookingBadge": "Looking for a room",
-    "budgetUpTo": "up to {max}",
-    "movingFrom": "from {date}",
     "traits": "Lifestyle"
   },
   "roomWanted": {

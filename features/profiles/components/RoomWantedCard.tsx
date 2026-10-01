@@ -7,26 +7,22 @@ import { formatDate, formatMoneyFromCents } from '@/lib/format';
 import type { Locale } from '@/lib/i18n';
 import { stayLabel } from '@/lib/stay';
 
-type RoomWantedCardProps = {
-  locale: Locale;
+export type RoomWantedPost = {
   citySlug: string | null;
-  wantedNeighborhoods: string[];
+  wantedNeighborhoods: readonly string[];
   budgetMinCents?: number;
   budgetMaxCents?: number;
   moveInDate: string | null;
   stayMonths: number | null;
 };
 
-/** A seeker's published "room wanted" post, shown at the top of their profile. */
-export async function RoomWantedCard({
-  locale,
-  citySlug,
-  wantedNeighborhoods,
-  budgetMinCents,
-  budgetMaxCents,
-  moveInDate,
-  stayMonths,
-}: RoomWantedCardProps) {
+type RoomWantedCardProps = RoomWantedPost & { locale: Locale };
+
+/** The post as label/value rows, shared by this card and the find-roommate cards. */
+export async function getRoomWantedRows(
+  locale: Locale,
+  { citySlug, wantedNeighborhoods, budgetMinCents, budgetMaxCents, moveInDate, stayMonths }: RoomWantedPost,
+) {
   const t = await getTranslations({ locale, namespace: 'profiles.roomWanted' });
   const tCommon = await getTranslations({ locale, namespace: 'common' });
 
@@ -52,7 +48,7 @@ export async function RoomWantedCard({
 
   const stay = stayMonths === null ? null : stayLabel(stayMonths);
 
-  const rows = [
+  return [
     where && { label: t('where'), value: where },
     budget && { label: t('budget'), value: budget },
     { label: t('moveIn'), value: moveInDate ? formatDate(moveInDate, locale) : t('flexible') },
@@ -61,6 +57,12 @@ export async function RoomWantedCard({
       value: stay ? tCommon(`stay.${stay.unit}`, { count: stay.count }) : t('flexible'),
     },
   ].filter((row): row is { label: string; value: string } => Boolean(row));
+}
+
+/** A seeker's published "room wanted" post, shown at the top of their profile. */
+export async function RoomWantedCard({ locale, ...post }: RoomWantedCardProps) {
+  const t = await getTranslations({ locale, namespace: 'profiles.roomWanted' });
+  const rows = await getRoomWantedRows(locale, post);
 
   return (
     <section className="rounded-[15px] border border-brand-terracotta/30 bg-white p-5">

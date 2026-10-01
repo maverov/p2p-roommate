@@ -2,6 +2,12 @@
   "nav": {
     "mainNavigation": "Main navigation",
     "findRoom": "Find a Room",
+    "findMenu": {
+      "all": "All listings",
+      "rooms": "Rooms",
+      "apartments": "Apartments & studios",
+      "houses": "Houses"
+    },
     "findRoommate": "Find Roommate",
     "listProperty": "List your property",
     "messages": "Messages",
@@ -28,15 +34,19 @@
     "findRoom": "Find a Room",
     "findRoommate": "Find Roommate",
     "listProperty": "List your property",
-    "helpCenter": "Help Center",
     "safetyTips": "Safety Tips",
     "aboutUs": "About us",
-    "contact": "Contact",
+    "contact": "Contact us",
     "privacy": "Privacy",
     "terms": "Terms",
     "madeWith": "Made with",
     "inBulgaria": "in Bulgaria",
-    "templates": "Rental templates"
+    "templates": "Rental templates",
+    "citiesHeading": "Find a room by city",
+    "faq": "FAQs",
+    "whyUs": "Why use Stay.bg?",
+    "howItWorks": "How Stay.bg works",
+    "press": "Press office"
   },
   "actions": {
     "browseListings": "Browse listings",
@@ -95,5 +105,10 @@
   "match": {
     "label": "{score}% match",
     "hint": "How well this fits your profile: budget, area, dates and lifestyle."
+  },
+  "cityPicker": {
+    "listLabel": "Cities",
+    "showAll": "Show all cities",
+    "noMatches": "No matching city"
   }
 }

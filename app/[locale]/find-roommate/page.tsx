@@ -6,13 +6,14 @@ import { notFound } from 'next/navigation';
 import type { Route } from 'next';
 
 import { StateMessage } from '@/components/shared/StateMessage';
+import { CityCombobox } from '@/features/areas/components/CityCombobox';
 import { scoreProfiles } from '@/features/compatibility/score';
 import { getCompatibilityProfile } from '@/features/compatibility/server/repository';
 import { ProfileCard } from '@/features/profiles/components/ProfileCard';
 import { TraitCheckbox } from '@/features/profiles/components/TraitCheckbox';
 import { parseProfileTraits } from '@/features/profiles/schemas';
 import { listPublicProfiles } from '@/features/profiles/server/repository';
-import { CITY_IDS, cityLabels, isCityId } from '@/lib/areas';
+import { isCityId } from '@/lib/areas';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { PROFILE_TRAITS } from '@/lib/labels';
 import { routes } from '@/lib/routes';
@@ -96,21 +97,21 @@ export default async function FindRoommatePage({ params, searchParams }: FindRoo
       <form method="GET" className="mt-6 flex flex-wrap gap-3">
         {/*
           Filtering happens on submit rather than on change: this is a server
-          component, so an onChange handler cannot cross the boundary, and a plain
-          GET form keeps the page working without JavaScript.
+          component, so an onChange handler cannot cross the boundary. The city
+          picker posts its slug through a hidden input, like any other field.
         */}
-        <select
-          name="citySlug"
+        <CityCombobox
+          aria-label={t('city')}
+          classNames={{
+            root: 'w-full sm:w-56',
+            input:
+              'w-full rounded-[10px] border border-brand-border bg-white px-3 py-2 text-[14px] text-brand-ink outline-none placeholder:text-brand-muted/70 focus:border-brand-terracotta',
+          }}
           defaultValue={citySlug ?? ''}
-          className="rounded-[10px] border border-brand-border bg-white px-3 py-2 text-[14px] text-brand-ink outline-none focus:border-brand-terracotta"
-        >
-          <option value="">{t('anyCity')}</option>
-          {CITY_IDS.map((id) => (
-            <option key={id} value={id}>
-              {cityLabels[id][locale]}
-            </option>
-          ))}
-        </select>
+          emptyLabel={t('anyCity')}
+          locale={locale}
+          name="citySlug"
+        />
 
         {/* Keyword search */}
         <div className="flex flex-1 items-center gap-2">
@@ -169,8 +170,8 @@ export default async function FindRoommatePage({ params, searchParams }: FindRoo
         ) : result.items.length === 0 ? (
           <StateMessage title={t('empty')} body={t('emptyBody')} />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {result.items.map((item) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {result.items.map((item, index) => (
               <ProfileCard
                 key={item.profileUserId}
                 locale={locale}
@@ -179,6 +180,7 @@ export default async function FindRoommatePage({ params, searchParams }: FindRoo
                     ? scoreProfiles(seeker, item.compatibility)
                     : null
                 }
+                priority={index < 3}
                 profile={{
                   profileUserId: item.profileUserId,
                   name: item.name ?? '',
@@ -186,9 +188,8 @@ export default async function FindRoommatePage({ params, searchParams }: FindRoo
                   citySlug: item.citySlug ?? null,
                   bio: item.bio ?? null,
                   createdAt: item.joinedAt ?? null,
-                  roomWanted: item.lookingForRoom
-                    ? { budgetMaxCents: item.budgetMaxCents, moveInDate: item.moveInDate }
-                    : null,
+                  isVerified: item.isVerified,
+                  roomWanted: item.roomWanted,
                   traits: item.traits,
                 }}
               />

@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
 
+import { CONTACT_EMAILS } from '@/lib/company';
+
 interface JsonLdProps {
   data: Record<string, any>;
 }
@@ -23,22 +25,22 @@ export function JsonLd({ data }: JsonLdProps): ReactNode {
   );
 }
 
+/**
+ * Who runs the site. A plain `Organization`: Stay.bg is a platform between owners and
+ * tenants, not a `RealEstateAgent`. `logo` and `sameAs` (the social profiles) are left
+ * out until the logo file and the accounts exist, since Google checks both.
+ */
 export function OrganizationJsonLd({ appUrl }: { appUrl: string }): ReactNode {
   const organizationData = {
     '@context': 'https://schema.org',
-    '@type': 'RealEstateAgent',
+    '@type': 'Organization',
     name: 'Stay.bg',
     url: appUrl,
-    description: 'P2P platform for finding rooms and apartments in Bulgaria without intermediaries',
-    logo: `${appUrl}/logo.png`,
-    sameAs: [
-      'https://facebook.com/staybg',
-      'https://instagram.com/staybg',
-      'https://twitter.com/staybg',
-    ],
+    description:
+      'Rooms, flats and roommates across Bulgaria, straight from the people who let them. No agents, no commission.',
     contactPoint: {
       '@type': 'ContactPoint',
-      email: 'support@stay.bg',
+      email: CONTACT_EMAILS.support,
       contactType: 'Customer Service',
       areaServed: ['BG', 'Bulgaria'],
     },
@@ -49,6 +51,21 @@ export function OrganizationJsonLd({ appUrl }: { appUrl: string }): ReactNode {
   };
 
   return <JsonLd data={organizationData} />;
+}
+
+/** The site itself, on the home page: Google reads its name for the site name in results. */
+export function WebSiteJsonLd({ appUrl }: { appUrl: string }): ReactNode {
+  return (
+    <JsonLd
+      data={{
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Stay.bg',
+        url: appUrl,
+        inLanguage: ['bg-BG', 'en-US'],
+      }}
+    />
+  );
 }
 
 export function ListingJsonLd({

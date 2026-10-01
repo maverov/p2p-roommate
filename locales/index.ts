@@ -7,6 +7,7 @@ import { CLIENT_NAMESPACES, type ClientNamespace } from './client-namespaces';
 import bgAreas from './bg/areas.json';
 import bgAuth from './bg/auth.json';
 import bgCommon from './bg/common.json';
+import bgCompany from './bg/company.json';
 import bgEmails from './bg/emails.json';
 import bgEnums from './bg/enums.json';
 import bgHome from './bg/home.json';
@@ -23,6 +24,7 @@ import bgTemplates from './bg/templates.json';
 import enAreas from './en/areas.json';
 import enAuth from './en/auth.json';
 import enCommon from './en/common.json';
+import enCompany from './en/company.json';
 import enEmails from './en/emails.json';
 import enEnums from './en/enums.json';
 import enHome from './en/home.json';
@@ -51,6 +53,7 @@ const bg = {
   areas: bgAreas,
   auth: bgAuth,
   common: bgCommon,
+  company: bgCompany,
   emails: bgEmails,
   enums: bgEnums,
   home: bgHome,
@@ -80,6 +83,7 @@ const catalogue: Record<Locale, Messages> = {
     areas: enAreas,
     auth: enAuth,
     common: enCommon,
+    company: enCompany,
     emails: enEmails,
     enums: enEnums,
     home: enHome,

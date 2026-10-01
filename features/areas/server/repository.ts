@@ -5,7 +5,9 @@ import { cache } from 'react';
 
 import { db } from '@/db';
 import { listings, user, userProfiles } from '@/db/schema';
-import type { CityId } from '@/lib/areas';
+import { listListingsQuerySchema } from '@/features/listings/schemas';
+import { buildPublishedListingWhere } from '@/features/listings/server/repository';
+import { AREA_KINDS, AREA_KIND_FILTERS, type AreaKind, type CityId } from '@/lib/areas';
 
 export type AreaRef = { citySlug: CityId; neighborhoodSlug?: string };
 
@@ -17,33 +19,40 @@ function publishedIn({ citySlug, neighborhoodSlug }: AreaRef) {
   );
 }
 
+/** The listings a kind page shows, built by the search itself so the two never disagree. */
+function ofKind(kind: AreaKind) {
+  return buildPublishedListingWhere(listListingsQuerySchema.parse(AREA_KIND_FILTERS[kind]));
+}
+
 /**
  * Listing count and rent spread for an area page's copy and meta description.
  * `cache`d: the page and its metadata both ask for the same area in one request.
  */
-export const getAreaRentStats = cache(async (citySlug: CityId, neighborhoodSlug?: string) => {
-  const [row] = await db
-    .select({
-      count: count(),
-      min: sql<number | null>`min(${listings.monthlyRentCents})`,
-      median: sql<
-        number | null
-      >`percentile_cont(0.5) within group (order by ${listings.monthlyRentCents})`,
-      max: sql<number | null>`max(${listings.monthlyRentCents})`,
-    })
-    .from(listings)
-    .where(publishedIn({ citySlug, neighborhoodSlug }));
+export const getAreaRentStats = cache(
+  async (citySlug: CityId, neighborhoodSlug?: string, kind?: AreaKind) => {
+    const [row] = await db
+      .select({
+        count: count(),
+        min: sql<number | null>`min(${listings.monthlyRentCents})`,
+        median: sql<
+          number | null
+        >`percentile_cont(0.5) within group (order by ${listings.monthlyRentCents})`,
+        max: sql<number | null>`max(${listings.monthlyRentCents})`,
+      })
+      .from(listings)
+      .where(and(publishedIn({ citySlug, neighborhoodSlug }), kind ? ofKind(kind) : undefined));
 
-  const cents = (value: number | null | undefined) =>
-    value === null || value === undefined ? null : Math.round(Number(value));
+    const cents = (value: number | null | undefined) =>
+      value === null || value === undefined ? null : Math.round(Number(value));
 
-  return {
-    count: row?.count ?? 0,
-    minRentCents: cents(row?.min),
-    medianRentCents: cents(row?.median),
-    maxRentCents: cents(row?.max),
-  };
-});
+    return {
+      count: row?.count ?? 0,
+      minRentCents: cents(row?.min),
+      medianRentCents: cents(row?.median),
+      maxRentCents: cents(row?.max),
+    };
+  },
+);
 
 export type AreaRentStats = Awaited<ReturnType<typeof getAreaRentStats>>;
 
@@ -74,6 +83,23 @@ export const getListingCountsByArea = cache(async () => {
   }
 
   return { cities, neighborhoods };
+});
+
+/** Published listings per city for each kind: the kind links and the sitemap read them. */
+export const getListingCountsByKind = cache(async () => {
+  const entries = await Promise.all(
+    AREA_KINDS.map(async (kind) => {
+      const rows = await db
+        .select({ citySlug: listings.citySlug, value: count() })
+        .from(listings)
+        .where(ofKind(kind))
+        .groupBy(listings.citySlug);
+
+      return [kind, new Map(rows.map((row) => [row.citySlug, row.value]))] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries) as Record<AreaKind, Map<string, number>>;
 });
 
 export function areaKey(citySlug: string, neighborhoodSlug: string) {
