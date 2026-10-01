@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
-import { CITY_IDS, cityLabels, getGroupedNeighborhoods, isCityId } from '@/lib/areas';
+import { CityCombobox } from '@/features/areas/components/CityCombobox';
+import { getGroupedNeighborhoods, hasMetro, isCityId } from '@/lib/areas';
 import { VERIFICATION_BADGES } from '@/lib/feature-flags';
 import type { Locale } from '@/lib/i18n';
 import { PROPERTY_TYPES, ROOM_TYPES, ROOMMATE_PREFERENCES } from '@/lib/labels';
@@ -168,31 +169,29 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
         </Group>
 
         <Group label={t('city')}>
-          <select
-            className={FIELD}
-            onChange={(event) =>
+          <CityCombobox
+            aria-label={t('city')}
+            classNames={{ input: FIELD }}
+            emptyLabel={t('anyCity')}
+            locale={locale}
+            onChange={(city) =>
               update((next) => {
-                const value = event.target.value;
-
-                if (value) {
-                  next.set('citySlug', value);
+                if (city) {
+                  next.set('citySlug', city);
                 } else {
                   next.delete('citySlug');
                 }
 
                 // Neighborhood slugs belong to the previous city.
                 next.delete('neighborhoodSlug');
+
+                if (city && !hasMetro(city)) {
+                  next.delete('nearMetro');
+                }
               })
             }
-            value={citySlug}
-          >
-            <option value="">{t('anyCity')}</option>
-            {CITY_IDS.map((city) => (
-              <option key={city} value={city}>
-                {cityLabels[city][locale]}
-              </option>
-            ))}
-          </select>
+            value={isCityId(citySlug) ? citySlug : ''}
+          />
         </Group>
 
         {neighborhoodGroups.length > 0 && (
@@ -349,7 +348,10 @@ export function ListingFilters({ locale }: ListingFiltersProps) {
 
         <Group label={t('features')}>
           <div className="grid gap-1.5">
-            {FLAG_FILTERS.map((flag) => (
+            {/* "Any city" keeps the metro flag: it then narrows the search to Sofia. */}
+            {FLAG_FILTERS.filter(
+              (flag) => flag !== 'nearMetro' || !citySlug || hasMetro(citySlug),
+            ).map((flag) => (
               <CheckboxRow
                 checked={params.get(flag) === 'true'}
                 key={flag}

@@ -16,13 +16,6 @@
     "cityRequired": "Моля, избери град",
     "selectOption": "Избери {label}: {value}",
     "optionsLabel": "Опции за {label}",
-    "cities": {
-      "sofia": "София",
-      "plovdiv": "Пловдив",
-      "varna": "Варна",
-      "burgas": "Бургас",
-      "haskovo": "Хасково"
-    },
     "propertyTypes": {
       "room": "Стая",
       "apartment": "Апартамент",
@@ -39,11 +32,12 @@
     "heading": "Популярни градове",
     "viewAll": "Виж всички градове",
     "listingCount": "{count, plural, one {# обява} other {# обяви}}",
-    "sofia": "София",
-    "plovdiv": "Пловдив",
-    "varna": "Варна",
-    "burgas": "Бургас",
-    "haskovo": "Хасково"
+    "rooms": "Стаи",
+    "homes": "Жилища",
+    "roommates": "Съквартиранти",
+    "roomsIn": "Стаи {place}",
+    "homesIn": "Апартаменти и къщи {place}",
+    "roommatesIn": "Съквартиранти {place}"
   },
   "featured": {
     "heading": "Места, които ще харесаш",
@@ -57,6 +51,7 @@
   },
   "howItWorks": {
     "heading": "Как работи",
+    "learnMore": "Научи повече",
     "steps": {
       "search": {
         "title": "1. Търси",

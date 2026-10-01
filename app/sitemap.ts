@@ -1,9 +1,9 @@
 import type { MetadataRoute } from 'next';
 
-import { getListingCountsByArea } from '@/features/areas/server/repository';
+import { getListingCountsByArea, getListingCountsByKind } from '@/features/areas/server/repository';
 import { listPublishedListingsForSitemap } from '@/features/listings/server/repository';
 import { TEMPLATE_DOCS, TEMPLATE_SLUGS } from '@/features/templates/documents';
-import { CITY_IDS, getNeighborhoodsByCity } from '@/lib/areas';
+import { AREA_KINDS, CITY_IDS, getNeighborhoodsByCity } from '@/lib/areas';
 import { localeTag, locales, type Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
 import { safeQuery } from '@/lib/server/safe';
@@ -32,6 +32,12 @@ const STATIC_PAGES: Array<
   { path: routes.safety, changeFrequency: 'yearly', priority: 0.3 },
   { path: routes.areas, changeFrequency: 'daily', priority: 0.7 },
   { path: routes.templates, changeFrequency: 'yearly', priority: 0.5 },
+  { path: routes.about, changeFrequency: 'yearly', priority: 0.4 },
+  { path: routes.whyUs, changeFrequency: 'yearly', priority: 0.4 },
+  { path: routes.howItWorks, changeFrequency: 'yearly', priority: 0.4 },
+  { path: routes.faq, changeFrequency: 'monthly', priority: 0.5 },
+  { path: routes.contact, changeFrequency: 'yearly', priority: 0.3 },
+  { path: routes.press, changeFrequency: 'monthly', priority: 0.3 },
   ...TEMPLATE_DOCS.map((doc) => ({
     path: (locale: Locale) => routes.template(locale, TEMPLATE_SLUGS[doc]),
     changeFrequency: 'yearly' as const,
@@ -57,14 +63,21 @@ function localized(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // A failed query still serves the static pages rather than a 500 crawlers would retry.
-  const counts = await safeQuery(getListingCountsByArea(), 'sitemap areas');
-  // Every city page, and the neighbourhood pages that have listings: the empty ones are
-  // `noindex`, so listing them would only waste crawl budget.
-  const areaPaths: LocalizedPath[] = CITY_IDS.flatMap((citySlug) => [
+  const [counts, kindCounts] = await Promise.all([
+    safeQuery(getListingCountsByArea(), 'sitemap areas'),
+    safeQuery(getListingCountsByKind(), 'sitemap area kinds'),
+  ]);
+  // City and neighbourhood pages that have listings: the empty ones are `noindex`, so
+  // listing them would only waste crawl budget. If the counts fail, every city is kept.
+  const citiesWithListings = CITY_IDS.filter((citySlug) => !counts || counts.cities.get(citySlug));
+  const areaPaths: LocalizedPath[] = citiesWithListings.flatMap((citySlug) => [
     (locale: Locale) => routes.area(locale, citySlug),
     ...getNeighborhoodsByCity(citySlug)
       .filter((item) => counts?.neighborhoods.get(`${citySlug}/${item.id}`))
       .map((item) => (locale: Locale) => routes.area(locale, citySlug, item.id)),
+    ...AREA_KINDS.filter((kind) => kindCounts?.[kind].get(citySlug)).map(
+      (kind) => (locale: Locale) => routes.areaKind(locale, kind, citySlug),
+    ),
   ]);
   const listingLimit =
     Math.floor(MAX_URLS / locales.length) - STATIC_PAGES.length - areaPaths.length;

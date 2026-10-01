@@ -12,10 +12,11 @@ import {
   type RoommatePreferences,
   type UpdateProfileInput,
 } from '@/features/profiles/schemas';
+import { CityCombobox } from '@/features/areas/components/CityCombobox';
 import type { EditableProfile } from '@/features/profiles/server/repository';
 import { PhotoUploadButton } from '@/features/uploads/components/PhotoUploadButton';
 import { apiClient } from '@/lib/api-client';
-import { CITY_IDS, cityLabels, getNeighborhoodsByCity, isCityId } from '@/lib/areas';
+import { getNeighborhoodsByCity, isCityId } from '@/lib/areas';
 import type { Locale } from '@/lib/i18n';
 import { PROFILE_TRAITS, type ProfileTrait } from '@/lib/labels';
 
@@ -201,24 +202,19 @@ export function ProfileSettingsForm({ userId, locale, profile }: ProfileSettings
             <label className={SETTINGS_LABEL} htmlFor="city">
               {t('profile.city')}
             </label>
-            <select
-              className={SETTINGS_FIELD}
+            <CityCombobox
+              classNames={{ input: SETTINGS_FIELD }}
+              emptyLabel={t('profile.none')}
               id="city"
-              onChange={(e) => {
-                edited(setCitySlug)(e.target.value);
+              locale={locale}
+              onChange={(city) => {
+                edited(setCitySlug)(city);
                 setNeighborhoodSlug('');
                 // Wanted neighbourhoods belong to the old city.
                 setRoomWanted((current) => ({ ...current, wantedNeighborhoods: [] }));
               }}
-              value={citySlug}
-            >
-              <option value="">{t('profile.none')}</option>
-              {CITY_IDS.map((id) => (
-                <option key={id} value={id}>
-                  {cityLabels[id][locale]}
-                </option>
-              ))}
-            </select>
+              value={isCityId(citySlug) ? citySlug : ''}
+            />
           </div>
           <div>
             <label className={SETTINGS_LABEL} htmlFor="neighborhood">

@@ -94,10 +94,17 @@ export async function listPublicProfiles(filters: PublicProfilesFilters) {
         bio: row.bio,
         joinedAt: row.joinedAt,
         isVerified: row.isVerified,
-        lookingForRoom: row.lookingForRoom,
-        moveInDate: row.moveInDate,
         traits: compatibility.traits,
-        budgetMaxCents: compatibility.preferences.budgetMaxCents ?? null,
+        /** The published "room wanted" post, if any. */
+        roomWanted: compatibility.lookingForRoom
+          ? {
+              budgetMinCents: compatibility.preferences.budgetMinCents,
+              budgetMaxCents: compatibility.preferences.budgetMaxCents,
+              moveInDate: compatibility.moveInDate,
+              stayMonths: compatibility.stayMonths,
+              wantedNeighborhoods: compatibility.wantedNeighborhoods,
+            }
+          : null,
         /** For scoring against the viewer on the server; not rendered as is. */
         compatibility,
       };

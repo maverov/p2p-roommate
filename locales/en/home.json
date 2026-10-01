@@ -16,13 +16,6 @@
     "cityRequired": "Please select a city",
     "selectOption": "Select {label}: {value}",
     "optionsLabel": "{label} options",
-    "cities": {
-      "sofia": "Sofia",
-      "plovdiv": "Plovdiv",
-      "varna": "Varna",
-      "burgas": "Burgas",
-      "haskovo": "Haskovo"
-    },
     "propertyTypes": {
       "room": "Room",
       "apartment": "Apartment",
@@ -39,11 +32,12 @@
     "heading": "Popular cities",
     "viewAll": "View all cities",
     "listingCount": "{count, plural, one {# listing} other {# listings}}",
-    "sofia": "Sofia",
-    "plovdiv": "Plovdiv",
-    "varna": "Varna",
-    "burgas": "Burgas",
-    "haskovo": "Haskovo"
+    "rooms": "Rooms",
+    "homes": "Homes",
+    "roommates": "Roommates",
+    "roomsIn": "Rooms {place}",
+    "homesIn": "Apartments and houses {place}",
+    "roommatesIn": "Roommates {place}"
   },
   "featured": {
     "heading": "Places you'll love",
@@ -57,6 +51,7 @@
   },
   "howItWorks": {
     "heading": "How it works",
+    "learnMore": "Learn more",
     "steps": {
       "search": {
         "title": "1. Search",

@@ -2,9 +2,11 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import type { ComponentType, SVGProps } from 'react';
 import { Heart } from 'lucide-react';
+import { CITY_IDS, getCityLabel } from '@/lib/areas';
 import { caveat } from '@/lib/fonts';
 import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
+import { cn } from '@/utils';
 
 /**
  * Structure only — the headings and labels are message keys resolved at render time,
@@ -15,32 +17,37 @@ const FOOTER_COLUMNS = [
     heading: 'explore',
     links: [
       { label: 'findRoom', href: routes.areas },
-      { label: 'findRoommate', href: '/find-roommate' },
+      { label: 'findRoommate', href: routes.findRoommate },
     ],
   },
   {
     heading: 'host',
-    links: [{ label: 'listProperty', href: '/list-property' }],
+    links: [{ label: 'listProperty', href: routes.listProperty }],
   },
   {
     heading: 'support',
     links: [
-      { label: 'helpCenter', href: '/help' },
+      { label: 'faq', href: routes.faq },
       { label: 'safetyTips', href: routes.safety },
       { label: 'templates', href: routes.templates },
+      { label: 'contact', href: routes.contact },
     ],
   },
   {
     heading: 'about',
     links: [
-      { label: 'aboutUs', href: '/about' },
-      { label: 'contact', href: '/contact' },
-      // Locale-aware: these pages exist under every locale prefix.
+      { label: 'aboutUs', href: routes.about },
+      { label: 'whyUs', href: routes.whyUs },
+      { label: 'howItWorks', href: routes.howItWorks },
+      { label: 'press', href: routes.press },
       { label: 'privacy', href: routes.privacy },
       { label: 'terms', href: routes.terms },
     ],
   },
 ] as const;
+
+/** The city list and the link columns share this grid, so their columns line up. */
+const COLUMNS = 'grid grid-cols-2 gap-x-10 sm:grid-cols-4 lg:gap-x-8 xl:gap-x-12';
 
 // lucide-react no longer ships brand icons — minimal inline glyphs instead.
 function FacebookIcon(props: SVGProps<SVGSVGElement>) {
@@ -105,70 +112,100 @@ export async function Footer({ locale }: { locale: Locale }) {
       </svg>
 
       <div className="bg-brand-sand px-6 pb-12 pt-4 lg:px-10">
-        <div className="mx-auto flex w-full max-w-[2000px] flex-col gap-10 lg:flex-row lg:items-center">
-        {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 self-start lg:self-center">
-          <svg className="h-10 w-10" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-            <circle cx="20" cy="20" r="18" fill="#c85b36" />
-            <path d="M20 8L26 24H14L20 8Z" fill="white" />
-          </svg>
-          <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
-            stay<span className="text-brand-ink">.bg</span>
-          </span>
-        </Link>
-
-        {/* Link columns — clustered next to the logo, natural width */}
-        <nav
-          aria-label={t('label')}
-          className="grid grid-cols-2 gap-x-10 gap-y-8 sm:flex sm:flex-wrap sm:gap-x-16 lg:ml-16 xl:ml-24 xl:gap-x-24"
-        >
-          {FOOTER_COLUMNS.map((column) => (
-            <div key={column.heading}>
-              <h3 className="text-[14px] font-bold leading-5 text-brand-ink">
-                {t(column.heading)}
-              </h3>
-
-              <ul className="mt-3 space-y-2">
-                {column.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={typeof link.href === 'function' ? link.href(locale) : link.href}
-                      className="text-[13px] leading-5 text-brand-muted transition hover:text-brand-terracotta"
-                    >
-                      {t(link.label)}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
-
-        {/* Socials + tagline — pinned right */}
-        <div className="flex flex-col items-start gap-3.5 lg:ml-auto lg:items-end">
-          <div className="flex items-center gap-3.5">
-            {SOCIAL_LINKS.map((social) => (
-              <a
-                key={social.label}
-                href={social.href}
-                aria-label={social.label}
-                rel="noopener noreferrer"
-                target="_blank"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-olive text-brand-cream transition hover:bg-brand-terracotta"
-              >
-                <social.icon className="h-4 w-4" />
-              </a>
-            ))}
-          </div>
-
-          <p
-            className={`${caveat.className} flex items-center gap-1.5 text-[21px] leading-6 text-brand-ink`}
+        {/*
+          One grid for the whole band: the cities sit above the link columns, in the same
+          middle track, while the logo and socials share the links' row below the divider.
+        */}
+        <div className="mx-auto grid w-full max-w-[2000px] gap-10 lg:grid-cols-[auto_minmax(0,48rem)_1fr] lg:gap-x-12 xl:gap-x-24">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 justify-self-start lg:col-start-1 lg:row-start-3 lg:self-center"
           >
-            {t('madeWith')}
-            <Heart size={16} aria-hidden="true" className="fill-red-600 text-red-600" />
-            {t('inBulgaria')}
-          </p>
-        </div>
+            <svg className="h-10 w-10" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <circle cx="20" cy="20" r="18" fill="#c85b36" />
+              <path d="M20 8L26 24H14L20 8Z" fill="white" />
+            </svg>
+            <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
+              stay<span className="text-brand-ink">.bg</span>
+            </span>
+          </Link>
+
+          <nav aria-labelledby="footer-cities-heading" className="lg:col-start-2 lg:row-start-1">
+            <h3
+              id="footer-cities-heading"
+              className="text-[14px] font-bold leading-5 text-brand-ink"
+            >
+              {t('citiesHeading')}
+            </h3>
+
+            <ul className={cn(COLUMNS, 'mt-3 gap-y-2')}>
+              {CITY_IDS.map((citySlug) => (
+                <li key={citySlug}>
+                  <Link
+                    href={routes.area(locale, citySlug)}
+                    className="text-[13px] leading-5 text-brand-muted transition hover:text-brand-terracotta"
+                  >
+                    {getCityLabel(citySlug, locale)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <hr className="border-brand-border/70 lg:col-span-3 lg:row-start-2" />
+
+          <nav
+            aria-label={t('label')}
+            className={cn(COLUMNS, 'gap-y-8 lg:col-start-2 lg:row-start-3')}
+          >
+            {FOOTER_COLUMNS.map((column) => (
+              <div key={column.heading}>
+                <h3 className="text-[14px] font-bold leading-5 text-brand-ink">
+                  {t(column.heading)}
+                </h3>
+
+                <ul className="mt-3 space-y-2">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href(locale)}
+                        className="text-[13px] leading-5 text-brand-muted transition hover:text-brand-terracotta"
+                      >
+                        {t(link.label)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
+
+          {/* Socials + tagline — pinned right */}
+          <div className="flex flex-col items-start gap-3.5 lg:col-start-3 lg:row-start-3 lg:items-end lg:self-center lg:justify-self-end">
+            <div className="flex items-center gap-3.5">
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  aria-label={social.label}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-olive text-brand-cream transition hover:bg-brand-terracotta"
+                >
+                  <social.icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+
+            <p
+              className={`${caveat.className} flex items-center gap-1.5 whitespace-nowrap text-[21px] leading-6 text-brand-ink`}
+            >
+              {t('madeWith')}
+              <Heart size={16} aria-hidden="true" className="fill-red-600 text-red-600" />
+              {t('inBulgaria')}
+            </p>
+          </div>
         </div>
       </div>
     </footer>

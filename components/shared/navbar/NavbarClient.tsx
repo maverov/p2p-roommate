@@ -22,6 +22,7 @@ import { locales, type Locale } from '@/lib/i18n';
 import { isAdmin } from '@/lib/roles';
 import { routes, withLocale } from '@/lib/routes';
 
+import { FIND_PLACE_ITEMS, FindPlaceMenu } from './FindPlaceMenu';
 import { UserMenu } from './UserMenu';
 
 interface NavbarClientProps {
@@ -60,12 +61,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
 
           {/* Primary Navigation */}
           <nav className="ml-12 hidden items-center gap-9 lg:flex">
-            <Link
-              href={routes.listings(locale)}
-              className="text-[15px] font-medium text-brand-ink transition hover:text-brand-terracotta"
-            >
-              {t('findRoom')}
-            </Link>
+            <FindPlaceMenu locale={locale} />
             <Link
               href={routes.findRoommate(locale)}
               className="text-[15px] font-medium text-brand-ink transition hover:text-brand-terracotta"
@@ -140,12 +136,23 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
         <div className="lg:hidden">
           <div className="mx-auto w-full max-w-[2000px] px-6 pb-5 lg:px-10">
             <nav className="flex flex-col gap-1">
-              <Link
-                href={routes.listings(locale)}
-                className="py-2 text-[15px] font-medium text-brand-ink hover:text-brand-terracotta"
-              >
-                {t('findRoom')}
-              </Link>
+              <div className="py-2">
+                <p className="text-[15px] font-medium text-brand-ink">{t('findRoom')}</p>
+                <div className="mt-1 flex flex-col border-l border-brand-border pl-3">
+                  {FIND_PLACE_ITEMS.map(({ href, icon: Icon, id }) => (
+                    <Link
+                      className="flex items-center gap-2 py-1.5 text-[14px] text-brand-ink hover:text-brand-terracotta"
+                      href={href(locale)}
+                      key={id}
+                      // A filter change keeps the pathname, so the route-change close never fires.
+                      onClick={closeMenu}
+                    >
+                      <Icon aria-hidden="true" size={16} strokeWidth={1.75} />
+                      {t(`findMenu.${id}`)}
+                    </Link>
+                  ))}
+                </div>
+              </div>
               <Link
                 href={routes.findRoommate(locale)}
                 className="py-2 text-[15px] font-medium text-brand-ink hover:text-brand-terracotta"

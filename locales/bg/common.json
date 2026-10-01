@@ -2,6 +2,12 @@
   "nav": {
     "mainNavigation": "Основна навигация",
     "findRoom": "Намери стая",
+    "findMenu": {
+      "all": "Всички обяви",
+      "rooms": "Стаи",
+      "apartments": "Апартаменти и студиа",
+      "houses": "Къщи"
+    },
     "findRoommate": "Намери съквартирант",
     "listProperty": "Публикувай имот",
     "messages": "Съобщения",
@@ -28,7 +34,6 @@
     "findRoom": "Намери стая",
     "findRoommate": "Намери съквартирант",
     "listProperty": "Публикувай имот",
-    "helpCenter": "Помощен център",
     "safetyTips": "Съвети за сигурност",
     "aboutUs": "За нас",
     "contact": "Контакти",
@@ -36,7 +41,12 @@
     "terms": "Условия",
     "madeWith": "Направено с",
     "inBulgaria": "в България",
-    "templates": "Образци на документи"
+    "templates": "Образци на документи",
+    "citiesHeading": "Намери стая по град",
+    "faq": "Често задавани въпроси",
+    "whyUs": "Защо Stay.bg?",
+    "howItWorks": "Как работи Stay.bg",
+    "press": "Прес център"
   },
   "actions": {
     "browseListings": "Разгледай обяви",
@@ -95,5 +105,10 @@
   "match": {
     "label": "{score}% съвпадение",
     "hint": "Доколко ви подхожда според профила ви: бюджет, район, дати и начин на живот."
+  },
+  "cityPicker": {
+    "listLabel": "Градове",
+    "showAll": "Покажи всички градове",
+    "noMatches": "Няма такъв град"
   }
 }

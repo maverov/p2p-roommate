@@ -1,0 +1,355 @@
+{
+  "breadcrumbHome": "Home",
+  "why": {
+    "heading": "Why use Stay.bg?",
+    "more": "Learn more",
+    "cards": {
+      "direct": {
+        "title": "No agents, no commission",
+        "body": "Rooms and flats come straight from the people who let them. Searching, posting and messaging are all free."
+      },
+      "safety": {
+        "title": "Safety comes first",
+        "body": "Every account confirms its email, contact details stay hidden from visitors who aren't signed in, and our team reviews every report."
+      },
+      "people": {
+        "title": "It's about the people",
+        "body": "Profiles with lifestyle tags and a match score help you find someone you'll enjoy living with, not just a free bed."
+      }
+    }
+  },
+  "featuredIn": {
+    "heading": "As featured in"
+  },
+  "explore": {
+    "heading": "Find out more",
+    "about": {
+      "title": "About us",
+      "body": "Who we are and why we built Stay.bg."
+    },
+    "whyUs": {
+      "title": "Why use Stay.bg?",
+      "body": "What makes renting here simpler and safer."
+    },
+    "howItWorks": {
+      "title": "How Stay.bg works",
+      "body": "Step by step, whether you're looking or letting."
+    },
+    "faq": {
+      "title": "FAQs",
+      "body": "Quick answers to the questions we hear most."
+    }
+  },
+  "about": {
+    "metaTitle": "About Stay.bg",
+    "metaDescription": "Stay.bg is a Bulgarian platform for renting rooms and flats and finding roommates directly, with no agents and no commission.",
+    "title": "About Stay.bg",
+    "intro": "Stay.bg is where people in Bulgaria find a room, let one or find someone to share a home with. You deal with each other directly: no agents in between and no commission on top.",
+    "sharing": {
+      "heading": "Life's better when you share it",
+      "p1": "Sharing a home is more than splitting the rent. The right roommate is the person you cook with, swap city tips with and sometimes keep as a friend for life.",
+      "p2": "That's why Stay.bg is built around people as much as places. Profiles, lifestyle tags and a match score help you find someone whose everyday rhythm fits yours, before you carry a single box up the stairs.",
+      "imageAlt": "Café terraces on a cobbled street in Kapana, Plovdiv"
+    },
+    "mission": {
+      "heading": "Why we built Stay.bg",
+      "p1": "Finding a room in Bulgaria too often means agency fees, ads that were let weeks ago and phone numbers passed around in crowded groups. People who simply want to rent out a room, or find one, deserve better.",
+      "p2": "So we built a place where owners and tenants talk to each other directly, where every account confirms its email and where anything suspicious reaches a real team. It's free, it's in Bulgarian and English, and it's made in Bulgaria."
+    },
+    "facts": {
+      "heading": "Stay.bg in numbers",
+      "cities": {
+        "value": "10",
+        "label": "cities, from Sofia to the Black Sea coast"
+      },
+      "languages": {
+        "value": "2",
+        "label": "languages: Bulgarian and English"
+      },
+      "commission": {
+        "value": "€0",
+        "label": "in fees or commission, for everyone"
+      }
+    },
+    "cta": {
+      "heading": "Ready to find your place?",
+      "rooms": "Find a room",
+      "roommates": "Find a roommate"
+    }
+  },
+  "whyUs": {
+    "metaTitle": "Why use Stay.bg?",
+    "metaDescription": "Free, direct and built with safety in mind: why renting a room or finding a roommate on Stay.bg is simpler.",
+    "title": "Why use Stay.bg?",
+    "intro": "Finding a room or a roommate is a big decision. Here's how Stay.bg makes it simpler, fairer and safer.",
+    "sections": {
+      "direct": {
+        "title": "Fill a room or find one, without the middleman",
+        "body": "Post a free listing in a few minutes or start searching straight away. You deal directly with the owner or the people you'd live with, so there's no agency fee and no commission on top of the rent."
+      },
+      "you": {
+        "title": "It's all about you",
+        "body": "Everyone wants something different from a shared home. Search by city, neighbourhood, budget and move-in date, then narrow it down to what matters to you: pets allowed, furnished, near the metro, a private bathroom or a women-only household. Add lifestyle tags to your profile and you'll see a match score on listings and people."
+      },
+      "safety": {
+        "title": "Safety",
+        "body": "Every account has to confirm its email address. Phone numbers and emails written in ads and profiles are hidden from visitors who aren't signed in, conversations stay on Stay.bg until you choose to share your details, and messaging limits keep spammers out. Anyone can report or block a listing or user, and our team reviews every report."
+      },
+      "meet": {
+        "title": "Meet before you commit",
+        "body": "Request a viewing from the listing and follow every request under Applied listings. Meet in person, look around and never pay a deposit before you've seen the place. Once you agree, our free rental templates help you put it in writing."
+      },
+      "help": {
+        "title": "Help when you need it",
+        "body": "Our FAQs answer the most common questions, our safety tips explain the usual scams, and if you're stuck you can always write to us."
+      }
+    },
+    "links": {
+      "faq": "Read the FAQs",
+      "safety": "Safety tips",
+      "templates": "Rental templates",
+      "contact": "Contact us"
+    }
+  },
+  "howItWorks": {
+    "metaTitle": "How Stay.bg works",
+    "metaDescription": "How to find a room, let a room or find a roommate on Stay.bg, step by step.",
+    "title": "How Stay.bg works",
+    "intro": "Whether you're looking for a room, letting one or looking for someone to share with, it takes a few simple steps.",
+    "seekers": {
+      "heading": "Looking for a room",
+      "cta": "Browse rooms",
+      "steps": {
+        "search": {
+          "title": "Search",
+          "body": "Pick a city and set your budget, area and must-haves. Switch to the map to see where each place is."
+        },
+        "save": {
+          "title": "Shortlist",
+          "body": "Save the places you like so you can come back to them later."
+        },
+        "message": {
+          "title": "Message the owner",
+          "body": "Sign in and ask your questions through Stay.bg. Your email stays private and you decide when to share your phone number."
+        },
+        "view": {
+          "title": "Arrange a viewing",
+          "body": "Send a viewing request from the listing and follow its status under Applied listings."
+        },
+        "agree": {
+          "title": "Agree and move in",
+          "body": "Never pay before you've seen the place. Put the terms in writing with our free rental templates."
+        }
+      }
+    },
+    "hosts": {
+      "heading": "Letting a room or a flat",
+      "cta": "List your property",
+      "steps": {
+        "account": {
+          "title": "Create a free account",
+          "body": "Sign up and confirm your email address."
+        },
+        "post": {
+          "title": "Post your listing",
+          "body": "Add photos, the rent, deposit and bills, and who already lives there. Pin the place on the map: visitors see the area, not your exact address."
+        },
+        "reply": {
+          "title": "Reply to messages",
+          "body": "Answer questions and viewing requests on Stay.bg, and open each person's profile to see who they are."
+        },
+        "choose": {
+          "title": "Choose who moves in",
+          "body": "Meet people in person, then agree the terms in writing with our rental templates."
+        },
+        "close": {
+          "title": "Close the listing",
+          "body": "Once the room is taken, archive the listing from My listings so it leaves the search results."
+        }
+      }
+    },
+    "roommates": {
+      "heading": "Looking for a roommate",
+      "cta": "Find a roommate",
+      "steps": {
+        "profile": {
+          "title": "Fill in your profile",
+          "body": "Add a photo, a few lines about yourself and lifestyle tags such as non-smoker, early riser or pet-friendly."
+        },
+        "wanted": {
+          "title": "Post a “room wanted”",
+          "body": "Share your budget, preferred neighbourhoods and move-in date so people with a room can find you and write first."
+        },
+        "browse": {
+          "title": "Browse people",
+          "body": "Filter by city and lifestyle, and check the match score to see who fits."
+        },
+        "message": {
+          "title": "Say hello",
+          "body": "Message the people you like, meet up and take it from there."
+        }
+      }
+    }
+  },
+  "faq": {
+    "metaTitle": "Frequently asked questions",
+    "metaDescription": "Answers about finding a room, letting one, costs, privacy and safety on Stay.bg.",
+    "title": "Frequently asked questions",
+    "intro": "Quick answers about finding a room, letting one and staying safe on Stay.bg.",
+    "groups": {
+      "finding": {
+        "heading": "Finding a room or a roommate",
+        "items": {
+          "find": {
+            "question": "How do I find a room or a compatible roommate on Stay.bg?",
+            "answer": "Choose your city, set your budget and filters, and browse the results or the map. To find a roommate, add a few lifestyle tags to your profile: Stay.bg then shows a match score with each person, so you can message the best fits first."
+          },
+          "account": {
+            "question": "Do I need an account to browse?",
+            "answer": "No. Anyone can browse rooms and profiles. You need a free account to message people, save listings and request viewings."
+          },
+          "filters": {
+            "question": "Can I look for pet-friendly, smoke-free or LGBTQ+ friendly places and people?",
+            "answer": "Yes. Listing filters include pets allowed, couples welcome, furnished, a private bathroom, bills or internet included, near the metro and women-only or men-only households. On Find a roommate you can filter people by lifestyle tags, including non-smoker, pet-friendly and LGBTQ+ friendly."
+          },
+          "wanted": {
+            "question": "What is a “room wanted” post?",
+            "answer": "It's part of your profile. Switch it on in your settings and add your budget, preferred neighbourhoods and move-in date. People with a room can then find you under Find a roommate and message you first."
+          },
+          "match": {
+            "question": "How does the match score work?",
+            "answer": "It compares what you and the other side have both filled in, such as lifestyle tags, smoking, pets, budget, area and move-in date. Anything either of you left blank is skipped rather than guessed. It's a guide, not a guarantee, so always meet first."
+          }
+        }
+      },
+      "letting": {
+        "heading": "Letting a room",
+        "items": {
+          "list": {
+            "question": "How do I list my room?",
+            "answer": "Create a free account and confirm your email, then choose List your property. Add photos, the rent, deposit and bills, the move-in date and a few words about the household. Your listing goes live as soon as you publish it."
+          },
+          "cost": {
+            "question": "What does Stay.bg cost?",
+            "answer": "Nothing. Searching, posting a listing, messaging and requesting viewings are all free, and there's no agency fee or commission. You agree the rent and deposit directly with each other."
+          },
+          "address": {
+            "question": "Will people see my exact address?",
+            "answer": "No. The map on your listing shows an approximate area of a few hundred metres, not the building. You decide when to share the exact address, for example when you arrange a viewing."
+          },
+          "close": {
+            "question": "What do I do once the room is taken?",
+            "answer": "Archive the listing from My listings. It leaves the search results straight away, so nobody keeps asking about it."
+          }
+        }
+      },
+      "safety": {
+        "heading": "Safety and privacy",
+        "items": {
+          "contact": {
+            "question": "How do I contact people without sharing my phone number or email?",
+            "answer": "Use Stay.bg's messages. Your email is never shown, and your phone number only appears to signed-in users if you switch that on in your settings. Contact details written in ads and profiles are hidden from visitors who aren't signed in."
+          },
+          "scams": {
+            "question": "How does Stay.bg protect me from scams?",
+            "answer": "Every account has to confirm its email address, contact details are hidden from visitors who aren't signed in, and messaging limits keep spammers out. You can report or block any listing or user, and our team reviews every report. The golden rule: never pay anything before you've seen the place and met the person."
+          },
+          "report": {
+            "question": "How do I report a listing or a user?",
+            "answer": "Choose Report this listing or Report this user on the listing or profile page and tell us what's wrong. Reports are private: the person isn't told who sent them. You can also block someone so they can no longer message you."
+          }
+        }
+      },
+      "about": {
+        "heading": "About Stay.bg",
+        "items": {
+          "cities": {
+            "question": "Which cities does Stay.bg cover?",
+            "answer": "Sofia, Plovdiv, Varna, Burgas, Ruse, Stara Zagora, Veliko Tarnovo, Blagoevgrad, Pleven and Haskovo. In Sofia and Plovdiv you can also search neighbourhood by neighbourhood."
+          },
+          "language": {
+            "question": "Can I use Stay.bg in English?",
+            "answer": "Yes. The whole site is available in Bulgarian and English: switch languages from the menu at the top."
+          },
+          "delete": {
+            "question": "How do I delete my account?",
+            "answer": "Go to Settings and choose Delete my account. It permanently deletes your account, listings, photos, messages and saved items."
+          }
+        }
+      }
+    },
+    "stillStuck": {
+      "heading": "Still have a question?",
+      "body": "Write to us and we'll get back to you.",
+      "cta": "Contact us"
+    }
+  },
+  "contact": {
+    "metaTitle": "Contact us",
+    "metaDescription": "How to reach the Stay.bg team about your account, a listing, safety, press or partnerships.",
+    "title": "Contact us",
+    "intro": "We're a small team and we read every message. Pick the address that fits, so it reaches the right person.",
+    "channels": {
+      "support": {
+        "title": "Help with your account or a listing",
+        "body": "Questions about using Stay.bg, signing in or managing your listings."
+      },
+      "safety": {
+        "title": "Safety and suspicious ads",
+        "body": "Something doesn't look right? The report button on the listing or profile reaches our team fastest. For anything else, write to us here."
+      },
+      "press": {
+        "title": "Press and media",
+        "body": "Interviews, comment and insight into renting and flat-sharing in Bulgaria.",
+        "link": "Press office"
+      },
+      "partners": {
+        "title": "Partnerships",
+        "body": "Universities, employers and organisations that help people find a home."
+      }
+    },
+    "before": {
+      "heading": "Before you write",
+      "body": "Many questions are already answered in our FAQs and safety tips.",
+      "faq": "Read the FAQs",
+      "safety": "Safety tips"
+    }
+  },
+  "press": {
+    "metaTitle": "Press office",
+    "metaDescription": "Press enquiries, spokespeople, press releases and media assets for Stay.bg.",
+    "title": "Press office",
+    "enquiries": {
+      "heading": "Press enquiries",
+      "body": "Stay.bg is a Bulgarian platform for renting rooms and flats and finding roommates directly, without agents. We're happy to help journalists with comment, background and insight into renting and flat-sharing in Bulgaria.",
+      "cta": "Email the press office"
+    },
+    "background": {
+      "heading": "For more background",
+      "body": "Read who we are and how the platform works.",
+      "about": "About Stay.bg",
+      "howItWorks": "How Stay.bg works"
+    },
+    "spokespeople": {
+      "heading": "Our spokespeople",
+      "body": "Our founders are available for interviews and comment. Write to the press office to arrange one."
+    },
+    "releases": {
+      "heading": "Press releases",
+      "empty": "Our press releases will appear here."
+    },
+    "assets": {
+      "heading": "Download our assets",
+      "logos": {
+        "title": "Logos",
+        "body": "The Stay.bg logo for print and screen."
+      },
+      "photos": {
+        "title": "Team photos",
+        "body": "Photos of the founders for publication."
+      },
+      "download": "Download",
+      "request": "Request by email"
+    }
+  }
+}

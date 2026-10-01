@@ -12,13 +12,9 @@ import { LocationPicker } from '@/features/maps/components/LocationPicker';
 import { PhotoUploadButton } from '@/features/uploads/components/PhotoUploadButton';
 import { useRouterRefresh } from '@/hooks';
 import { apiClient } from '@/lib/api-client';
+import { CityCombobox } from '@/features/areas/components/CityCombobox';
 import type { CityId } from '@/lib/areas';
-import {
-  CITY_IDS,
-  cityLabels,
-  getNeighborhoodsByCity,
-  isCityId,
-} from '@/lib/areas';
+import { getNeighborhoodsByCity, hasMetro, isCityId } from '@/lib/areas';
 import { PLATFORM_CURRENCY } from '@/lib/currency';
 import { IMAGE_UPLOAD } from '@/lib/images';
 import type { Locale } from '@/lib/i18n';
@@ -97,8 +93,7 @@ export function ListingForm({ locale, edit }: Props) {
       propertyType: form.propertyType as CreateListingInput['propertyType'],
       citySlug: form.citySlug,
       neighborhoodSlug: form.neighborhoodSlug || undefined,
-      roommatePreference:
-        form.roommatePreference as CreateListingInput['roommatePreference'],
+      roommatePreference: form.roommatePreference as CreateListingInput['roommatePreference'],
       bedroomCount: Number(form.bedroomCount) || 0,
       bathroomCount: Number(form.bathroomCount) || 0,
       maxOccupants: Number(form.maxOccupants) || 1,
@@ -132,11 +127,7 @@ export function ListingForm({ locale, edit }: Props) {
     mutation.mutate(isEdit ? shared : { ...shared, status });
   };
 
-  const addTag = (
-    list: 'amenities' | 'rules',
-    value: string,
-    clear: () => void,
-  ) => {
+  const addTag = (list: 'amenities' | 'rules', value: string, clear: () => void) => {
     const tag = value.trim();
     if (!tag) return;
     set(list, [...form[list], tag]);
@@ -274,47 +265,49 @@ export function ListingForm({ locale, edit }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LABEL}>{t('city')}</label>
-            <select
-              className={FIELD}
-              value={form.citySlug}
-              onChange={(e) => {
-                set('citySlug', e.target.value);
+            <label className={LABEL} htmlFor="listing-city">
+              {t('city')}
+            </label>
+            <CityCombobox
+              classNames={{ input: FIELD }}
+              id="listing-city"
+              locale={locale}
+              onChange={(city) => {
+                // There is no empty option, so a city is always picked.
+                if (!city) return;
+                set('citySlug', city);
                 set('neighborhoodSlug', '');
                 // A pin dropped in the previous city is wrong in the new one.
                 set('location', null);
+                if (!hasMetro(city)) set('nearMetro', false);
               }}
-            >
-              {CITY_IDS.map((id) => (
-                <option key={id} value={id}>
-                  {cityLabels[id][locale]}
-                </option>
-              ))}
-            </select>
+              value={isCityId(form.citySlug) ? form.citySlug : ''}
+            />
           </div>
-          <div>
-            <label className={LABEL}>{t('neighborhood')}</label>
-            <select
-              className={FIELD}
-              value={form.neighborhoodSlug}
-              onChange={(e) => set('neighborhoodSlug', e.target.value)}
-            >
-              <option value="">{t('anyNeighborhood')}</option>
-              {neighborhoods.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.label[locale]}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Cities without neighbourhood data yet skip this field. */}
+          {neighborhoods.length > 0 && (
+            <div>
+              <label className={LABEL}>{t('neighborhood')}</label>
+              <select
+                className={FIELD}
+                value={form.neighborhoodSlug}
+                onChange={(e) => set('neighborhoodSlug', e.target.value)}
+              >
+                <option value="">{t('anyNeighborhood')}</option>
+                {neighborhoods.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.label[locale]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div>
           <p className={LABEL}>{t('mapPin')}</p>
           <LocationPicker
-            fallbackCenter={
-              isCityId(form.citySlug) ? CITY_CENTERS[form.citySlug] : BULGARIA_CENTER
-            }
+            fallbackCenter={isCityId(form.citySlug) ? CITY_CENTERS[form.citySlug] : BULGARIA_CENTER}
             labels={{
               region: t('mapPin'),
               hint: t('mapPinHint'),
@@ -379,7 +372,9 @@ export function ListingForm({ locale, edit }: Props) {
         <h2 className={SECTION_TITLE}>{t('sectionPricing')}</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LABEL}>{t('monthlyRent')} ({PLATFORM_CURRENCY})</label>
+            <label className={LABEL}>
+              {t('monthlyRent')} ({PLATFORM_CURRENCY})
+            </label>
             <input
               type="number"
               min={0}
@@ -391,7 +386,9 @@ export function ListingForm({ locale, edit }: Props) {
             />
           </div>
           <div>
-            <label className={LABEL}>{t('deposit')} ({PLATFORM_CURRENCY})</label>
+            <label className={LABEL}>
+              {t('deposit')} ({PLATFORM_CURRENCY})
+            </label>
             <input
               type="number"
               min={0}
@@ -430,17 +427,19 @@ export function ListingForm({ locale, edit }: Props) {
               ['couplesAllowed', t('couplesAllowed')],
               ['smokingAllowed', t('smokingAllowed')],
             ] as const
-          ).map(([key, label]) => (
-            <label key={key} className={CHECKBOX_ROW}>
-              <input
-                type="checkbox"
-                className="size-[15px] accent-brand-terracotta"
-                checked={form[key]}
-                onChange={(e) => set(key, e.target.checked)}
-              />
-              {label}
-            </label>
-          ))}
+          )
+            .filter(([key]) => key !== 'nearMetro' || hasMetro(form.citySlug))
+            .map(([key, label]) => (
+              <label key={key} className={CHECKBOX_ROW}>
+                <input
+                  type="checkbox"
+                  className="size-[15px] accent-brand-terracotta"
+                  checked={form[key]}
+                  onChange={(e) => set(key, e.target.checked)}
+                />
+                {label}
+              </label>
+            ))}
         </div>
       </section>
 
@@ -489,9 +488,7 @@ export function ListingForm({ locale, edit }: Props) {
           inputValue={ruleInput}
           onInputChange={setRuleInput}
           onAdd={() => addTag('rules', ruleInput, () => setRuleInput(''))}
-          onKeyDown={(e) =>
-            handleTagKeyDown(e, 'rules', ruleInput, () => setRuleInput(''))
-          }
+          onKeyDown={(e) => handleTagKeyDown(e, 'rules', ruleInput, () => setRuleInput(''))}
           onRemove={(i) => removeTag('rules', i)}
         />
       </section>

@@ -6,8 +6,10 @@ import HowItWorks from '@/components/home/HowItWorks';
 import ListPropertyCta from '@/components/home/ListPropertyCta';
 import PopularCities from '@/components/home/PopularCities';
 import Testimonials from '@/components/home/Testimonials';
+import WhyStay from '@/components/home/WhyStay';
+import { FeaturedIn } from '@/features/company/components/FeaturedIn';
 import { openGraphLocale, type Locale } from '@/lib/i18n';
-import { OrganizationJsonLd, BreadcrumbJsonLd } from '@/lib/jsonld';
+import { BreadcrumbJsonLd, OrganizationJsonLd, WebSiteJsonLd } from '@/lib/jsonld';
 import type { Metadata } from 'next';
 
 interface PageProps {
@@ -56,11 +58,15 @@ export default async function HomePage({ params }: PageProps) {
   return (
     <>
       <OrganizationJsonLd appUrl={appUrl} />
+      <WebSiteJsonLd appUrl={appUrl} />
       <BreadcrumbJsonLd items={breadcrumbItems} />
       <main className="min-h-screen bg-brand-cream text-brand-ink">
         <HeroSection locale={params.locale} />
         <PopularCities locale={params.locale} />
         <FeaturedListings locale={params.locale} />
+        {/* Renders nothing until there is coverage in `features/company/press.ts`. */}
+        <FeaturedIn className="bg-brand-cream px-6 pb-6 pt-8 lg:px-10" locale={params.locale} />
+        <WhyStay locale={params.locale} />
         <ListPropertyCta locale={params.locale} />
         <Testimonials locale={params.locale} />
         <HowItWorks locale={params.locale} />

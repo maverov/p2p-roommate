@@ -1,7 +1,7 @@
 {
   "hub": {
     "metaTitle": "Rooms and flats for rent by area",
-    "metaDescription": "Rooms, flats and shared homes for rent straight from the owners in Sofia and Plovdiv, neighbourhood by neighbourhood. No agents, no commissions.",
+    "metaDescription": "Rooms, flats and shared homes for rent straight from the owners in cities across Bulgaria, neighbourhood by neighbourhood. No agents, no commissions.",
     "title": "Rooms and flats for rent by area",
     "intro": "Rooms, flats and shared homes straight from the owners, city by city and neighbourhood by neighbourhood.",
     "popular": "Neighbourhoods with listings"
@@ -24,5 +24,23 @@
   "nearby": "Nearby neighbourhoods",
   "allOf": "All of {city}",
   "seekers": "{count, plural, one {# person is} other {# people are}} looking for a room {place}.",
-  "seekersCta": "Have a room? List it for free"
+  "seekersCta": "Have a room? List it for free",
+  "byKind": "Browse by type",
+  "allKinds": "All rooms and flats",
+  "kinds": {
+    "apartments": {
+      "label": "Apartments & houses",
+      "metaTitle": "Apartments and houses for rent {place}",
+      "metaDescription": "{count, plural, one {# apartment or house} other {# apartments and houses}} for rent {place}, straight from the owners. Typical rent {median} a month. No agents, no commissions.",
+      "metaDescriptionEmpty": "Apartments and houses for rent {place}, straight from the owners. No agents, no commissions.",
+      "title": "Apartments and houses for rent {place}"
+    },
+    "students": {
+      "label": "Student housing",
+      "metaTitle": "Student housing {place}",
+      "metaDescription": "{count, plural, one {# room or flat} other {# rooms and flats}} for students {place}, straight from the owners. Typical rent {median} a month. No agents, no commissions.",
+      "metaDescriptionEmpty": "Rooms and flats for students {place}, straight from the owners. No agents, no commissions.",
+      "title": "Student housing {place}"
+    }
+  }
 }

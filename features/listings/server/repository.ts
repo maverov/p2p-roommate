@@ -14,10 +14,11 @@ import {
   lte,
   ne,
   or,
+  sql,
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { favorites, listingImages, listings, user } from '@/db/schema';
+import { favorites, listingImages, listings, user, userProfiles } from '@/db/schema';
 import { approximate } from '@/lib/map';
 import { ApiError } from '@/lib/server/api';
 
@@ -37,22 +38,26 @@ export type ListingDTO = ListingRow & {
   owner: OwnerRow;
 };
 
+/**
+ * The name and photo the listing page shows for its owner: the profile's, falling back to
+ * the account's. Needs `userProfiles` left-joined on the owner.
+ */
+const publicOwnerColumns = {
+  id: user.id,
+  name: sql<string>`coalesce(${userProfiles.displayName}, ${user.name})`,
+  image: sql<string | null>`coalesce(${userProfiles.avatarUrl}, ${user.image})`,
+};
+
 export async function listPublishedListings(filters: ListListingsQuery) {
   const where = buildPublishedListingWhere(filters);
   const offset = (filters.page - 1) * filters.perPage;
 
   const [rows, totalRows] = await Promise.all([
     db
-      .select({
-        listing: listings,
-        owner: {
-          id: user.id,
-          name: user.name,
-          image: user.image,
-        },
-      })
+      .select({ listing: listings, owner: publicOwnerColumns })
       .from(listings)
       .innerJoin(user, eq(listings.ownerId, user.id))
+      .leftJoin(userProfiles, eq(userProfiles.userId, listings.ownerId))
       .where(where)
       .orderBy(...buildListingOrderBy(filters.sort))
       .limit(filters.perPage)
@@ -437,7 +442,8 @@ export async function listPublishedListingsForMap(filters: ListListingsQuery) {
   };
 }
 
-function buildPublishedListingWhere(filters: ListListingsQuery) {
+/** The `where` for a listing search; area pages reuse it so their counts match the search. */
+export function buildPublishedListingWhere(filters: ListListingsQuery) {
   const conditions = [eq(listings.status, 'PUBLISHED')];
 
   if (filters.citySlug) {

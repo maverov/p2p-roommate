@@ -213,6 +213,7 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
                               ? scoreListing(seeker, listing)
                               : null
                           }
+                          owner={listing.owner}
                           priority={index < 4}
                           sizes="(min-width: 1536px) 22vw, (min-width: 1280px) 30vw, (min-width: 640px) 45vw, 100vw"
                         />
