@@ -17,29 +17,37 @@ import {
 } from 'drizzle-orm/pg-core';
 
 const timestamps = {
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 };
 
-export const user = pgTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').default(false).notNull(),
-  image: text('image'),
-  // Owned by the Better Auth admin plugin (lib/auth.ts), which never lets users write them.
-  role: text('role'),
-  banned: boolean('banned').default(false).notNull(),
-  banReason: text('ban_reason'),
-  banExpires: timestamp('ban_expires', { withTimezone: true }),
-  /** The language emails are written in. Set at sign-up, changed in settings (`lib/auth.ts`). */
-  locale: text('locale').default('bg').notNull(),
-  ...timestamps,
-});
+export const user = pgTable(
+  'user',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull().unique(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    image: text('image'),
+    // Owned by the Better Auth admin plugin (lib/auth.ts), which never lets users write them.
+    role: text('role'),
+    banned: boolean('banned').default(false).notNull(),
+    banReason: text('ban_reason'),
+    banExpires: timestamp('ban_expires', { withTimezone: true }),
+    /** The language emails are written in. Set at sign-up, changed in settings (`lib/auth.ts`). */
+    locale: text('locale').default('bg').notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex('user_single_admin_idx')
+      .on(table.role)
+      .where(sql`${table.role} = 'admin'`),
+    check(
+      'user_admin_identity_check',
+      sql`${table.role} IS NULL OR ${table.role} = 'user' OR (${table.role} = 'admin' AND lower(${table.email}) = 'maverov@gmail.com')`,
+    ),
+  ],
+);
 
 export const session = pgTable(
   'session',
@@ -114,19 +122,9 @@ export const apiRateLimits = pgTable('api_rate_limit', {
   resetAt: timestamp('reset_at', { withTimezone: true }).notNull(),
 });
 
-export const listingStatus = pgEnum('listing_status', [
-  'DRAFT',
-  'PUBLISHED',
-  'PAUSED',
-  'ARCHIVED',
-]);
+export const listingStatus = pgEnum('listing_status', ['DRAFT', 'PUBLISHED', 'PAUSED', 'ARCHIVED']);
 
-export const propertyType = pgEnum('property_type', [
-  'APARTMENT',
-  'HOUSE',
-  'STUDIO',
-  'ROOM',
-]);
+export const propertyType = pgEnum('property_type', ['APARTMENT', 'HOUSE', 'STUDIO', 'ROOM']);
 
 export const roommatePreference = pgEnum('roommate_preference', [
   'ANY',
@@ -138,12 +136,7 @@ export const roommatePreference = pgEnum('roommate_preference', [
 
 export const roomType = pgEnum('room_type', ['SINGLE', 'DOUBLE', 'SHARED']);
 
-export const reportStatus = pgEnum('report_status', [
-  'OPEN',
-  'REVIEWING',
-  'RESOLVED',
-  'DISMISSED',
-]);
+export const reportStatus = pgEnum('report_status', ['OPEN', 'REVIEWING', 'RESOLVED', 'DISMISSED']);
 
 export const archivedViewingStatus = pgEnum('viewing_request_status', [
   'REQUESTED',
@@ -152,16 +145,9 @@ export const archivedViewingStatus = pgEnum('viewing_request_status', [
   'CANCELLED',
 ]);
 
-export const reviewTargetType = pgEnum('review_target_type', [
-  'LISTING',
-  'USER',
-]);
+export const reviewTargetType = pgEnum('review_target_type', ['LISTING', 'USER']);
 
-export const reviewerRole = pgEnum('reviewer_role', [
-  'MEMBER',
-  'TENANT',
-  'OWNER',
-]);
+export const reviewerRole = pgEnum('reviewer_role', ['MEMBER', 'TENANT', 'OWNER']);
 
 export const userProfiles = pgTable(
   'user_profile',
@@ -179,9 +165,7 @@ export const userProfiles = pgTable(
     emailVerified: boolean('email_verified').default(false).notNull(),
     phoneVerified: boolean('phone_verified').default(false).notNull(),
     identityVerified: boolean('identity_verified').default(false).notNull(),
-    publicContactAllowed: boolean('public_contact_allowed')
-      .default(false)
-      .notNull(),
+    publicContactAllowed: boolean('public_contact_allowed').default(false).notNull(),
     /** `PROFILE_TRAITS` ids. Read through `parseProfileTraits`: older rows may hold free text. */
     traits: jsonb('traits').$type<string[]>().default([]).notNull(),
     languages: jsonb('languages').$type<string[]>().default([]).notNull(),
@@ -199,9 +183,7 @@ export const userProfiles = pgTable(
     stayMonths: integer('stay_months'),
     /** Neighbourhood slugs within `citySlug`. */
     wantedNeighborhoods: jsonb('wanted_neighborhoods').$type<string[]>().default([]).notNull(),
-    joinedAt: timestamp('joined_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
     ...timestamps,
   },
   (table) => [
@@ -225,9 +207,7 @@ export const listings = pgTable(
     description: text('description').notNull(),
     status: listingStatus('status').default('DRAFT').notNull(),
     propertyType: propertyType('property_type').notNull(),
-    roommatePreference: roommatePreference('roommate_preference')
-      .default('ANY')
-      .notNull(),
+    roommatePreference: roommatePreference('roommate_preference').default('ANY').notNull(),
     citySlug: text('city_slug').notNull(),
     neighborhoodSlug: text('neighborhood_slug'),
     addressLine: text('address_line'),
@@ -299,10 +279,7 @@ export const listingImages = pgTable(
   },
   (table) => [
     index('listing_image_listing_id_idx').on(table.listingId),
-    uniqueIndex('listing_image_sort_order_unique').on(
-      table.listingId,
-      table.sortOrder,
-    ),
+    uniqueIndex('listing_image_sort_order_unique').on(table.listingId, table.sortOrder),
   ],
 );
 
@@ -315,9 +292,7 @@ export const favorites = pgTable(
     listingId: text('listing_id')
       .notNull()
       .references(() => listings.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.listingId] }),
@@ -334,9 +309,7 @@ export const savedProfiles = pgTable(
     profileUserId: text('profile_user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.profileUserId] }),
@@ -357,9 +330,7 @@ export const userBlocks = pgTable(
     blockedId: text('blocked_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.blockerId, table.blockedId] }),
@@ -462,9 +433,7 @@ export const conversationParticipants = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     lastReadAt: timestamp('last_read_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.conversationId, table.userId] }),
@@ -483,15 +452,10 @@ export const messages = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     body: text('body').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
-    index('message_conversation_created_at_idx').on(
-      table.conversationId,
-      table.createdAt,
-    ),
+    index('message_conversation_created_at_idx').on(table.conversationId, table.createdAt),
     index('message_sender_id_idx').on(table.senderId),
   ],
 );

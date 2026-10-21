@@ -22,5 +22,5 @@ export const banUserInputSchema = z.object({
 export type BanUserInput = z.infer<typeof banUserInputSchema>;
 
 export const adminUpdateListingInputSchema = z.object({
-  status: z.literal('ARCHIVED'),
+  status: z.enum(['ARCHIVED', 'PAUSED']),
 });

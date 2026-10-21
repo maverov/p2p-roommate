@@ -5,6 +5,7 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import { BadgeCheck, CalendarDays, Languages, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 
+import { ProfileAdminActions } from '@/features/admin/components/ProfileAdminActions';
 import { Avatar } from '@/components/shared/Avatar';
 import { Rating } from '@/components/shared/Rating';
 import { StateMessage } from '@/components/shared/StateMessage';
@@ -234,6 +235,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
       <BreadcrumbJsonLd items={breadcrumbItems} />
 
       <PageShell>
+        <ProfileAdminActions userId={profile.userId} />
         <nav aria-label="Breadcrumb" className="mb-4 text-[13px] text-brand-muted">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>

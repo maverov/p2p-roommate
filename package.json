@@ -17,6 +17,7 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "db:seed": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx db/seed.ts",
+    "admin:setup": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/setup-admin.ts",
     "admin:set-role": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --import tsx scripts/set-role.ts",
     "openapi:generate": "tsx scripts/generate-openapi.ts"
   },

@@ -12,6 +12,11 @@ import type { BanUserInput } from '../schemas';
 
 const DAY_SECONDS = 24 * 60 * 60;
 
+export async function unbanUser(userId: string, headers: Headers) {
+  await auth.api.unbanUser({ body: { userId }, headers });
+  return { unbanned: true };
+}
+
 /**
  * Bans through the Better Auth admin plugin, which signs the user out everywhere
  * and blocks new sign-ins, then pauses their published listings so the account

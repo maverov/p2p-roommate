@@ -19,6 +19,8 @@ import {
   UsersRound,
 } from 'lucide-react';
 
+import { ArchiveListingButton } from '@/features/admin/components/ArchiveListingButton';
+import { isAdmin } from '@/lib/roles';
 import { Avatar } from '@/components/shared/Avatar';
 import { Rating } from '@/components/shared/Rating';
 import { SafetyReminder } from '@/components/shared/SafetyReminder';
@@ -284,6 +286,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
 
       <main className="min-h-screen bg-brand-cream text-brand-ink">
         <div className="mx-auto w-full max-w-[1400px] px-6 pb-16 pt-6 lg:px-10">
+          {isAdmin(viewer) && <section className="mb-4 rounded-xl border border-red-200 bg-white p-4" aria-label="Admin controls"><ArchiveListingButton listingId={listing.id} redirectAfterArchive /></section>}
           <nav aria-label="Breadcrumb" className="mb-4 text-[13px] text-brand-muted">
             <ol className="flex flex-wrap items-center gap-1.5">
               <li>

@@ -97,10 +97,10 @@ Open `http://localhost:3000`.
 
 ## Admin access
 
-Sign up and confirm the address (or use a seeded account), then grant yourself the role:
+Sign up and confirm the address (or use a seeded account), then provision the designated administrator (`maverov@gmail.com`):
 
 ```powershell
-pnpm admin:set-role you@example.com admin
+pnpm admin:setup
 ```
 
 The role applies on your next page load. Open `http://localhost:3000/admin`.
@@ -132,3 +132,5 @@ CI (`.github/workflows/ci.yml`) runs on every push to `main` and every pull requ
 against a throwaway Postgres 16 service: `type-check`, `lint`, `i18n:check`, `test`,
 `db:migrate` from an empty database, `db:check`, a check that `db:generate` produces no
 new migration (a `db/schema.ts` change without its migration fails), and `build`.
+
+See [Administrator and password setup](README.admin.md) for the sole-admin policy and required production provisioning.

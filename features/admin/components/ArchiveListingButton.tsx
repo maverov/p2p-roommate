@@ -11,13 +11,22 @@ import { describeError } from './describeError';
 const BUTTON =
   'rounded-xl px-3 py-1.5 text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50';
 
-export function ArchiveListingButton({ listingId }: { listingId: string }) {
+export function ArchiveListingButton({
+  listingId,
+  redirectAfterArchive = false,
+}: {
+  listingId: string;
+  redirectAfterArchive?: boolean;
+}) {
   const { isRefreshing, refresh } = useRouterRefresh();
   const [isConfirming, setIsConfirming] = useState(false);
 
   const archive = useMutation({
     mutationFn: () => apiClient.patch(`/api/admin/listings/${listingId}`, { status: 'ARCHIVED' }),
-    onSuccess: () => refresh(),
+    onSuccess: () => {
+      if (redirectAfterArchive) window.location.assign('/admin/listings');
+      else refresh();
+    },
   });
   // Busy until the refreshed server data is on screen, not just until the request returns.
   const isBusy = archive.isPending || isRefreshing;
@@ -29,7 +38,7 @@ export function ArchiveListingButton({ listingId }: { listingId: string }) {
         onClick={() => setIsConfirming(true)}
         type="button"
       >
-        Archive listing
+        Remove listing (archive)
       </button>
     );
   }

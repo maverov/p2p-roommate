@@ -1,5 +1,5 @@
 import { adminUpdateListingInputSchema } from '@/features/admin/schemas';
-import { archiveListing } from '@/features/admin/server/listings';
+import { archiveListing, restoreListing } from '@/features/admin/server/listings';
 import { requireAdminApiUser } from '@/lib/server/admin';
 import { apiOk, handleApiRoute, parseJsonBody } from '@/lib/server/api';
 
@@ -15,8 +15,8 @@ type AdminListingRouteContext = {
 export async function PATCH(request: Request, { params }: AdminListingRouteContext) {
   return handleApiRoute(async () => {
     await requireAdminApiUser(request);
-    await parseJsonBody(request, adminUpdateListingInputSchema);
-    const listing = await archiveListing(params.id);
+    const input = await parseJsonBody(request, adminUpdateListingInputSchema);
+    const listing = await (input.status === 'ARCHIVED' ? archiveListing(params.id) : restoreListing(params.id));
 
     return apiOk(listing);
   });

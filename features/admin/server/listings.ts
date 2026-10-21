@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { listings } from '@/db/schema';
@@ -19,4 +19,15 @@ export async function archiveListing(listingId: string) {
   }
 
   return archived;
+}
+
+/** Restore to paused: the owner explicitly republishes after reviewing the listing. */
+export async function restoreListing(listingId: string) {
+  const [restored] = await db
+    .update(listings)
+    .set({ status: 'PAUSED', updatedAt: new Date() })
+    .where(and(eq(listings.id, listingId), eq(listings.status, 'ARCHIVED')))
+    .returning({ id: listings.id, status: listings.status });
+  if (!restored) throw new ApiError(409, 'NOT_ARCHIVED', 'Only archived listings can be restored.');
+  return restored;
 }

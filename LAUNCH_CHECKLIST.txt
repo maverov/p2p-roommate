@@ -46,7 +46,8 @@ MUST DO BEFORE LAUNCH
        - Use its pooled connection URL for DATABASE_URL, and set
          DATABASE_POOL_MAX=1
        - Apply migrations:          pnpm db:migrate
-       - Make both founders admins: pnpm admin:set-role <email> admin
+       - Provision the sole admin: pnpm admin:setup
+         Only maverov@gmail.com may be admin (display name: admin).
 
 [ ] 6. Hosting settings
        - BETTER_AUTH_SECRET: a new random value, 32+ characters
@@ -86,9 +87,8 @@ MUST DO BEFORE LAUNCH
 
 RECOMMENDED (NOT BLOCKING)
 
-[ ] Admin step 4c: user and listing management
-    Unban users, verify profiles, restore archived listings. Today these
-    need direct database access. About half a day of work.
+[x] Admin users/listings management: ban, unban, archive and restore.
+    Profile verification is not part of these controls.
 
 [ ] Press office content
     Spokespeople, press releases, logo and photo downloads, and the hidden

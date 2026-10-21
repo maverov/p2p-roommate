@@ -14,6 +14,7 @@ import {
 } from '@/features/profiles/components/settings-ui';
 import type { SignInMethods } from '@/features/account/server/sign-in-methods';
 import { SOCIAL_PROVIDER_NAMES } from '@/lib/auth-rules';
+import { PasswordSettings } from './PasswordSettings';
 import { authClient } from '@/lib/auth-client';
 import { isLocale, locales, type Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
@@ -35,6 +36,7 @@ export function AccountSettings({
   return (
     <>
       <EmailLanguageForm email={email} initial={isLocale(emailLocale) ? emailLocale : locale} />
+      <PasswordSettings hasPassword={signInMethods.hasPassword} />
       <DataExportSection />
       <DeleteAccountSection locale={locale} signInMethods={signInMethods} />
     </>

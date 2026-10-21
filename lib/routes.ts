@@ -64,6 +64,8 @@ export const routes = {
   /** Better Auth appends `error=` here when a verification link is bad or expired. */
   verifyEmail: (next?: string) => withNext('/verify-email', next),
   admin: () => route('/admin'),
+  adminUsers: (search?: string) => route(search ? `/admin/users?${search}` : '/admin/users'),
+  adminListings: (search?: string) => route(search ? `/admin/listings?${search}` : '/admin/listings'),
   adminReports: (search?: string) => route(search ? `/admin/reports?${search}` : '/admin/reports'),
   adminReport: (id: string) => route(`/admin/reports/${id}`),
 } as const;

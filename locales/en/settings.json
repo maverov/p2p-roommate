@@ -97,5 +97,20 @@
     "unblock": "Unblock",
     "failed": "Could not unblock. Try again.",
     "loadFailed": "We could not load your blocked users."
+  },
+  "password": {
+    "heading": "Password",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "hint": "Use at least {min} characters. Changing your password signs out your other sessions.",
+    "saving": "Changing…",
+    "save": "Change password",
+    "mismatch": "The new passwords do not match.",
+    "wrongCurrent": "Your current password is incorrect.",
+    "failed": "Your password could not be changed. Please try again.",
+    "success": "Your password has been changed.",
+    "social": "You sign in using a social provider. Use email password reset if you want to set a password for this account.",
+    "reset": "Forgot your password? Reset it by email"
   }
 }

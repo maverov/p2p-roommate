@@ -159,3 +159,5 @@ CI results as validation of the current checkout.
 - Home-page testimonials are placeholder content.
 - Footer links to pages that do not exist yet: find a room, help centre, safety tips,
   about us, contact.
+
+See [Administrator and password setup](README.admin.md) for the sole-admin policy and required production provisioning.

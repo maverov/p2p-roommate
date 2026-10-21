@@ -3,7 +3,7 @@ import 'server-only';
 import { drizzleAdapter } from '@better-auth/drizzle-adapter';
 import { waitUntil } from '@vercel/functions';
 import { betterAuth } from 'better-auth';
-import { getOAuthState } from 'better-auth/api';
+import { APIError, getOAuthState } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { admin } from 'better-auth/plugins/admin';
 import { eq } from 'drizzle-orm';
@@ -91,6 +91,13 @@ export const auth = betterAuth({
   },
   databaseHooks: {
     user: {
+      delete: {
+        before: async (user) => {
+          if (user.email.toLowerCase() === 'maverov@gmail.com') {
+            throw new APIError('FORBIDDEN', { message: 'The administrator account cannot be deleted.' });
+          }
+        },
+      },
       create: {
         before: async (user, context) => {
           // Email sign-up sends `locale` itself; a social sign-up carries the page's
@@ -113,6 +120,9 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
       beforeDelete: async (user) => {
+        if (user.email.toLowerCase() === 'maverov@gmail.com') {
+          throw new APIError('FORBIDDEN', { message: 'The administrator account cannot be deleted.' });
+        }
         pendingUploadCleanup.set(user.id, await listUserUploads(user.id));
       },
       afterDelete: async (user) => {

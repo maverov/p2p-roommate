@@ -19,11 +19,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-brand-sand/40" lang="en">
       <header className="border-b border-brand-border bg-white">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 lg:px-6">
-          <nav aria-label="Admin" className="flex items-center gap-5 text-[14px] font-semibold">
+          <nav
+            aria-label="Admin"
+            className="flex flex-wrap items-center gap-5 text-[14px] font-semibold"
+          >
             <Link className="text-brand-ink hover:text-brand-terracotta" href={routes.admin()}>
               RentBee Admin
             </Link>
-            <AdminNav items={[{ href: routes.adminReports(), label: 'Reports' }]} />
+            <AdminNav
+              items={[
+                { href: routes.adminReports(), label: 'Reports' },
+                { href: routes.adminUsers(), label: 'Users' },
+                { href: routes.adminListings(), label: 'Listings' },
+              ]}
+            />
           </nav>
 
           <div className="flex items-center gap-4 text-[13px]">

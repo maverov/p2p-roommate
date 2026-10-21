@@ -1,5 +1,5 @@
 import { banUserInputSchema } from '@/features/admin/schemas';
-import { banUser } from '@/features/admin/server/users';
+import { banUser, unbanUser } from '@/features/admin/server/users';
 import { requireAdminApiUser } from '@/lib/server/admin';
 import { apiOk, handleApiRoute, parseJsonBody } from '@/lib/server/api';
 
@@ -19,5 +19,12 @@ export async function POST(request: Request, { params }: AdminBanRouteContext) {
     const result = await banUser(params.id, input, request.headers);
 
     return apiOk(result);
+  });
+}
+
+export async function DELETE(request: Request, { params }: AdminBanRouteContext) {
+  return handleApiRoute(async () => {
+    await requireAdminApiUser(request);
+    return apiOk(await unbanUser(params.id, request.headers));
   });
 }
