@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarCheck, ChevronDown, Home, LogOut, Settings, ShieldCheck, User } from 'lucide-react';
+import { ChevronDown, Home, LogOut, Settings, ShieldCheck, User } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -48,7 +48,6 @@ export function UserMenu({ user, locale }: UserMenuProps) {
   const menuItems = [
     { href: routes.profile(locale, user.id), icon: User, label: t('profile') },
     { href: routes.myListings(locale), icon: Home, label: t('myListings') },
-    { href: routes.appliedListings(locale), icon: CalendarCheck, label: t('appliedListings') },
     { href: routes.settings(locale), icon: Settings, label: t('settings') },
     ...(isAdmin(user) ? [{ href: routes.admin(), icon: ShieldCheck, label: t('admin') }] : []),
   ];

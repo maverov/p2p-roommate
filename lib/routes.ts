@@ -31,7 +31,6 @@ export const routes = {
     route(search ? `/${locale}/saved?${search}` : `/${locale}/saved`),
   myListings: (locale: Locale) => route(`/${locale}/my-listings`),
   listProperty: (locale: Locale) => route(`/${locale}/list-property`),
-  appliedListings: (locale: Locale) => route(`/${locale}/applied-listings`),
   findRoommate: (locale: Locale, search?: string) =>
     route(search ? `/${locale}/find-roommate?${search}` : `/${locale}/find-roommate`),
   /** SEO landing pages: every city, then each city and neighbourhood. */
@@ -51,7 +50,7 @@ export const routes = {
   safety: (locale: Locale) => route(`/${locale}/safety`),
   templates: (locale: Locale) => route(`/${locale}/templates`),
   about: (locale: Locale) => route(`/${locale}/about`),
-  whyUs: (locale: Locale) => route(`/${locale}/why-stay`),
+  whyUs: (locale: Locale) => route(`/${locale}/why-rentbee`),
   howItWorks: (locale: Locale) => route(`/${locale}/how-it-works`),
   faq: (locale: Locale) => route(`/${locale}/faq`),
   contact: (locale: Locale) => route(`/${locale}/contact`),

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { CalendarDays, Check, MessageSquare, Phone } from 'lucide-react';
+import { Check, MessageSquare, Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,7 +20,7 @@ type ContactOwnerPanelProps = {
   isOwner: boolean;
 };
 
-type ActiveForm = 'message' | 'viewing' | null;
+type ActiveForm = 'message' | null;
 
 const PRIMARY_BUTTON =
   'flex w-full items-center justify-center gap-2 rounded-[10px] bg-brand-terracotta px-4 py-3 text-[14px] font-bold text-white transition hover:bg-brand-terracotta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-terracotta disabled:opacity-60';
@@ -30,13 +30,6 @@ const SECONDARY_BUTTON =
 
 const FIELD =
   'w-full rounded-[10px] border border-brand-border bg-brand-chip px-3 py-2.5 text-[14px] text-brand-ink outline-none transition placeholder:text-brand-muted/70 focus:border-brand-terracotta focus:bg-white';
-
-/** `datetime-local` needs `YYYY-MM-DDTHH:mm` in local time, not an ISO string. */
-function toLocalInputValue(date: Date) {
-  const offset = date.getTimezoneOffset() * 60_000;
-
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-}
 
 export function ContactOwnerPanel({
   isAuthenticated,
@@ -52,12 +45,6 @@ export function ContactOwnerPanel({
   const sendMessage = useMutation({
     mutationFn: (message: string) =>
       apiClient.post<{ id: string }>('/api/conversations', { listingId, message }),
-    onSuccess: () => setActiveForm(null),
-  });
-
-  const requestViewing = useMutation({
-    mutationFn: (input: { requestedStartAt: string; message?: string }) =>
-      apiClient.post(`/api/listings/${listingId}/viewing-requests`, input),
     onSuccess: () => setActiveForm(null),
   });
 
@@ -82,11 +69,6 @@ export function ContactOwnerPanel({
         <Link className={PRIMARY_BUTTON} href={loginHref}>
           <MessageSquare aria-hidden="true" size={16} strokeWidth={2} />
           {t('sendMessage')}
-        </Link>
-
-        <Link className={SECONDARY_BUTTON} href={loginHref}>
-          <CalendarDays aria-hidden="true" size={16} strokeWidth={2} />
-          {t('requestViewing')}
         </Link>
 
         <Link className={SECONDARY_BUTTON} href={loginHref}>
@@ -163,86 +145,6 @@ export function ContactOwnerPanel({
         >
           <MessageSquare aria-hidden="true" size={16} strokeWidth={2} />
           {t('sendMessage')}
-        </button>
-      )}
-
-      {requestViewing.isSuccess ? (
-        <p className="flex items-center gap-2 rounded-[10px] border border-brand-olive/40 bg-[#f7f8ef] px-4 py-3 text-[13px] font-bold text-brand-ink">
-          <Check aria-hidden="true" size={15} strokeWidth={2.4} />
-          {t('viewingSent')}
-        </p>
-      ) : activeForm === 'viewing' ? (
-        <form
-          className="grid gap-2 rounded-[10px] border border-brand-border bg-brand-chip p-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const form = new FormData(event.currentTarget);
-            const requestedStartAt = String(form.get('requestedStartAt') ?? '');
-            const message = String(form.get('message') ?? '').trim();
-
-            if (requestedStartAt) {
-              requestViewing.mutate({
-                // The input is local time; the API stores UTC.
-                requestedStartAt: new Date(requestedStartAt).toISOString(),
-                message: message || undefined,
-              });
-            }
-          }}
-        >
-          <label className="text-[13px] font-bold text-brand-ink" htmlFor="viewing-date">
-            {t('viewingDate')}
-          </label>
-
-          <input
-            autoFocus
-            className={cn(FIELD, 'bg-white')}
-            defaultValue={toLocalInputValue(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000))}
-            id="viewing-date"
-            name="requestedStartAt"
-            required
-            type="datetime-local"
-          />
-
-          <label className="mt-1 text-[13px] font-bold text-brand-ink" htmlFor="viewing-note">
-            {t('viewingNote')}
-          </label>
-
-          <textarea
-            className={cn(FIELD, 'min-h-[64px] resize-y bg-white')}
-            id="viewing-note"
-            maxLength={1000}
-            name="message"
-            placeholder={t('viewingNotePlaceholder')}
-          />
-
-          <FormError error={requestViewing.error} />
-
-          <div className="flex gap-2">
-            <button
-              className={PRIMARY_BUTTON}
-              disabled={requestViewing.isPending}
-              type="submit"
-            >
-              {t('submit')}
-            </button>
-
-            <button
-              className={SECONDARY_BUTTON}
-              onClick={() => setActiveForm(null)}
-              type="button"
-            >
-              {t('cancel')}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button
-          className={SECONDARY_BUTTON}
-          onClick={() => setActiveForm('viewing')}
-          type="button"
-        >
-          <CalendarDays aria-hidden="true" size={16} strokeWidth={2} />
-          {t('requestViewing')}
         </button>
       )}
 

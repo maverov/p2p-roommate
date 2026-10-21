@@ -12,15 +12,10 @@
     "WOMEN_ONLY": "Women only",
     "MEN_ONLY": "Men only"
   },
-  "viewingRequestStatus": {
-    "REQUESTED": "Awaiting reply",
-    "ACCEPTED": "Accepted",
-    "DECLINED": "Declined",
-    "CANCELLED": "Cancelled"
-  },
   "reviewerRole": {
     "TENANT": "Tenant",
-    "OWNER": "Landlord"
+    "OWNER": "Landlord",
+    "MEMBER": "Member"
   },
   "reportReason": {
     "SCAM": "Scam or fraud",

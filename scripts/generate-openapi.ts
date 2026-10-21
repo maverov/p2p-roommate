@@ -59,13 +59,9 @@ const roommatePreferenceSchema: JsonObject = {
   type: 'string',
   enum: ['ANY', 'STUDENTS', 'PROFESSIONALS', 'WOMEN_ONLY', 'MEN_ONLY'],
 };
-const viewingRequestStatusSchema: JsonObject = {
-  type: 'string',
-  enum: ['REQUESTED', 'ACCEPTED', 'DECLINED', 'CANCELLED'],
-};
 const reviewerRoleSchema: JsonObject = {
   type: 'string',
-  enum: ['TENANT', 'OWNER'],
+  enum: ['TENANT', 'OWNER', 'MEMBER'],
 };
 
 const roomTypeSchema: JsonObject = { type: 'string', enum: ROOM_TYPES };
@@ -623,81 +619,6 @@ const components: JsonObject = {
         },
       },
     },
-    ViewingRequest: {
-      type: 'object',
-      required: [
-        'id',
-        'listingId',
-        'requesterId',
-        'ownerId',
-        'requestedStartAt',
-        'message',
-        'status',
-        'createdAt',
-        'updatedAt',
-      ],
-      properties: {
-        id: { type: 'string' },
-        listingId: { type: 'string' },
-        requesterId: { type: 'string' },
-        ownerId: { type: 'string' },
-        requestedStartAt: dateTimeSchema,
-        message: nullableStringSchema,
-        status: viewingRequestStatusSchema,
-        createdAt: dateTimeSchema,
-        updatedAt: dateTimeSchema,
-      },
-    },
-    ViewingRequestListItem: {
-      allOf: [
-        schemaRef('ViewingRequest'),
-        {
-          type: 'object',
-          required: [
-            'listingTitle',
-            'listingCitySlug',
-            'listingNeighborhoodSlug',
-            'listingMonthlyRentCents',
-            'listingCurrency',
-            'listingCoverImageUrl',
-            'requesterName',
-            'ownerName',
-            'ownerImage',
-          ],
-          properties: {
-            listingTitle: { type: 'string' },
-            listingCitySlug: { type: 'string' },
-            listingNeighborhoodSlug: nullableStringSchema,
-            listingMonthlyRentCents: { type: 'integer' },
-            listingCurrency: { type: 'string' },
-            listingCoverImageUrl: nullableStringSchema,
-            requesterName: { type: 'string' },
-            ownerName: { type: 'string' },
-            ownerImage: nullableStringSchema,
-          },
-        },
-      ],
-    },
-    CreateViewingRequestInput: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['requestedStartAt'],
-      properties: {
-        requestedStartAt: dateTimeSchema,
-        message: { type: 'string', maxLength: 1000 },
-      },
-    },
-    UpdateViewingRequestInput: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['status'],
-      properties: {
-        status: {
-          type: 'string',
-          enum: ['ACCEPTED', 'DECLINED', 'CANCELLED'],
-        },
-      },
-    },
     CreateReviewInput: {
       oneOf: [
         {
@@ -1044,7 +965,7 @@ const applicationPaths: Record<string, PathItem> = {
       operationId: 'exportCurrentUserData',
       summary: "Download all of the current user's data",
       description:
-        'GDPR access and portability: a JSON attachment (`stay-bg-data-YYYY-MM-DD.json`) with the account, profile, listings, saved listings and profiles, viewing requests, reviews, reports filed, conversations with messages, and sessions. Passwords, tokens and other secrets are never included. Not wrapped in `{ data }`.',
+        'GDPR access and portability: a JSON attachment (`rentbee-data-YYYY-MM-DD.json`) with the account, profile, listings, saved listings and profiles, archived records, reviews, reports filed, conversations with messages, and sessions. Passwords, tokens and other secrets are never included. Not wrapped in `{ data }`.',
       security: cookieSecurity,
       responses: responseSet(
         {
@@ -1381,23 +1302,6 @@ const applicationPaths: Record<string, PathItem> = {
       ),
     },
   },
-  '/api/listings/{id}/viewing-requests': {
-    post: {
-      tags: ['Viewing requests'],
-      operationId: 'createViewingRequest',
-      summary: 'Request a listing viewing',
-      description: 'The listing owner cannot request a viewing of their own listing.',
-      security: cookieSecurity,
-      parameters: [idParameter('Listing ID.')],
-      requestBody: jsonBody('CreateViewingRequestInput'),
-      responses: responseSet(
-        {
-          '201': dataResponse('Viewing request created.', schemaRef('ViewingRequest')),
-        },
-        [400, 401, 404],
-      ),
-    },
-  },
   '/api/profiles/{id}': {
     get: {
       tags: ['Profiles'],
@@ -1521,7 +1425,7 @@ const applicationPaths: Record<string, PathItem> = {
       operationId: 'blockUser',
       summary: 'Block a user',
       description:
-        'Idempotent. While either person has blocked the other, neither can start a conversation, send a message, request a viewing or reveal the other\'s phone number (`403 USER_BLOCKED`). The blocked person is not notified.',
+        'Idempotent. While either person has blocked the other, neither can start a conversation, send a message or reveal the other\'s phone number (`403 USER_BLOCKED`). The blocked person is not notified.',
       security: cookieSecurity,
       parameters: [idParameter('User ID to block.')],
       responses: responseSet(
@@ -1568,66 +1472,13 @@ const applicationPaths: Record<string, PathItem> = {
       ),
     },
   },
-  '/api/viewing-requests': {
-    get: {
-      tags: ['Viewing requests'],
-      operationId: 'listViewingRequests',
-      summary: 'List viewing requests involving the signed-in user',
-      security: cookieSecurity,
-      parameters: [
-        {
-          name: 'role',
-          in: 'query',
-          schema: {
-            type: 'string',
-            enum: ['requester', 'owner', 'all'],
-            default: 'all',
-          },
-        },
-      ],
-      responses: responseSet(
-        {
-          '200': dataResponse('Viewing requests.', {
-            type: 'object',
-            additionalProperties: false,
-            required: ['items'],
-            properties: {
-              items: {
-                type: 'array',
-                items: schemaRef('ViewingRequestListItem'),
-              },
-            },
-          }),
-        },
-        [400, 401],
-      ),
-    },
-  },
-  '/api/viewing-requests/{id}': {
-    patch: {
-      tags: ['Viewing requests'],
-      operationId: 'updateViewingRequest',
-      summary: 'Accept, decline, or cancel a viewing request',
-      description:
-        'Only the listing owner may accept or decline. Only the requester may cancel. Invalid state transitions return 409.',
-      security: cookieSecurity,
-      parameters: [idParameter('Viewing request ID.')],
-      requestBody: jsonBody('UpdateViewingRequestInput'),
-      responses: responseSet(
-        {
-          '200': dataResponse('Viewing request updated.', schemaRef('ViewingRequest')),
-        },
-        [400, 401, 403, 404, 409],
-      ),
-    },
-  },
   '/api/reviews': {
     post: {
       tags: ['Reviews'],
       operationId: 'createReview',
       summary: 'Create a listing or user review',
       description:
-        'An accepted viewing request is required. A reviewer may review each target only once and cannot review themselves.',
+        'Both users must have sent messages in the same conversation. Listing reviews require a conversation linked to that listing with its current owner. Self-reviews, reviews of owned listings, blocked interactions and duplicate reviews are rejected. New reviews use the MEMBER role.',
       security: cookieSecurity,
       requestBody: jsonBody('CreateReviewInput'),
       responses: responseSet(
@@ -1757,13 +1608,11 @@ const RATE_LIMITED_OPERATIONS = new Set([
   'archiveListing',
   'favoriteListing',
   'unfavoriteListing',
-  'createViewingRequest',
   'updateProfile',
   'favoriteProfile',
   'unfavoriteProfile',
   'blockUser',
   'unblockUser',
-  'updateViewingRequest',
   'createReview',
   'createReport',
   'createConversation',
@@ -1801,7 +1650,7 @@ function addRateLimitResponses(paths: Record<string, PathItem>) {
  */
 async function getAuthenticationPaths() {
   const documentationAuth = betterAuth({
-    appName: 'Stay.bg',
+    appName: 'RentBee',
     baseURL: 'http://localhost:3000',
     secret: 'openapi-generation-only-secret-at-least-32-characters',
     // Callbacks are no-ops: only their presence changes which routes Better Auth mounts.
@@ -1903,10 +1752,10 @@ async function main() {
   const openApiDocument = {
     openapi: '3.1.1',
     info: {
-      title: 'Stay.bg Backend API',
+      title: 'RentBee Backend API',
       version: '0.1.0',
       description:
-        'OpenAPI documentation for the Stay.bg Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes. Admin routes (`/api/admin/*` and the Better Auth admin plugin) are intentionally excluded; they return 404 to non-admins and are documented in docs/README.backend.md.',
+        'OpenAPI documentation for the RentBee Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes. Admin routes (`/api/admin/*` and the Better Auth admin plugin) are intentionally excluded; they return 404 to non-admins and are documented in docs/README.backend.md.',
     },
     servers: [
       {
@@ -1925,7 +1774,6 @@ async function main() {
       { name: 'Listings' },
       { name: 'Profiles' },
       { name: 'Favorites' },
-      { name: 'Viewing requests' },
       { name: 'Reviews' },
       { name: 'Reports' },
       { name: 'Conversations' },

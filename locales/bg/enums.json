@@ -12,15 +12,10 @@
     "WOMEN_ONLY": "Само жени",
     "MEN_ONLY": "Само мъже"
   },
-  "viewingRequestStatus": {
-    "REQUESTED": "Изчаква отговор",
-    "ACCEPTED": "Приета",
-    "DECLINED": "Отказана",
-    "CANCELLED": "Отменена"
-  },
   "reviewerRole": {
     "TENANT": "Наемател",
-    "OWNER": "Наемодател"
+    "OWNER": "Наемодател",
+    "MEMBER": "Потребител"
   },
   "reportReason": {
     "SCAM": "Измама",

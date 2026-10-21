@@ -1,19 +1,9 @@
 import 'server-only';
 
 import { and, eq, gte, lt, ne } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db';
-import {
-  conversationParticipants,
-  conversations,
-  listings,
-  messages,
-  user,
-  viewingRequests,
-} from '@/db/schema';
-import { OWNER_REQUESTS_ANCHOR } from '@/features/viewing-requests/constants';
-import { formatDateTime } from '@/lib/format';
+import { conversationParticipants, conversations, listings, messages, user } from '@/db/schema';
 import { routes } from '@/lib/routes';
 import { sendEmail } from '@/lib/server/email';
 import { serverEnv } from '@/lib/server/env';
@@ -150,120 +140,6 @@ export async function notifyNewMessage(messageId: string) {
           },
         }),
       );
-    }),
-  );
-}
-
-const requester = alias(user, 'requester');
-const owner = alias(user, 'owner');
-
-async function loadViewingRequest(requestId: string) {
-  const [row] = await db
-    .select({
-      message: viewingRequests.message,
-      requestedStartAt: viewingRequests.requestedStartAt,
-      listingTitle: listings.title,
-      requester: { name: requester.name, email: requester.email, locale: requester.locale },
-      owner: { name: owner.name, email: owner.email, locale: owner.locale },
-    })
-    .from(viewingRequests)
-    .innerJoin(listings, eq(listings.id, viewingRequests.listingId))
-    .innerJoin(requester, eq(requester.id, viewingRequests.requesterId))
-    .innerJoin(owner, eq(owner.id, viewingRequests.ownerId))
-    .where(eq(viewingRequests.id, requestId))
-    .limit(1);
-
-  return row;
-}
-
-export async function notifyViewingRequestCreated(requestId: string) {
-  const request = await loadViewingRequest(requestId);
-
-  if (!request) {
-    return;
-  }
-
-  const locale = emailLocale(request.owner.locale);
-  const t = emailTranslator(locale);
-  const when = formatDateTime(request.requestedStartAt, locale);
-
-  await sendEmail(
-    renderEmail({
-      to: request.owner.email,
-      locale,
-      subject: t('newViewingRequest.subject', { listing: request.listingTitle }),
-      heading: t('newViewingRequest.heading'),
-      paragraphs: [
-        t('newViewingRequest.body', {
-          requester: request.requester.name,
-          listing: request.listingTitle,
-          when,
-        }),
-        ...(request.message ? [t('newViewingRequest.messageLabel')] : []),
-      ],
-      quote: request.message,
-      action: {
-        label: t('newViewingRequest.button'),
-        url: `${appUrl}${routes.myListings(locale)}#${OWNER_REQUESTS_ANCHOR}`,
-      },
-    }),
-  );
-}
-
-/** Tells the other side about an owner's decision or a requester's cancellation. */
-export async function notifyViewingRequestStatus(
-  requestId: string,
-  status: 'ACCEPTED' | 'DECLINED' | 'CANCELLED',
-) {
-  const request = await loadViewingRequest(requestId);
-
-  if (!request) {
-    return;
-  }
-
-  const recipient = status === 'CANCELLED' ? request.owner : request.requester;
-  const locale = emailLocale(recipient.locale);
-  const t = emailTranslator(locale);
-  const values = {
-    owner: request.owner.name,
-    requester: request.requester.name,
-    listing: request.listingTitle,
-    when: formatDateTime(request.requestedStartAt, locale),
-  };
-
-  const content =
-    status === 'ACCEPTED'
-      ? {
-          subject: t('viewingAccepted.subject', values),
-          heading: t('viewingAccepted.heading'),
-          body: t('viewingAccepted.body', values),
-          button: t('viewingAccepted.button'),
-          url: routes.appliedListings(locale),
-        }
-      : status === 'DECLINED'
-        ? {
-            subject: t('viewingDeclined.subject', values),
-            heading: t('viewingDeclined.heading'),
-            body: t('viewingDeclined.body', values),
-            button: t('viewingDeclined.button'),
-            url: routes.listings(locale),
-          }
-        : {
-            subject: t('viewingCancelled.subject', values),
-            heading: t('viewingCancelled.heading'),
-            body: t('viewingCancelled.body', values),
-            button: t('viewingCancelled.button'),
-            url: `${routes.myListings(locale)}#${OWNER_REQUESTS_ANCHOR}`,
-          };
-
-  await sendEmail(
-    renderEmail({
-      to: recipient.email,
-      locale,
-      subject: content.subject,
-      heading: content.heading,
-      paragraphs: [content.body],
-      action: { label: content.button, url: `${appUrl}${content.url}` },
     }),
   );
 }

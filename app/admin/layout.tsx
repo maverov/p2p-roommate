@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 lg:px-6">
           <nav aria-label="Admin" className="flex items-center gap-5 text-[14px] font-semibold">
             <Link className="text-brand-ink hover:text-brand-terracotta" href={routes.admin()}>
-              Stay.bg Admin
+              RentBee Admin
             </Link>
             <AdminNav items={[{ href: routes.adminReports(), label: 'Reports' }]} />
           </nav>

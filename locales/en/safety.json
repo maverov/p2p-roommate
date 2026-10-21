@@ -2,7 +2,7 @@
   "metaTitle": "Safety tips",
   "metaDescription": "How to rent a room safely in Bulgaria: never pay before a viewing, spot common scams, check who owns the property and put everything in writing.",
   "title": "Safety tips",
-  "intro": "Most people on Stay.bg are exactly who they say they are. These habits protect you from the few who are not.",
+  "intro": "Most people on RentBee are exactly who they say they are. These habits protect you from the few who are not.",
   "sections": {
     "money": {
       "title": "Never pay before a viewing",
@@ -25,7 +25,7 @@
     "viewings": {
       "title": "Viewings",
       "points": {
-        "record": "Arrange the viewing through Stay.bg, so there is a record of when and where.",
+        "record": "Agree on the time and place in your RentBee messages, so you have a written record.",
         "company": "Go in daylight if you can, take a friend or tell someone where you are going.",
         "check": "Check that the room matches the photos, and test the water, heating, windows, locks and internet.",
         "flatmates": "If you will share the home, meet the people you will live with."
@@ -49,9 +49,9 @@
       }
     },
     "platform": {
-      "title": "Keep the conversation on Stay.bg",
+      "title": "Keep the conversation on RentBee",
       "points": {
-        "record": "Messages on Stay.bg are a record if something goes wrong, and they let us act on a report.",
+        "record": "Messages on RentBee are a record if something goes wrong, and they let us act on a report.",
         "personal": "Do not share a copy of your ID card, your personal number (ЕГН) or bank details before you get to signing the lease."
       }
     },
@@ -59,7 +59,7 @@
       "title": "Report and block",
       "points": {
         "report": "If a listing or a person seems wrong, report it from the listing or the profile. Reports are confidential.",
-        "block": "Block someone from their profile or a conversation to stop them messaging you or requesting viewings."
+        "block": "Block someone from their profile or a conversation to stop them messaging you."
       }
     }
   },

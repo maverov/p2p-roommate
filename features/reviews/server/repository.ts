@@ -1,41 +1,26 @@
 import 'server-only';
 
-import { and, avg, count, desc, eq, or } from 'drizzle-orm';
+import { and, avg, count, desc, eq, sql } from 'drizzle-orm';
+
+import { alias } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db';
-import { listings, reviews, user, viewingRequests } from '@/db/schema';
+import {
+  conversationParticipants,
+  conversations,
+  listings,
+  messages,
+  reviews,
+  user,
+} from '@/db/schema';
 import { ApiError } from '@/lib/server/api';
+import { publicUserCondition } from '@/lib/server/public-user';
+import { assertNotBlocked } from '@/features/blocks/server/repository';
 
 import type { CreateReviewInput, ListReviewsQuery } from '../schemas';
 
 export async function createReview(reviewerId: string, input: CreateReviewInput) {
-  let reviewerRole: 'TENANT' | 'OWNER';
-
-  if (input.targetType === 'USER') {
-    if (input.targetUserId === reviewerId) {
-      throw new ApiError(400, 'CANNOT_REVIEW_SELF', 'You cannot review yourself.');
-    }
-
-    await assertUserExists(input.targetUserId);
-    reviewerRole = await getUserReviewRoleOrThrow(
-      reviewerId,
-      input.targetUserId,
-    );
-    await assertReviewDoesNotExist(
-      reviewerId,
-      input.targetType,
-      input.targetUserId,
-    );
-  } else {
-    await assertListingExists(input.listingId);
-    await assertAcceptedListingViewingOrThrow(reviewerId, input.listingId);
-    reviewerRole = 'TENANT';
-    await assertReviewDoesNotExist(
-      reviewerId,
-      input.targetType,
-      input.listingId,
-    );
-  }
+  await assertReviewAllowed(reviewerId, input);
 
   try {
     const [review] = await db
@@ -44,11 +29,9 @@ export async function createReview(reviewerId: string, input: CreateReviewInput)
         id: crypto.randomUUID(),
         reviewerId,
         targetType: input.targetType,
-        targetUserId:
-          input.targetType === 'USER' ? input.targetUserId : undefined,
-        listingId:
-          input.targetType === 'LISTING' ? input.listingId : undefined,
-        reviewerRole,
+        targetUserId: input.targetType === 'USER' ? input.targetUserId : undefined,
+        listingId: input.targetType === 'LISTING' ? input.listingId : undefined,
+        reviewerRole: 'MEMBER',
         rating: input.rating,
         body: input.body,
       })
@@ -57,34 +40,12 @@ export async function createReview(reviewerId: string, input: CreateReviewInput)
     return review;
   } catch (error) {
     if (isUniqueViolation(error)) {
-      throw new ApiError(
-        409,
-        'REVIEW_ALREADY_EXISTS',
-        'You have already reviewed this target.',
-      );
+      throw new ApiError(409, 'REVIEW_ALREADY_EXISTS', 'You have already reviewed this target.');
     }
 
     throw error;
   }
 }
-
-/**
- * Everything a user has already reviewed, so review prompts can disappear once used.
- * One indexed scan of the reviewer's own rows — bounded by how many reviews one person writes.
- */
-export async function listReviewedTargets(reviewerId: string) {
-  const rows = await db
-    .select({ listingId: reviews.listingId, targetUserId: reviews.targetUserId })
-    .from(reviews)
-    .where(eq(reviews.reviewerId, reviewerId));
-
-  return {
-    listingIds: new Set(rows.flatMap((row) => (row.listingId ? [row.listingId] : []))),
-    userIds: new Set(rows.flatMap((row) => (row.targetUserId ? [row.targetUserId] : []))),
-  };
-}
-
-export type ReviewedTargets = Awaited<ReturnType<typeof listReviewedTargets>>;
 
 export async function listUserReviews(userId: string, query: ListReviewsQuery) {
   const offset = (query.page - 1) * query.perPage;
@@ -127,10 +88,7 @@ export async function listUserReviews(userId: string, query: ListReviewsQuery) {
   };
 }
 
-export async function listListingReviews(
-  listingId: string,
-  query: ListReviewsQuery,
-) {
+export async function listListingReviews(listingId: string, query: ListReviewsQuery) {
   const offset = (query.page - 1) * query.perPage;
   const where = and(
     eq(reviews.targetType, 'LISTING'),
@@ -207,10 +165,7 @@ export async function getListingReviewSummary(listingId: string) {
   return normalizeSummary(summary);
 }
 
-function normalizeSummary(summary?: {
-  averageRating: string | null;
-  reviewCount: number;
-}) {
+function normalizeSummary(summary?: { averageRating: string | null; reviewCount: number }) {
   const averageRating = summary?.averageRating
     ? Number(Number(summary.averageRating).toFixed(1))
     : null;
@@ -221,91 +176,102 @@ function normalizeSummary(summary?: {
   };
 }
 
-async function assertUserExists(userId?: string) {
-  const [existingUser] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.id, userId ?? ''))
-    .limit(1);
+export type ReviewTarget =
+  { targetType: 'LISTING'; listingId: string } | { targetType: 'USER'; targetUserId: string };
 
-  if (!existingUser) {
-    throw new ApiError(404, 'USER_NOT_FOUND', 'User was not found.');
+/** The same eligibility check powers the page action and the write endpoint. */
+export async function canReview(reviewerId: string, target: ReviewTarget) {
+  try {
+    await assertReviewAllowed(reviewerId, target);
+    return true;
+  } catch (error) {
+    if (error instanceof ApiError && [400, 403, 404, 409].includes(error.status)) return false;
+    throw error;
   }
 }
 
-async function assertListingExists(listingId?: string) {
-  const [listing] = await db
-    .select({ id: listings.id })
-    .from(listings)
-    .where(eq(listings.id, listingId ?? ''))
-    .limit(1);
-
-  if (!listing) {
-    throw new ApiError(404, 'LISTING_NOT_FOUND', 'Listing was not found.');
-  }
-}
-
-async function assertAcceptedListingViewingOrThrow(
-  reviewerId: string,
-  listingId: string,
-) {
-  const [viewingRequest] = await db
-    .select({ id: viewingRequests.id })
-    .from(viewingRequests)
-    .where(
-      and(
-        eq(viewingRequests.listingId, listingId),
-        eq(viewingRequests.requesterId, reviewerId),
-        eq(viewingRequests.status, 'ACCEPTED'),
-      ),
-    )
-    .limit(1);
-
-  if (!viewingRequest) {
-    throw new ApiError(
-      403,
-      'REVIEW_NOT_ALLOWED',
-      'You can review a listing only after an accepted viewing request.',
-    );
-  }
-}
-
-async function getUserReviewRoleOrThrow(
-  reviewerId: string,
-  targetUserId: string,
-): Promise<'TENANT' | 'OWNER'> {
-  const [viewingRequest] = await db
-    .select({
-      requesterId: viewingRequests.requesterId,
-      ownerId: viewingRequests.ownerId,
-    })
-    .from(viewingRequests)
-    .where(
-      and(
-        eq(viewingRequests.status, 'ACCEPTED'),
-        or(
-          and(
-            eq(viewingRequests.requesterId, reviewerId),
-            eq(viewingRequests.ownerId, targetUserId),
-          ),
-          and(
-            eq(viewingRequests.ownerId, reviewerId),
-            eq(viewingRequests.requesterId, targetUserId),
-          ),
+async function assertReviewAllowed(reviewerId: string, target: ReviewTarget) {
+  let otherUserId: string;
+  if (target.targetType === 'USER') {
+    otherUserId = target.targetUserId;
+    const [person] = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.id, otherUserId), publicUserCondition()))
+      .limit(1);
+    if (!person) throw new ApiError(404, 'USER_NOT_FOUND', 'User was not found.');
+  } else {
+    const [listing] = await db
+      .select({ ownerId: listings.ownerId })
+      .from(listings)
+      .innerJoin(user, eq(user.id, listings.ownerId))
+      .where(
+        and(
+          eq(listings.id, target.listingId),
+          eq(listings.status, 'PUBLISHED'),
+          publicUserCondition(),
         ),
-      ),
-    )
-    .limit(1);
-
-  if (!viewingRequest) {
+      )
+      .limit(1);
+    if (!listing) throw new ApiError(404, 'LISTING_NOT_FOUND', 'Listing was not found.');
+    otherUserId = listing.ownerId;
+  }
+  if (reviewerId === otherUserId) {
+    throw new ApiError(
+      400,
+      'CANNOT_REVIEW_SELF',
+      'You cannot review yourself or your own listing.',
+    );
+  }
+  await assertNotBlocked(reviewerId, otherUserId);
+  if (
+    !(await hasMessageExchange(
+      reviewerId,
+      otherUserId,
+      target.targetType === 'LISTING' ? target.listingId : undefined,
+    ))
+  ) {
     throw new ApiError(
       403,
       'REVIEW_NOT_ALLOWED',
-      'You can review a user only after an accepted viewing request together.',
+      'Both people must have sent messages in the same conversation before a review.',
     );
   }
+  await assertReviewDoesNotExist(
+    reviewerId,
+    target.targetType,
+    target.targetType === 'LISTING' ? target.listingId : target.targetUserId,
+  );
+}
 
-  return viewingRequest.requesterId === reviewerId ? 'TENANT' : 'OWNER';
+/** A one-sided enquiry does not qualify. Listing reviews require that listing's thread. */
+export async function hasMessageExchange(
+  reviewerId: string,
+  otherUserId: string,
+  listingId?: string,
+) {
+  const reviewer = alias(conversationParticipants, 'reviewer_participant');
+  const recipient = alias(conversationParticipants, 'recipient_participant');
+  const [conversation] = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .innerJoin(
+      reviewer,
+      and(eq(reviewer.conversationId, conversations.id), eq(reviewer.userId, reviewerId)),
+    )
+    .innerJoin(
+      recipient,
+      and(eq(recipient.conversationId, conversations.id), eq(recipient.userId, otherUserId)),
+    )
+    .where(
+      and(
+        listingId ? eq(conversations.listingId, listingId) : undefined,
+        sql`exists (select 1 from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.senderId} = ${reviewerId})`,
+        sql`exists (select 1 from ${messages} where ${messages.conversationId} = ${conversations.id} and ${messages.senderId} = ${otherUserId})`,
+      ),
+    )
+    .limit(1);
+  return Boolean(conversation);
 }
 
 async function assertReviewDoesNotExist(
@@ -314,36 +280,21 @@ async function assertReviewDoesNotExist(
   targetId: string,
 ) {
   const targetWhere =
-    targetType === 'LISTING'
-      ? eq(reviews.listingId, targetId)
-      : eq(reviews.targetUserId, targetId);
+    targetType === 'LISTING' ? eq(reviews.listingId, targetId) : eq(reviews.targetUserId, targetId);
 
   const [existingReview] = await db
     .select({ id: reviews.id })
     .from(reviews)
-    .where(
-      and(
-        eq(reviews.reviewerId, reviewerId),
-        eq(reviews.targetType, targetType),
-        targetWhere,
-      ),
-    )
+    .where(and(eq(reviews.reviewerId, reviewerId), eq(reviews.targetType, targetType), targetWhere))
     .limit(1);
 
   if (existingReview) {
-    throw new ApiError(
-      409,
-      'REVIEW_ALREADY_EXISTS',
-      'You have already reviewed this target.',
-    );
+    throw new ApiError(409, 'REVIEW_ALREADY_EXISTS', 'You have already reviewed this target.');
   }
 }
 
 function isUniqueViolation(error: unknown): error is { code: string } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === '23505'
-  );
+  if (typeof error !== 'object' || error === null) return false;
+  if ('code' in error && error.code === '23505') return true;
+  return 'cause' in error && error.cause !== error && isUniqueViolation(error.cause);
 }

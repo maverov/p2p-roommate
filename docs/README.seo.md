@@ -85,7 +85,7 @@ export async function generateMetadata({
 
 The root `app/layout.tsx` keeps static brand defaults: it sits outside `[locale]` and
 also serves the auth pages and `/admin`, so localizing it would force dynamic rendering. Its
-`%s | Stay.bg` title template brands every page title below it — but Open Graph and
+`%s | RentBee` title template brands every page title below it — but Open Graph and
 Twitter titles bypass that template, so spell the brand out there.
 
 ## Rule: filtered and tabbed URLs are not indexable
@@ -119,7 +119,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 ```
 
-Signed-in pages (`/settings`, `/saved`, `/messages`, My Listings, Applied Listings, the
+Signed-in pages (`/settings`, `/saved`, `/messages`, My Listings, the
 listing form) and the draft legal pages (`/privacy`, `/terms`) set
 `robots: { index: false }` in their own `generateMetadata`.
 
@@ -167,13 +167,28 @@ routes with ids. One sitemap file holds at most 50,000 URLs, so listings are cap
 `/terms` are `noindex` while they hold draft text; add them to `STATIC_PAGES` when the
 reviewed text is published.
 
+## RentBee branding and URLs
+
+The public brand is `RentBee`, and production metadata should use
+`NEXT_PUBLIC_APP_URL=https://rentbee.bg`. Titles, Open Graph site names, email copy,
+and Organization/WebSite structured data use RentBee in both languages. No social
+account handle is declared until a real one is supplied.
+
+`routes.whyUs(locale)` resolves to `/<locale>/why-rentbee`, so navigation, canonical
+URLs, language alternates, and the sitemap use the new path. `next.config.js`
+permanently redirects `/bg/why-stay` and `/en/why-stay` to the corresponding new
+pages; `/why-stay` redirects to `/bg/why-rentbee`. The page implementation is
+`app/[locale]/why-rentbee/page.tsx`; shared cards and the home section are
+`features/company/components/WhyRentBeeCards.tsx` and `components/home/WhyRentBee.tsx`.
+
 ## Known gap: icons and OG image are missing
 
 `app/layout.tsx` points at `/favicon.ico`, `/favicon-16x16.png`, `/apple-touch-icon.png`
-and `/og-image.png`, and listing pages and `lib/jsonld.tsx` fall back to `/og-image.png`;
-`OrganizationJsonLd` also references `/logo.png`. None of these files exist in `public/`
-yet, so they all return 404 and share previews have no image. Add real assets (OG image
-1200×630) before launch; this is a violation of team rule 7, not a pattern to copy.
+and `/og-image.png`, and listing pages and `lib/jsonld.tsx` fall back to `/og-image.png`.
+These files do not exist in `public/` yet, so the referenced assets return 404 and
+share previews have no image. Add RentBee assets (OG image 1200×630) before launch.
+`OrganizationJsonLd` currently omits the logo and social accounts; add those fields
+once a real logo asset and account URLs are available.
 
 ## Example: JSON-LD structured data
 
@@ -190,7 +205,7 @@ import { JsonLd } from '@/lib/jsonld';
   data={{
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Stay.bg',
+    name: 'RentBee',
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
   }}
 />;

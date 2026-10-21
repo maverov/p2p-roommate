@@ -45,7 +45,7 @@ export default async function AreasPage({ params }: AreasPageProps) {
     safeQuery(getListingCountsByArea(), 'area counts'),
   ]);
   const crumbs = [
-    { name: 'Stay.bg', href: routes.home(locale) },
+    { name: 'RentBee', href: routes.home(locale) },
     { name: t('breadcrumb'), href: routes.areas(locale) },
   ];
 

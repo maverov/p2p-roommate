@@ -115,10 +115,10 @@ Set production variables in `.env.production.local` (or the host's environment):
 ```env
 DATABASE_URL=postgresql://user:password@host:5432/database
 BETTER_AUTH_SECRET=replace-with-a-high-entropy-secret
-BETTER_AUTH_URL=https://your-app-url
-NEXT_PUBLIC_APP_URL=https://your-app-url
+BETTER_AUTH_URL=https://rentbee.bg
+NEXT_PUBLIC_APP_URL=https://rentbee.bg
 RESEND_API_KEY=re_...
-EMAIL_FROM="Stay.bg <noreply@your-verified-domain>"
+EMAIL_FROM="RentBee <noreply@rentbee.bg>"
 BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
 ```
 
@@ -138,6 +138,15 @@ Auth's rate limiter (Better Auth leaves it off in development). The per-user API
 apply in every environment.
 
 ## Open before launch
+
+The RentBee text rebrand is complete. The production domain is `rentbee.bg`,
+registered with Jump.bg; the DNS and hosting setup still need verification.
+Contact addresses in `lib/company.ts` use `@rentbee.bg`, but changing those strings
+does not create mailboxes. Likewise, the sender above requires Resend domain verification.
+
+The 13 October branding checks passed ESLint and translation integrity, but TypeScript
+reported errors and the production build was not reverified. Do not treat historical
+CI results as validation of the current checkout.
 
 - Real favicon, Apple touch icon, logo, and OG image assets (see
   [README.seo.md](README.seo.md#known-gap-icons-and-og-image-are-missing)).

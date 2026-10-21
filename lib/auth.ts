@@ -44,7 +44,7 @@ const socialProviders = Object.fromEntries(
 const pendingUploadCleanup = new Map<string, string[]>();
 
 export const auth = betterAuth({
-  appName: 'Stay.bg',
+  appName: 'RentBee',
   baseURL: serverEnv.BETTER_AUTH_URL,
   secret: serverEnv.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {

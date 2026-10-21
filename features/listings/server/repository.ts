@@ -21,6 +21,7 @@ import { db } from '@/db';
 import { favorites, listingImages, listings, user, userProfiles } from '@/db/schema';
 import { approximate } from '@/lib/map';
 import { ApiError } from '@/lib/server/api';
+import { publicListingLocation } from '@/lib/server/listing-location';
 
 import type {
   CreateListingInput,
@@ -65,7 +66,7 @@ export async function listPublishedListings(filters: ListListingsQuery) {
     db.select({ value: count() }).from(listings).where(where),
   ]);
 
-  const items = await attachImages(rows);
+  const items = (await attachImages(rows)).map(publicListingLocation);
 
   return {
     items,
@@ -96,7 +97,7 @@ export async function getPublishedListingById(id: string) {
 
   const [listing] = await attachImages([row]);
 
-  return listing;
+  return publicListingLocation(listing);
 }
 
 export async function createListing(ownerId: string, input: CreateListingInput) {
@@ -249,7 +250,7 @@ export async function listSavedListings(userId: string) {
   );
 
   return items.map((item) => ({
-    ...item,
+    ...publicListingLocation(item),
     savedAt: savedAtByListingId.get(item.id) ?? null,
   }));
 }
@@ -354,7 +355,7 @@ export async function listSimilarListings(listingId: string, limit = 6) {
     .orderBy(desc(listings.publishedAt), desc(listings.createdAt))
     .limit(limit);
 
-  return attachImages(rows);
+  return (await attachImages(rows)).map(publicListingLocation);
 }
 
 async function attachImages(

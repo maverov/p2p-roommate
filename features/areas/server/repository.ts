@@ -8,6 +8,7 @@ import { listings, user, userProfiles } from '@/db/schema';
 import { listListingsQuerySchema } from '@/features/listings/schemas';
 import { buildPublishedListingWhere } from '@/features/listings/server/repository';
 import { AREA_KINDS, AREA_KIND_FILTERS, type AreaKind, type CityId } from '@/lib/areas';
+import { publicUserCondition } from '@/lib/server/public-user';
 
 export type AreaRef = { citySlug: CityId; neighborhoodSlug?: string };
 
@@ -119,7 +120,7 @@ export async function countRoomSeekers({ citySlug, neighborhoodSlug }: AreaRef) 
       and(
         eq(userProfiles.lookingForRoom, true),
         eq(userProfiles.citySlug, citySlug),
-        eq(user.banned, false),
+        publicUserCondition(),
         neighborhoodSlug
           ? or(
               sql`${userProfiles.wantedNeighborhoods} @> ${JSON.stringify([neighborhoodSlug])}::jsonb`,

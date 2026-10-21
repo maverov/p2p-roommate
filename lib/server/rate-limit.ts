@@ -18,8 +18,6 @@ export const RATE_LIMITS = {
   sendMessage: { limit: 30, windowSeconds: 60 },
   createListing: { limit: 10, windowSeconds: 24 * 60 * 60 },
   updateListing: { limit: 60, windowSeconds: 60 * 60 },
-  requestViewing: { limit: 10, windowSeconds: 60 * 60 },
-  updateViewingRequest: { limit: 60, windowSeconds: 60 * 60 },
   report: { limit: 10, windowSeconds: 60 * 60 },
   review: { limit: 10, windowSeconds: 60 * 60 },
   favorite: { limit: 120, windowSeconds: 60 },

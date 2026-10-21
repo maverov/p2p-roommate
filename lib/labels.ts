@@ -14,9 +14,8 @@ export type RoommatePreference =
   | 'PROFESSIONALS'
   | 'WOMEN_ONLY'
   | 'MEN_ONLY';
-export type ViewingRequestStatus = 'REQUESTED' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
 export type ReportStatus = 'OPEN' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
-export type ReviewerRole = 'TENANT' | 'OWNER';
+export type ReviewerRole = 'TENANT' | 'OWNER' | 'MEMBER';
 export type RoomType = 'SINGLE' | 'DOUBLE' | 'SHARED';
 
 export const PROPERTY_TYPES: PropertyType[] = [

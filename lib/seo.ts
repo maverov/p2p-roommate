@@ -26,8 +26,8 @@ export function pageMetadata({
   type = 'website',
 }: PageMetadataInput): Metadata {
   const url = `${appUrl}${path(locale)}`;
-  // Social titles bypass the layout's `%s | Stay.bg` template.
-  const socialTitle = `${title} | Stay.bg`;
+  // Social titles bypass the layout's `%s | RentBee` template.
+  const socialTitle = `${title} | RentBee`;
   const image = `${appUrl}/og-image.png`;
 
   return {
@@ -44,7 +44,7 @@ export function pageMetadata({
       title: socialTitle,
       description,
       url,
-      siteName: 'Stay.bg',
+      siteName: 'RentBee',
       images: [{ url: image, width: 1200, height: 630 }],
       type,
       locale: openGraphLocale[locale],

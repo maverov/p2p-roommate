@@ -6,7 +6,7 @@ import HowItWorks from '@/components/home/HowItWorks';
 import ListPropertyCta from '@/components/home/ListPropertyCta';
 import PopularCities from '@/components/home/PopularCities';
 import Testimonials from '@/components/home/Testimonials';
-import WhyStay from '@/components/home/WhyStay';
+import WhyRentBee from '@/components/home/WhyRentBee';
 import { FeaturedIn } from '@/features/company/components/FeaturedIn';
 import { openGraphLocale, type Locale } from '@/lib/i18n';
 import { BreadcrumbJsonLd, OrganizationJsonLd, WebSiteJsonLd } from '@/lib/jsonld';
@@ -23,7 +23,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: 'metadata.home' });
 
-  // The root layout's `%s | Stay.bg` template brands `metadata.title`; Open Graph
+  // The root layout's `%s | RentBee` template brands `metadata.title`; Open Graph
   // titles bypass that template, so they carry the brand themselves.
   const title = t('title');
 
@@ -66,7 +66,7 @@ export default async function HomePage({ params }: PageProps) {
         <FeaturedListings locale={params.locale} />
         {/* Renders nothing until there is coverage in `features/company/press.ts`. */}
         <FeaturedIn className="bg-brand-cream px-6 pb-6 pt-8 lg:px-10" locale={params.locale} />
-        <WhyStay locale={params.locale} />
+        <WhyRentBee locale={params.locale} />
         <ListPropertyCta locale={params.locale} />
         <Testimonials locale={params.locale} />
         <HowItWorks locale={params.locale} />

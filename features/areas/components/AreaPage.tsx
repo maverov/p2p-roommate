@@ -188,7 +188,7 @@ export async function AreaPage(props: AreaPageProps) {
   });
 
   const crumbs = [
-    { name: 'Stay.bg', href: routes.home(locale) },
+    { name: 'RentBee', href: routes.home(locale) },
     { name: t('breadcrumb'), href: routes.areas(locale) },
     { name: area.city, href: routes.area(locale, citySlug) },
     ...(area.neighborhood

@@ -145,7 +145,7 @@ export const reportStatus = pgEnum('report_status', [
   'DISMISSED',
 ]);
 
-export const viewingRequestStatus = pgEnum('viewing_request_status', [
+export const archivedViewingStatus = pgEnum('viewing_request_status', [
   'REQUESTED',
   'ACCEPTED',
   'DECLINED',
@@ -158,6 +158,7 @@ export const reviewTargetType = pgEnum('review_target_type', [
 ]);
 
 export const reviewerRole = pgEnum('reviewer_role', [
+  'MEMBER',
   'TENANT',
   'OWNER',
 ]);
@@ -345,7 +346,7 @@ export const savedProfiles = pgTable(
 
 /**
  * One row per "A blocked B". Stored one-way so each side's list is their own, but
- * enforced both ways: neither person can message or request a viewing from the other.
+ * enforced both ways: neither person can message the other.
  */
 export const userBlocks = pgTable(
   'user_block',
@@ -367,7 +368,8 @@ export const userBlocks = pgTable(
   ],
 );
 
-export const viewingRequests = pgTable(
+/** Retired scheduling records retained solely for account data export and deletion. */
+export const archivedViewingRequests = pgTable(
   'viewing_request',
   {
     id: text('id').primaryKey(),
@@ -384,7 +386,7 @@ export const viewingRequests = pgTable(
       withTimezone: true,
     }).notNull(),
     message: text('message'),
-    status: viewingRequestStatus('status').default('REQUESTED').notNull(),
+    status: archivedViewingStatus('status').default('REQUESTED').notNull(),
     ...timestamps,
   },
   (table) => [
@@ -531,5 +533,3 @@ export type UserProfile = typeof userProfiles.$inferSelect;
 export type NewUserProfile = typeof userProfiles.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
-export type ViewingRequest = typeof viewingRequests.$inferSelect;
-export type NewViewingRequest = typeof viewingRequests.$inferInsert;

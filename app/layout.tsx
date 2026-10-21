@@ -13,12 +13,12 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Stay.bg - Намери стая без посредник',
-    template: '%s | Stay.bg',
+    default: 'RentBee - Намери стая без посредник',
+    template: '%s | RentBee',
   },
   description:
     'P2P платформа за наем на стаи и апартаменти в България. Директен контакт между наематели и наемодатели.',
-  applicationName: 'Stay.bg',
+  applicationName: 'RentBee',
   keywords: [
     'стая под наем',
     'апартамент под наем',
@@ -52,9 +52,9 @@ export const metadata: Metadata = {
       'max-video-preview': -1,
     },
   },
-  authors: [{ name: 'Stay.bg Team' }],
-  creator: 'Stay.bg Team',
-  publisher: 'Stay.bg',
+  authors: [{ name: 'RentBee Team' }],
+  creator: 'RentBee Team',
+  publisher: 'RentBee',
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon-16x16.png',
@@ -62,11 +62,11 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: 'Stay.bg - Намери стая без посредник',
+    title: 'RentBee - Намери стая без посредник',
     description:
       'P2P платформа за наем на стаи и апартаменти в България. Директен контакт между наематели и наемодатели.',
     url: `${appUrl}/bg`,
-    siteName: 'Stay.bg',
+    siteName: 'RentBee',
     locale: 'bg_BG',
     alternateLocale: ['en_US'],
     images: [
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Stay.bg - P2P платформа за наем',
+        alt: 'RentBee - P2P платформа за наем',
         type: 'image/png',
       },
     ],
@@ -83,11 +83,10 @@ export const metadata: Metadata = {
 
   twitter: {
     card: 'summary_large_image',
-    title: 'Stay.bg - Намери стая без посредник',
+    title: 'RentBee - Намери стая без посредник',
     description:
       'P2P платформа за наем на стаи и апартаменти в България. Директен контакт между наематели и наемодатели.',
     images: ['/og-image.png'],
-    creator: '@staybg',
   },
 };
 

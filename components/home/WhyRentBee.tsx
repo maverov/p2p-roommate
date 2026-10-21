@@ -2,11 +2,11 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import SquiggleUnderline from '@/components/ui/SquiggleUnderline';
-import { WhyStayCards } from '@/features/company/components/WhyStayCards';
+import { WhyRentBeeCards } from '@/features/company/components/WhyRentBeeCards';
 import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
 
-export default async function WhyStay({ locale }: { locale: Locale }) {
+export default async function WhyRentBee({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: 'company.why' });
 
   return (
@@ -29,7 +29,7 @@ export default async function WhyStay({ locale }: { locale: Locale }) {
           </Link>
         </div>
 
-        <WhyStayCards locale={locale} />
+        <WhyRentBeeCards locale={locale} />
       </div>
     </section>
   );

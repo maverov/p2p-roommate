@@ -55,8 +55,8 @@ export async function generateMetadata({ params }: SafetyPageProps): Promise<Met
       },
     },
     openGraph: {
-      // Open Graph titles bypass the layout's `%s | Stay.bg` template.
-      title: `${t('metaTitle')} | Stay.bg`,
+      // Open Graph titles bypass the layout's `%s | RentBee` template.
+      title: `${t('metaTitle')} | RentBee`,
       description: t('metaDescription'),
       url,
       type: 'article',

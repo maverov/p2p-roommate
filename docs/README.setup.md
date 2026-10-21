@@ -26,7 +26,7 @@ Copy-Item .env.example .env.local
 Fill in `.env.local`:
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/stay_bg
+DATABASE_URL=postgresql://user:password@localhost:5432/rentbee
 BETTER_AUTH_SECRET=replace-with-a-32-character-minimum-secret
 BETTER_AUTH_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -34,9 +34,16 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Optional
 DATABASE_POOL_MAX=10
 RESEND_API_KEY=
-EMAIL_FROM="Stay.bg <noreply@stay.bg>"
+EMAIL_FROM="RentBee <noreply@rentbee.bg>"
 BLOB_READ_WRITE_TOKEN=
 ```
+
+These database names and credentials are examples: use the database and role you
+actually created. Existing checkouts may use the legacy `stay_bg` database; keep
+their working `DATABASE_URL`. The RentBee rebrand does not rename databases or
+change local credentials. CI creates a separate disposable `rentbee_ci` database.
+Keep localhost URLs for local development. In Vercel production, set both
+`BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to `https://rentbee.bg` before building.
 
 `lib/server/env.ts` validates the server variables on first use: `DATABASE_URL` and
 `BETTER_AUTH_URL` must be URLs, `BETTER_AUTH_SECRET` must be at least 32 characters, and
@@ -71,7 +78,7 @@ pnpm db:seed      # optional: sample users, listings, reviews, conversations
 ```
 
 The seed is safe to re-run: every row it creates has a `seed-` id prefix, and it deletes
-those rows before inserting. Seeded accounts such as `maria@stay.bg` are already verified
+those rows before inserting. Seeded accounts such as `maria@rentbee.bg` are already verified
 and share the password `password123`. Because that password is public, the seed refuses
 any `DATABASE_URL` host other than `localhost`, `127.0.0.1`, `[::1]`, or
 `host.docker.internal`; set `ALLOW_REMOTE_SEED=1` only for a disposable, non-public

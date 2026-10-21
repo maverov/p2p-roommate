@@ -10,7 +10,7 @@
   "notFound": "Profile not found",
   "notFoundBody": "This user may have deleted their profile.",
   "backToListings": "Browse all listings",
-  "memberSince": "On Stay.bg since",
+  "memberSince": "On RentBee since",
   "location": "Location",
   "reviewCount": "{count, plural, one {# review} other {# reviews}}",
   "tabsLabel": "Profile sections",
@@ -43,7 +43,7 @@
   "reviews": {
     "heading": "Reviews",
     "empty": "No reviews yet",
-    "emptyBody": "Reviews appear after a confirmed viewing or tenancy.",
+    "emptyBody": "Reviews from people who have exchanged messages appear here.",
     "previous": "Previous",
     "next": "Next",
     "pageOf": "Page {page} of {total}"

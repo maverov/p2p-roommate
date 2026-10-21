@@ -16,7 +16,7 @@ const serverEnvSchema = z.object({
   BETTER_AUTH_URL: z.string().url(),
   /** Resend API key. Without it, emails are printed to the server log (development only). */
   RESEND_API_KEY: optional,
-  /** Verified sender, e.g. `Stay.bg <noreply@stay.bg>`. */
+  /** Verified sender, e.g. `RentBee <noreply@rentbee.bg>`. */
   EMAIL_FROM: optional,
   /** Vercel Blob read/write token for photo uploads (read by `@vercel/blob` itself). */
   BLOB_READ_WRITE_TOKEN: optional,

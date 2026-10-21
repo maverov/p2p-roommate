@@ -127,7 +127,7 @@ export async function Footer({ locale }: { locale: Locale }) {
               <path d="M20 8L26 24H14L20 8Z" fill="white" />
             </svg>
             <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
-              stay<span className="text-brand-ink">.bg</span>
+              Rent<span className="text-brand-ink">Bee</span>
             </span>
           </Link>
 

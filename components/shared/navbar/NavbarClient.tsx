@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  CalendarCheck,
   Heart,
   Home,
   LogOut,
@@ -55,7 +54,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
               <path d="M20 8L26 24H14L20 8Z" fill="white" />
             </svg>
             <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
-              stay<span className="text-brand-ink">.bg</span>
+              Rent<span className="text-brand-ink">Bee</span>
             </span>
           </Link>
 
@@ -198,13 +197,6 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
                   >
                     <Home size={18} strokeWidth={1.75} />
                     {t('myListings')}
-                  </Link>
-                  <Link
-                    href={routes.appliedListings(locale)}
-                    className="flex items-center gap-2 py-2 text-[15px] font-medium text-brand-ink hover:text-brand-terracotta"
-                  >
-                    <CalendarCheck size={18} strokeWidth={1.75} />
-                    {t('appliedListings')}
                   </Link>
                   {isAdmin(user) && (
                     <Link

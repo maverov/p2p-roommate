@@ -12,7 +12,7 @@ import {
   SECONDARY_BUTTON,
   SECTION_HEADING,
 } from '@/features/company/components/company-ui';
-import { WhyStayCards } from '@/features/company/components/WhyStayCards';
+import { WhyRentBeeCards } from '@/features/company/components/WhyRentBeeCards';
 import { isLocale, type Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
 import { pageMetadata } from '@/lib/seo';
@@ -52,7 +52,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
         <h2 className={SECTION_HEADING} id="about-why">
           {t('why.heading')}
         </h2>
-        <WhyStayCards className="mt-5" locale={locale} />
+        <WhyRentBeeCards className="mt-5" locale={locale} />
       </section>
 
       <section

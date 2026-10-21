@@ -1,6 +1,6 @@
 # Architecture
 
-Stay.bg is one full-stack Next.js application: one TypeScript codebase, one PostgreSQL
+RentBee is one full-stack Next.js application: one TypeScript codebase, one PostgreSQL
 database, typed database access through Drizzle, and authentication through Better Auth.
 Server-only concerns never reach browser bundles.
 
@@ -60,7 +60,7 @@ state; add a store only when state genuinely has to be shared between distant co
 ```
 
 Features: `account`, `admin`, `auth`, `conversations`, `legal`, `listings`,
-`notifications`, `profiles`, `reports`, `reviews`, `uploads`, `viewing-requests`.
+`notifications`, `profiles`, `reports`, `reviews`, `uploads`.
 
 Unit tests (`*.test.ts`) sit next to the module they cover and run with `pnpm test`.
 
@@ -177,8 +177,6 @@ Without them, development prints each email to the server console; production th
 - email verification and password reset (called by Better Auth);
 - a new message, to the other participants, skipped if the same sender already wrote in
   that thread in the previous 15 minutes;
-- a new viewing request, to the owner (links to My Listings `#viewing-requests`);
-- accepted or declined, to the requester; cancelled, to the owner.
 
 Notifications run after the response through `runInBackground()`
 (`lib/server/background.ts`, `waitUntil` from `@vercel/functions`); a failure is logged,

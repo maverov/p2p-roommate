@@ -118,7 +118,7 @@ export default async function ListingsSearchPage({ params, searchParams }: Searc
   const totalPages = results ? Math.max(1, Math.ceil(results.total / results.perPage)) : 1;
 
   const breadcrumbItems = [
-    { name: 'Stay.bg', url: `${appUrl}${routes.home(locale)}` },
+    { name: 'RentBee', url: `${appUrl}${routes.home(locale)}` },
     { name: t('common.listings'), url: `${appUrl}${routes.listings(locale)}` },
   ];
 

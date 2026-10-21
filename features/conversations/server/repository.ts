@@ -16,6 +16,7 @@ import {
 } from '@/db/schema';
 import { assertNotBlocked } from '@/features/blocks/server/repository';
 import { ApiError } from '@/lib/server/api';
+import { publicUserCondition } from '@/lib/server/public-user';
 
 /**
  * Two ways to start a thread:
@@ -414,7 +415,7 @@ async function assertLookingForRoom(userId: string) {
       and(
         eq(userProfiles.userId, userId),
         eq(userProfiles.lookingForRoom, true),
-        eq(user.banned, false),
+        publicUserCondition(),
       ),
     )
     .limit(1);

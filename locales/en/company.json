@@ -1,7 +1,7 @@
 {
   "breadcrumbHome": "Home",
   "why": {
-    "heading": "Why use Stay.bg?",
+    "heading": "Why use RentBee?",
     "more": "Learn more",
     "cards": {
       "direct": {
@@ -25,14 +25,14 @@
     "heading": "Find out more",
     "about": {
       "title": "About us",
-      "body": "Who we are and why we built Stay.bg."
+      "body": "Who we are and why we built RentBee."
     },
     "whyUs": {
-      "title": "Why use Stay.bg?",
+      "title": "Why use RentBee?",
       "body": "What makes renting here simpler and safer."
     },
     "howItWorks": {
-      "title": "How Stay.bg works",
+      "title": "How RentBee works",
       "body": "Step by step, whether you're looking or letting."
     },
     "faq": {
@@ -41,23 +41,23 @@
     }
   },
   "about": {
-    "metaTitle": "About Stay.bg",
-    "metaDescription": "Stay.bg is a Bulgarian platform for renting rooms and flats and finding roommates directly, with no agents and no commission.",
-    "title": "About Stay.bg",
-    "intro": "Stay.bg is where people in Bulgaria find a room, let one or find someone to share a home with. You deal with each other directly: no agents in between and no commission on top.",
+    "metaTitle": "About RentBee",
+    "metaDescription": "RentBee is a Bulgarian platform for renting rooms and flats and finding roommates directly, with no agents and no commission.",
+    "title": "About RentBee",
+    "intro": "RentBee is where people in Bulgaria find a room, let one or find someone to share a home with. You deal with each other directly: no agents in between and no commission on top.",
     "sharing": {
       "heading": "Life's better when you share it",
       "p1": "Sharing a home is more than splitting the rent. The right roommate is the person you cook with, swap city tips with and sometimes keep as a friend for life.",
-      "p2": "That's why Stay.bg is built around people as much as places. Profiles, lifestyle tags and a match score help you find someone whose everyday rhythm fits yours, before you carry a single box up the stairs.",
+      "p2": "That's why RentBee is built around people as much as places. Profiles, lifestyle tags and a match score help you find someone whose everyday rhythm fits yours, before you carry a single box up the stairs.",
       "imageAlt": "Café terraces on a cobbled street in Kapana, Plovdiv"
     },
     "mission": {
-      "heading": "Why we built Stay.bg",
+      "heading": "Why we built RentBee",
       "p1": "Finding a room in Bulgaria too often means agency fees, ads that were let weeks ago and phone numbers passed around in crowded groups. People who simply want to rent out a room, or find one, deserve better.",
       "p2": "So we built a place where owners and tenants talk to each other directly, where every account confirms its email and where anything suspicious reaches a real team. It's free, it's in Bulgarian and English, and it's made in Bulgaria."
     },
     "facts": {
-      "heading": "Stay.bg in numbers",
+      "heading": "RentBee in numbers",
       "cities": {
         "value": "10",
         "label": "cities, from Sofia to the Black Sea coast"
@@ -78,10 +78,10 @@
     }
   },
   "whyUs": {
-    "metaTitle": "Why use Stay.bg?",
-    "metaDescription": "Free, direct and built with safety in mind: why renting a room or finding a roommate on Stay.bg is simpler.",
-    "title": "Why use Stay.bg?",
-    "intro": "Finding a room or a roommate is a big decision. Here's how Stay.bg makes it simpler, fairer and safer.",
+    "metaTitle": "Why use RentBee?",
+    "metaDescription": "Free, direct and built with safety in mind: why renting a room or finding a roommate on RentBee is simpler.",
+    "title": "Why use RentBee?",
+    "intro": "Finding a room or a roommate is a big decision. Here's how RentBee makes it simpler, fairer and safer.",
     "sections": {
       "direct": {
         "title": "Fill a room or find one, without the middleman",
@@ -93,11 +93,11 @@
       },
       "safety": {
         "title": "Safety",
-        "body": "Every account has to confirm its email address. Phone numbers and emails written in ads and profiles are hidden from visitors who aren't signed in, conversations stay on Stay.bg until you choose to share your details, and messaging limits keep spammers out. Anyone can report or block a listing or user, and our team reviews every report."
+        "body": "Every account has to confirm its email address. Phone numbers and emails written in ads and profiles are hidden from visitors who aren't signed in, conversations stay on RentBee until you choose to share your details, and messaging limits keep spammers out. Anyone can report or block a listing or user, and our team reviews every report."
       },
       "meet": {
         "title": "Meet before you commit",
-        "body": "Request a viewing from the listing and follow every request under Applied listings. Meet in person, look around and never pay a deposit before you've seen the place. Once you agree, our free rental templates help you put it in writing."
+        "body": "Arrange a visit directly with the owner through messages. Meet in person, look around and never pay a deposit before you have seen the place. Once you agree, our free rental templates help you put it in writing."
       },
       "help": {
         "title": "Help when you need it",
@@ -112,9 +112,9 @@
     }
   },
   "howItWorks": {
-    "metaTitle": "How Stay.bg works",
-    "metaDescription": "How to find a room, let a room or find a roommate on Stay.bg, step by step.",
-    "title": "How Stay.bg works",
+    "metaTitle": "How RentBee works",
+    "metaDescription": "How to find a room, let a room or find a roommate on RentBee, step by step.",
+    "title": "How RentBee works",
     "intro": "Whether you're looking for a room, letting one or looking for someone to share with, it takes a few simple steps.",
     "seekers": {
       "heading": "Looking for a room",
@@ -130,11 +130,11 @@
         },
         "message": {
           "title": "Message the owner",
-          "body": "Sign in and ask your questions through Stay.bg. Your email stays private and you decide when to share your phone number."
+          "body": "Sign in and ask your questions through RentBee. Your email stays private and you decide when to share your phone number."
         },
         "view": {
           "title": "Arrange a viewing",
-          "body": "Send a viewing request from the listing and follow its status under Applied listings."
+          "body": "Agree on a time and place directly with the owner in your conversation."
         },
         "agree": {
           "title": "Agree and move in",
@@ -156,7 +156,7 @@
         },
         "reply": {
           "title": "Reply to messages",
-          "body": "Answer questions and viewing requests on Stay.bg, and open each person's profile to see who they are."
+          "body": "Answer messages on RentBee and open each person’s profile to see who they are."
         },
         "choose": {
           "title": "Choose who moves in",
@@ -193,20 +193,20 @@
   },
   "faq": {
     "metaTitle": "Frequently asked questions",
-    "metaDescription": "Answers about finding a room, letting one, costs, privacy and safety on Stay.bg.",
+    "metaDescription": "Answers about finding a room, letting one, costs, privacy and safety on RentBee.",
     "title": "Frequently asked questions",
-    "intro": "Quick answers about finding a room, letting one and staying safe on Stay.bg.",
+    "intro": "Quick answers about finding a room, letting one and staying safe on RentBee.",
     "groups": {
       "finding": {
         "heading": "Finding a room or a roommate",
         "items": {
           "find": {
-            "question": "How do I find a room or a compatible roommate on Stay.bg?",
-            "answer": "Choose your city, set your budget and filters, and browse the results or the map. To find a roommate, add a few lifestyle tags to your profile: Stay.bg then shows a match score with each person, so you can message the best fits first."
+            "question": "How do I find a room or a compatible roommate on RentBee?",
+            "answer": "Choose your city, set your budget and filters, and browse the results or the map. To find a roommate, add a few lifestyle tags to your profile: RentBee then shows a match score with each person, so you can message the best fits first."
           },
           "account": {
             "question": "Do I need an account to browse?",
-            "answer": "No. Anyone can browse rooms and profiles. You need a free account to message people, save listings and request viewings."
+            "answer": "No. Anyone can browse rooms and profiles. You need a free account to message people and save listings."
           },
           "filters": {
             "question": "Can I look for pet-friendly, smoke-free or LGBTQ+ friendly places and people?",
@@ -230,8 +230,8 @@
             "answer": "Create a free account and confirm your email, then choose List your property. Add photos, the rent, deposit and bills, the move-in date and a few words about the household. Your listing goes live as soon as you publish it."
           },
           "cost": {
-            "question": "What does Stay.bg cost?",
-            "answer": "Nothing. Searching, posting a listing, messaging and requesting viewings are all free, and there's no agency fee or commission. You agree the rent and deposit directly with each other."
+            "question": "What does RentBee cost?",
+            "answer": "Nothing. Searching, posting a listing and messaging are all free, with no agency fee or commission. You agree the rent and deposit directly with each other."
           },
           "address": {
             "question": "Will people see my exact address?",
@@ -248,10 +248,10 @@
         "items": {
           "contact": {
             "question": "How do I contact people without sharing my phone number or email?",
-            "answer": "Use Stay.bg's messages. Your email is never shown, and your phone number only appears to signed-in users if you switch that on in your settings. Contact details written in ads and profiles are hidden from visitors who aren't signed in."
+            "answer": "Use RentBee's messages. Your email is never shown, and your phone number only appears to signed-in users if you switch that on in your settings. Contact details written in ads and profiles are hidden from visitors who aren't signed in."
           },
           "scams": {
-            "question": "How does Stay.bg protect me from scams?",
+            "question": "How does RentBee protect me from scams?",
             "answer": "Every account has to confirm its email address, contact details are hidden from visitors who aren't signed in, and messaging limits keep spammers out. You can report or block any listing or user, and our team reviews every report. The golden rule: never pay anything before you've seen the place and met the person."
           },
           "report": {
@@ -261,14 +261,14 @@
         }
       },
       "about": {
-        "heading": "About Stay.bg",
+        "heading": "About RentBee",
         "items": {
           "cities": {
-            "question": "Which cities does Stay.bg cover?",
+            "question": "Which cities does RentBee cover?",
             "answer": "Sofia, Plovdiv, Varna, Burgas, Ruse, Stara Zagora, Veliko Tarnovo, Blagoevgrad, Pleven and Haskovo. In Sofia and Plovdiv you can also search neighbourhood by neighbourhood."
           },
           "language": {
-            "question": "Can I use Stay.bg in English?",
+            "question": "Can I use RentBee in English?",
             "answer": "Yes. The whole site is available in Bulgarian and English: switch languages from the menu at the top."
           },
           "delete": {
@@ -286,13 +286,13 @@
   },
   "contact": {
     "metaTitle": "Contact us",
-    "metaDescription": "How to reach the Stay.bg team about your account, a listing, safety, press or partnerships.",
+    "metaDescription": "How to reach the RentBee team about your account, a listing, safety, press or partnerships.",
     "title": "Contact us",
     "intro": "We're a small team and we read every message. Pick the address that fits, so it reaches the right person.",
     "channels": {
       "support": {
         "title": "Help with your account or a listing",
-        "body": "Questions about using Stay.bg, signing in or managing your listings."
+        "body": "Questions about using RentBee, signing in or managing your listings."
       },
       "safety": {
         "title": "Safety and suspicious ads",
@@ -317,18 +317,18 @@
   },
   "press": {
     "metaTitle": "Press office",
-    "metaDescription": "Press enquiries, spokespeople, press releases and media assets for Stay.bg.",
+    "metaDescription": "Press enquiries, spokespeople, press releases and media assets for RentBee.",
     "title": "Press office",
     "enquiries": {
       "heading": "Press enquiries",
-      "body": "Stay.bg is a Bulgarian platform for renting rooms and flats and finding roommates directly, without agents. We're happy to help journalists with comment, background and insight into renting and flat-sharing in Bulgaria.",
+      "body": "RentBee is a Bulgarian platform for renting rooms and flats and finding roommates directly, without agents. We're happy to help journalists with comment, background and insight into renting and flat-sharing in Bulgaria.",
       "cta": "Email the press office"
     },
     "background": {
       "heading": "For more background",
       "body": "Read who we are and how the platform works.",
-      "about": "About Stay.bg",
-      "howItWorks": "How Stay.bg works"
+      "about": "About RentBee",
+      "howItWorks": "How RentBee works"
     },
     "spokespeople": {
       "heading": "Our spokespeople",
@@ -342,7 +342,7 @@
       "heading": "Download our assets",
       "logos": {
         "title": "Logos",
-        "body": "The Stay.bg logo for print and screen."
+        "body": "The RentBee logo for print and screen."
       },
       "photos": {
         "title": "Team photos",

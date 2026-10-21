@@ -26,7 +26,7 @@ export function JsonLd({ data }: JsonLdProps): ReactNode {
 }
 
 /**
- * Who runs the site. A plain `Organization`: Stay.bg is a platform between owners and
+ * Who runs the site. A plain `Organization`: RentBee is a platform between owners and
  * tenants, not a `RealEstateAgent`. `logo` and `sameAs` (the social profiles) are left
  * out until the logo file and the accounts exist, since Google checks both.
  */
@@ -34,7 +34,7 @@ export function OrganizationJsonLd({ appUrl }: { appUrl: string }): ReactNode {
   const organizationData = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Stay.bg',
+    name: 'RentBee',
     url: appUrl,
     description:
       'Rooms, flats and roommates across Bulgaria, straight from the people who let them. No agents, no commission.',
@@ -60,7 +60,7 @@ export function WebSiteJsonLd({ appUrl }: { appUrl: string }): ReactNode {
       data={{
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: 'Stay.bg',
+        name: 'RentBee',
         url: appUrl,
         inLanguage: ['bg-BG', 'en-US'],
       }}

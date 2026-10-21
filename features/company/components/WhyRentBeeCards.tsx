@@ -11,8 +11,8 @@ const CARDS: ReadonlyArray<{ key: 'direct' | 'safety' | 'people'; icon: LucideIc
   { key: 'people', icon: UsersRound },
 ];
 
-/** "Why use Stay.bg?" as three cards, on the home and About pages. */
-export async function WhyStayCards({ className, locale }: { className?: string; locale: Locale }) {
+/** "Why use RentBee?" as three cards, on the home and About pages. */
+export async function WhyRentBeeCards({ className, locale }: { className?: string; locale: Locale }) {
   const t = await getTranslations({ locale, namespace: 'company.why.cards' });
 
   return (

@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 
 import type { ConversationMessage } from '@/features/conversations/server/repository';
 import { useRouterRefresh } from '@/hooks';
@@ -11,7 +11,7 @@ import { ApiError, apiClient, buildSearchParams } from '@/lib/api-client';
 import { localeTag, type Locale } from '@/lib/i18n';
 import { cn } from '@/utils';
 
-type ThreadMessage = ConversationMessage & { optimistic?: boolean };
+import { initialThreadState, threadReducer, type ThreadMessage } from '../thread-state';
 
 type MessagesApiResponse = {
   items: Array<{
@@ -50,7 +50,8 @@ export function MessageThread({
   const tBlock = useTranslations('common.block');
   const { refresh } = useRouterRefresh();
 
-  const [allMessages, setAllMessages] = useState<ThreadMessage[]>(initialMessages);
+  const [thread, dispatch] = useReducer(threadReducer, initialMessages, initialThreadState);
+  const allMessages = thread.messages;
   const [draft, setDraft] = useState('');
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -60,10 +61,10 @@ export function MessageThread({
    * The cursor tracks the latest message seen by the polling loop. A ref keeps
    * it up-to-date without re-subscribing the interval on every new message.
    */
-  const cursorRef = useRef({
-    after: initialMessages.at(-1)?.createdAt.toISOString() ?? null,
-    afterId: initialMessages.at(-1)?.id ?? null,
-  });
+  const cursorRef = useRef(thread.cursor);
+  useEffect(() => {
+    cursorRef.current = thread.cursor;
+  }, [thread.cursor]);
 
   // Scroll to bottom on first render and whenever messages grow.
   useEffect(() => {
@@ -81,7 +82,11 @@ export function MessageThread({
   useEffect(() => {
     if (closedNotice) return;
 
+    let fetching = false;
+    let cancelled = false;
     const intervalId = setInterval(async () => {
+      if (fetching) return;
+      fetching = true;
       try {
         const params = buildSearchParams({
           after: cursorRef.current.after,
@@ -91,6 +96,7 @@ export function MessageThread({
           `/api/conversations/${conversationId}/messages${params ? `?${params}` : ''}`,
         );
 
+        if (cancelled) return;
         if (data.items.length > 0) {
           const incoming: ThreadMessage[] = data.items.map((m) => ({
             id: m.id,
@@ -100,27 +106,23 @@ export function MessageThread({
             createdAt: new Date(m.createdAt),
           }));
 
-          setAllMessages((prev) => {
-            // Deduplicate: the send mutation may have already appended these.
-            const knownIds = new Set(prev.map((m) => m.id));
-            const novel = incoming.filter((m) => !knownIds.has(m.id));
-
-            return novel.length > 0 ? [...prev, ...novel] : prev;
+          dispatch({
+            type: 'received',
+            messages: incoming,
+            cursor: { after: data.nextCursor, afterId: data.nextCursorId },
           });
-
-          if (data.nextCursor) {
-            cursorRef.current = {
-              after: data.nextCursor,
-              afterId: data.nextCursorId,
-            };
-          }
         }
       } catch {
         // Polling errors are intentionally silent — the user keeps composing.
+      } finally {
+        fetching = false;
       }
     }, 3000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
   }, [closedNotice, conversationId]);
 
   const sendMessage = useMutation({
@@ -140,31 +142,21 @@ export function MessageThread({
         createdAt: new Date(),
         optimistic: true,
       };
-      setAllMessages((prev) => [...prev, optimistic]);
+      dispatch({ type: 'optimistic', message: optimistic });
 
       return { optimisticId };
     },
     onSuccess: (message, _body, context) => {
-      // Swap the optimistic placeholder for the confirmed server message.
-      setAllMessages((prev) =>
-        prev.map((m) =>
-          m.id === context?.optimisticId
-            ? {
-                id: message.id,
-                body: message.body,
-                senderId: message.senderId,
-                senderName: currentUserName,
-                createdAt: new Date(message.createdAt),
-              }
-            : m,
-        ),
-      );
-      cursorRef.current = { after: message.createdAt, afterId: message.id };
+      dispatch({
+        type: 'sent',
+        optimisticId: context?.optimisticId,
+        message: { ...message, senderName: currentUserName, createdAt: new Date(message.createdAt) },
+      });
       setDraft('');
     },
     onError: (error, _body, context) => {
       // Remove the failed optimistic message so the user can retry.
-      setAllMessages((prev) => prev.filter((m) => m.id !== context?.optimisticId));
+      dispatch({ type: 'failed', optimisticId: context?.optimisticId });
 
       // Blocked since the page loaded: re-render so the server closes the composer.
       if (error instanceof ApiError && error.code === 'USER_BLOCKED') refresh();

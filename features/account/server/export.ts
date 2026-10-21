@@ -16,7 +16,7 @@ import {
   user,
   userBlocks,
   userProfiles,
-  viewingRequests,
+  archivedViewingRequests,
 } from '@/db/schema';
 
 /**
@@ -40,7 +40,7 @@ export async function exportUserData(userId: string) {
     images,
     savedListingRows,
     savedProfileRows,
-    viewings,
+    archivedAppointments,
     reviewRows,
     reportRows,
     messageRows,
@@ -71,8 +71,13 @@ export async function exportUserData(userId: string) {
     db.select().from(savedProfiles).where(eq(savedProfiles.userId, userId)),
     db
       .select()
-      .from(viewingRequests)
-      .where(or(eq(viewingRequests.requesterId, userId), eq(viewingRequests.ownerId, userId))),
+      .from(archivedViewingRequests)
+      .where(
+        or(
+          eq(archivedViewingRequests.requesterId, userId),
+          eq(archivedViewingRequests.ownerId, userId),
+        ),
+      ),
     db
       .select()
       .from(reviews)
@@ -105,7 +110,7 @@ export async function exportUserData(userId: string) {
     })),
     savedListings: savedListingRows,
     savedProfiles: savedProfileRows,
-    viewingRequests: viewings,
+    archivedViewingRequests: archivedAppointments,
     reviews: {
       written: reviewRows.filter((review) => review.reviewerId === userId),
       received: reviewRows.filter((review) => review.targetUserId === userId),

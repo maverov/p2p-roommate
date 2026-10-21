@@ -14,7 +14,6 @@
     "saved": "Saved",
     "profile": "Profile",
     "myListings": "My listings",
-    "appliedListings": "Applied Listings",
     "settings": "Settings",
     "admin": "Admin panel",
     "signIn": "Sign in",
@@ -44,8 +43,8 @@
     "templates": "Rental templates",
     "citiesHeading": "Find a room by city",
     "faq": "FAQs",
-    "whyUs": "Why use Stay.bg?",
-    "howItWorks": "How Stay.bg works",
+    "whyUs": "Why use RentBee?",
+    "howItWorks": "How RentBee works",
     "press": "Press office"
   },
   "actions": {
@@ -90,7 +89,7 @@
     "trigger": "Block",
     "unblock": "Unblock",
     "confirmTitle": "Block {name}?",
-    "confirmBody": "Neither of you will be able to message the other, request viewings or see phone numbers. {name} is not notified. You can unblock them any time in Settings.",
+    "confirmBody": "Neither of you will be able to message the other or see phone numbers. {name} is not notified. You can unblock them any time in Settings.",
     "confirm": "Block",
     "cancel": "Cancel",
     "close": "Close",

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     await enforceRateLimit('dataExport', user.id);
 
     const data = await exportUserData(user.id);
-    const filename = `stay-bg-data-${data.exportedAt.slice(0, 10)}.json`;
+    const filename = `rentbee-data-${data.exportedAt.slice(0, 10)}.json`;
 
     return new Response(JSON.stringify(data, null, 2), {
       headers: {

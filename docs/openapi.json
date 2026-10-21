@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "Stay.bg Backend API",
+    "title": "RentBee Backend API",
     "version": "0.1.0",
-    "description": "OpenAPI documentation for the Stay.bg Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes. Admin routes (`/api/admin/*` and the Better Auth admin plugin) are intentionally excluded; they return 404 to non-admins and are documented in docs/README.backend.md."
+    "description": "OpenAPI documentation for the RentBee Next.js route-handler API and the concrete Better Auth routes mounted under `/api/auth`. Application routes return `{ data: ... }` on success and `{ error: { code, message, details? } }` on failure. Better Auth routes use Better Auth’s native response envelopes. Admin routes (`/api/admin/*` and the Better Auth admin plugin) are intentionally excluded; they return 404 to non-admins and are documented in docs/README.backend.md."
   },
   "servers": [
     {
@@ -32,9 +32,6 @@
     },
     {
       "name": "Favorites"
-    },
-    {
-      "name": "Viewing requests"
     },
     {
       "name": "Reviews"
@@ -174,7 +171,7 @@
         ],
         "operationId": "exportCurrentUserData",
         "summary": "Download all of the current user's data",
-        "description": "GDPR access and portability: a JSON attachment (`stay-bg-data-YYYY-MM-DD.json`) with the account, profile, listings, saved listings and profiles, viewing requests, reviews, reports filed, conversations with messages, and sessions. Passwords, tokens and other secrets are never included. Not wrapped in `{ data }`.",
+        "description": "GDPR access and portability: a JSON attachment (`rentbee-data-YYYY-MM-DD.json`) with the account, profile, listings, saved listings and profiles, archived records, reviews, reports filed, conversations with messages, and sessions. Passwords, tokens and other secrets are never included. Not wrapped in `{ data }`.",
         "security": [
           {
             "cookieAuth": []
@@ -1401,123 +1398,6 @@
         }
       }
     },
-    "/api/listings/{id}/viewing-requests": {
-      "post": {
-        "tags": [
-          "Viewing requests"
-        ],
-        "operationId": "createViewingRequest",
-        "summary": "Request a listing viewing",
-        "description": "The listing owner cannot request a viewing of their own listing.",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Listing ID.",
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateViewingRequestInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Viewing request created.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ViewingRequest"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource was not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "headers": {
-              "Retry-After": {
-                "description": "Seconds until the rate-limit window resets.",
-                "schema": {
-                  "type": "integer",
-                  "minimum": 1
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/profiles/{id}": {
       "get": {
         "tags": [
@@ -2150,7 +2030,7 @@
         ],
         "operationId": "blockUser",
         "summary": "Block a user",
-        "description": "Idempotent. While either person has blocked the other, neither can start a conversation, send a message, request a viewing or reveal the other's phone number (`403 USER_BLOCKED`). The blocked person is not notified.",
+        "description": "Idempotent. While either person has blocked the other, neither can start a conversation, send a message or reveal the other's phone number (`403 USER_BLOCKED`). The blocked person is not notified.",
         "security": [
           {
             "cookieAuth": []
@@ -2404,235 +2284,6 @@
         }
       }
     },
-    "/api/viewing-requests": {
-      "get": {
-        "tags": [
-          "Viewing requests"
-        ],
-        "operationId": "listViewingRequests",
-        "summary": "List viewing requests involving the signed-in user",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "role",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "requester",
-                "owner",
-                "all"
-              ],
-              "default": "all"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Viewing requests.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "items"
-                      ],
-                      "properties": {
-                        "items": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/components/schemas/ViewingRequestListItem"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/viewing-requests/{id}": {
-      "patch": {
-        "tags": [
-          "Viewing requests"
-        ],
-        "operationId": "updateViewingRequest",
-        "summary": "Accept, decline, or cancel a viewing request",
-        "description": "Only the listing owner may accept or decline. Only the requester may cancel. Invalid state transitions return 409.",
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Viewing request ID.",
-            "schema": {
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateViewingRequestInput"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Viewing request updated.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/ViewingRequest"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid JSON, invalid parameters, failed validation, or invalid operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "A valid session cookie is required.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "The signed-in user is not allowed to perform this operation.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "The requested resource was not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The operation conflicts with the current resource state.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many requests (`RATE_LIMITED`). Retry after the number of seconds in `Retry-After`, also given as `details.retryAfterSeconds`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            },
-            "headers": {
-              "Retry-After": {
-                "description": "Seconds until the rate-limit window resets.",
-                "schema": {
-                  "type": "integer",
-                  "minimum": 1
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "An unexpected server error occurred.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/reviews": {
       "post": {
         "tags": [
@@ -2640,7 +2291,7 @@
         ],
         "operationId": "createReview",
         "summary": "Create a listing or user review",
-        "description": "An accepted viewing request is required. A reviewer may review each target only once and cannot review themselves.",
+        "description": "Both users must have sent messages in the same conversation. Listing reviews require a conversation linked to that listing with its current owner. Self-reviews, reviews of owned listings, blocked interactions and duplicate reviews are rejected. New reviews use the MEMBER role.",
         "security": [
           {
             "cookieAuth": []
@@ -10049,154 +9700,6 @@
           }
         }
       },
-      "ViewingRequest": {
-        "type": "object",
-        "required": [
-          "id",
-          "listingId",
-          "requesterId",
-          "ownerId",
-          "requestedStartAt",
-          "message",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "listingId": {
-            "type": "string"
-          },
-          "requesterId": {
-            "type": "string"
-          },
-          "ownerId": {
-            "type": "string"
-          },
-          "requestedStartAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "message": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "REQUESTED",
-              "ACCEPTED",
-              "DECLINED",
-              "CANCELLED"
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ViewingRequestListItem": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ViewingRequest"
-          },
-          {
-            "type": "object",
-            "required": [
-              "listingTitle",
-              "listingCitySlug",
-              "listingNeighborhoodSlug",
-              "listingMonthlyRentCents",
-              "listingCurrency",
-              "listingCoverImageUrl",
-              "requesterName",
-              "ownerName",
-              "ownerImage"
-            ],
-            "properties": {
-              "listingTitle": {
-                "type": "string"
-              },
-              "listingCitySlug": {
-                "type": "string"
-              },
-              "listingNeighborhoodSlug": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "listingMonthlyRentCents": {
-                "type": "integer"
-              },
-              "listingCurrency": {
-                "type": "string"
-              },
-              "listingCoverImageUrl": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "requesterName": {
-                "type": "string"
-              },
-              "ownerName": {
-                "type": "string"
-              },
-              "ownerImage": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "CreateViewingRequestInput": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "requestedStartAt"
-        ],
-        "properties": {
-          "requestedStartAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "message": {
-            "type": "string",
-            "maxLength": 1000
-          }
-        }
-      },
-      "UpdateViewingRequestInput": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "status"
-        ],
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "ACCEPTED",
-              "DECLINED",
-              "CANCELLED"
-            ]
-          }
-        }
-      },
       "CreateReviewInput": {
         "oneOf": [
           {
@@ -10308,7 +9811,8 @@
             "type": "string",
             "enum": [
               "TENANT",
-              "OWNER"
+              "OWNER",
+              "MEMBER"
             ]
           },
           "rating": {
@@ -10359,7 +9863,8 @@
             "type": "string",
             "enum": [
               "TENANT",
-              "OWNER"
+              "OWNER",
+              "MEMBER"
             ]
           },
           "createdAt": {

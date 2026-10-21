@@ -32,6 +32,7 @@ import { HouseholdSection } from '@/features/listings/components/HouseholdSectio
 import { ListingCard } from '@/features/listings/components/ListingCard';
 import { ListingGallery } from '@/features/listings/components/ListingGallery';
 import { SaveListingButton } from '@/features/listings/components/SaveListingButton';
+import { WriteReviewButton } from '@/features/reviews/components/WriteReviewButton';
 import { ReportButton } from '@/features/reports/components/ReportButton';
 import {
   getPublishedListingById,
@@ -39,7 +40,7 @@ import {
   listSimilarListings,
 } from '@/features/listings/server/repository';
 import { getPublicProfile } from '@/features/profiles/server/repository';
-import { listListingReviews } from '@/features/reviews/server/repository';
+import { canReview, listListingReviews } from '@/features/reviews/server/repository';
 import {
   getCityLabel,
   getNeighborhoodLabel,
@@ -95,10 +96,10 @@ export async function generateMetadata({ params }: ListingPageProps): Promise<Me
   const listing = (await pageContactMasker(locale, false)).listing(loaded);
 
   const city = getCityLabel(listing.citySlug, locale);
-  // The root layout's `%s | Stay.bg` template brands `metadata.title` for us, but
+  // The root layout's `%s | RentBee` template brands `metadata.title` for us, but
   // Open Graph and Twitter titles bypass that template, so they get it spelled out.
   const title = `${listing.title} — ${city}`;
-  const socialTitle = `${title} | Stay.bg`;
+  const socialTitle = `${title} | RentBee`;
   const description = listing.description.slice(0, 300);
   const url = `${appUrl}${routes.listing(locale, listing.id)}`;
   const image = listing.images[0]?.url ?? `${appUrl}/og-image.png`;
@@ -146,6 +147,9 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
   const listing = mask.listing(loaded);
   const contactsHidden = listing.description !== loaded.description;
   const isOwner = viewer?.id === listing.ownerId;
+  const reviewTarget = { targetType: 'LISTING' as const, listingId: listing.id };
+  const reviewAllowed = viewer ? await safeQuery(canReview(viewer.id, reviewTarget), 'review eligibility') : false;
+  const tReview = await getTranslations({ locale, namespace: 'reviews.write' });
 
   // Enrichment runs in parallel and degrades independently of the main record.
   const [reviews, similarRows, ownerRow, savedIds, blockState] = await Promise.all([
@@ -251,7 +255,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
   ].filter((term): term is string => Boolean(term));
 
   const breadcrumbItems = [
-    { name: 'Stay.bg', url: `${appUrl}${routes.home(locale)}` },
+    { name: 'RentBee', url: `${appUrl}${routes.home(locale)}` },
     { name: t('common.listings'), url: `${appUrl}${routes.listings(locale)}` },
     { name: city, url: `${appUrl}${routes.listings(locale, `citySlug=${listing.citySlug}`)}` },
     { name: listing.title, url: `${appUrl}${routes.listing(locale, listing.id)}` },
@@ -284,7 +288,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
             <ol className="flex flex-wrap items-center gap-1.5">
               <li>
                 <Link className="hover:text-brand-terracotta" href={routes.home(locale)}>
-                  Stay.bg
+                  RentBee
                 </Link>
               </li>
               <li aria-hidden="true">/</li>
@@ -531,6 +535,9 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
                     : t('detail.reviews')
                 }
               >
+                {reviewAllowed && (
+                  <div className="mb-4"><WriteReviewButton target={reviewTarget} label={tReview('reviewListing')} /></div>
+                )}
                 {!reviews ? (
                   <StateMessage body={t('common.loadFailed')} title={t('detail.reviews')} tone="error" />
                 ) : reviews.items.length === 0 ? (

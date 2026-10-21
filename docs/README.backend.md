@@ -39,7 +39,6 @@ features/listings/server/        Listing database functions
 features/conversations/server/   Conversation and message database functions
 features/profiles/server/        Public profile and saved profile functions
 features/reviews/server/         Review functions
-features/viewing-requests/server/ Viewing request functions
 features/reports/server/         Report database functions
 features/admin/server/           Moderation functions (reports, listings, bans)
 features/account/server/         Personal data export
@@ -89,8 +88,6 @@ startConversation      10 per hour
 sendMessage            30 per minute
 createListing          10 per day
 updateListing          60 per hour   (PATCH and DELETE)
-requestViewing         10 per hour
-updateViewingRequest   60 per hour
 report                 10 per hour
 review                 10 per hour
 favorite              120 per minute (listings and profiles, save and unsave)
@@ -202,7 +199,7 @@ Example response:
 GET /api/me/export
 ```
 
-Protected endpoint. Downloads everything stored about the signed-in user as a JSON file (`stay-bg-data-<date>.json`), for GDPR access and portability: account, profile, listings with images, saved listings and profiles, viewing requests, reviews written and received, reports filed, every message in the user's conversations, and session metadata. No password hash, session token, or verification secret is included. Rate-limited to 5 per hour. The response is the file itself, not a `{ "data": ... }` wrapper.
+Protected endpoint. Downloads everything stored about the signed-in user as a JSON file (`rentbee-data-<date>.json`), for GDPR access and portability: account, profile, listings with images, saved listings and profiles, archived records, reviews written and received, reports filed, every message in the user's conversations, and session metadata. No password hash, session token, or verification secret is included. Rate-limited to 5 per hour. The response is the file itself, not a `{ "data": ... }` wrapper.
 
 ### Upload A Photo
 
@@ -400,25 +397,6 @@ page     default 1
 perPage  default 20, max 50
 ```
 
-### Request A Viewing
-
-```http
-POST /api/listings/:id/viewing-requests
-```
-
-Protected endpoint. Creates a viewing request for a published listing.
-
-Body:
-
-```json
-{
-  "requestedStartAt": "2026-07-15T15:00:00.000Z",
-  "message": "I can come after work."
-}
-```
-
-The listing owner gets an email linking to the Viewing requests section of My Listings, where they can accept or decline it.
-
 ### Public Profile
 
 ```http
@@ -544,50 +522,7 @@ User review:
 }
 ```
 
-Do not send `reviewerRole`; the server derives it. A listing review is always `TENANT`
-and needs an accepted viewing request for that listing. A user review needs an accepted
-viewing request between the two users, and takes its role from it (requester → `TENANT`,
-owner → `OWNER`). Each reviewer gets one review per target,
-and nobody can review themselves.
-
-The UI is stricter than the API: it offers a review only once an accepted viewing's time
-has passed (`isViewingCompleted` in `features/viewing-requests/constants.ts`). The tenant
-reviews the listing and the owner from Applied Listings; the owner reviews the tenant from
-My Listings. A prompt disappears once that review exists.
-
-### Viewing Requests
-
-```http
-GET /api/viewing-requests
-PATCH /api/viewing-requests/:id
-```
-
-Protected endpoints.
-
-List query:
-
-```text
-role=requester   only requests I made
-role=owner       only requests for my listings
-role=all         both directions
-```
-
-Update body:
-
-```json
-{
-  "status": "ACCEPTED"
-}
-```
-
-`status` must be one of `ACCEPTED`, `DECLINED`, or `CANCELLED`. A new request starts as
-`REQUESTED`, which cannot be set through this endpoint.
-
-- Only the listing owner can accept or decline, and only while the request is `REQUESTED`.
-- Only the requester can cancel, and only while it is `REQUESTED` or `ACCEPTED`.
-- Any other move returns `409 INVALID_STATUS_TRANSITION`.
-
-The other side is emailed: the requester when the owner accepts or declines, the owner when the requester cancels. The UI (Applied Listings) stops offering Cancel once an accepted viewing's time has passed; the API does not enforce that.
+Do not send `reviewerRole`; new reviews use `MEMBER`. Both people must have sent messages in the same conversation. For a listing review, the conversation must be linked to that listing and include its current owner. Profile reviews accept any shared conversation with a two-way exchange. Self-reviews, reviews of owned listings, blocked interactions, unavailable targets and duplicates are rejected. The UI and API use the same eligibility check; eligible users see review actions on listing details and the profile Reviews tab. Historical reviews remain visible.
 
 ### List Conversations
 
@@ -634,7 +569,7 @@ DELETE /api/profiles/:id/block
 GET    /api/me/blocks
 ```
 
-Protected endpoints. Blocking is idempotent and the other person is not told. While either person has blocked the other, neither can start a conversation, send a message, request a viewing, or reveal the other's phone number (`403 USER_BLOCKED`). `GET /api/me/blocks` lists the people you blocked, newest first.
+Protected endpoints. Blocking is idempotent and the other person is not told. While either person has blocked the other, neither can start a conversation, send a message or reveal the other's phone number (`403 USER_BLOCKED`). `GET /api/me/blocks` lists the people you blocked, newest first.
 
 ### List Messages
 

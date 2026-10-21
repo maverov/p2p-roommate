@@ -37,11 +37,11 @@ const SECTIONS: ReadonlyArray<{ id: Section; icon: LucideIcon; links?: LinkId[] 
   { id: 'help', icon: LifeBuoy, links: ['faq', 'contact'] },
 ];
 
-type WhyStayPageProps = {
+type WhyRentBeePageProps = {
   params: { locale: string };
 };
 
-export async function generateMetadata({ params }: WhyStayPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: WhyRentBeePageProps): Promise<Metadata> {
   const locale = isLocale(params.locale) ? params.locale : 'bg';
   const t = await getTranslations({ locale, namespace: 'company.whyUs' });
 
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: WhyStayPageProps): Promise<Me
   });
 }
 
-export default async function WhyStayPage({ params }: WhyStayPageProps) {
+export default async function WhyRentBeePage({ params }: WhyRentBeePageProps) {
   if (!isLocale(params.locale)) notFound();
 
   const locale: Locale = params.locale;

@@ -165,7 +165,7 @@ export default async function PressPage({ params }: PressPageProps) {
                   // Until the files exist, the press office sends them on request.
                   href={
                     href ??
-                    `mailto:${pressEmail}?subject=${encodeURIComponent(`Stay.bg: ${title}`)}`
+                    `mailto:${pressEmail}?subject=${encodeURIComponent(`RentBee: ${title}`)}`
                   }
                   {...(href ? { download: true } : {})}
                 >

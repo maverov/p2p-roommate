@@ -10,7 +10,7 @@
   "notFound": "Профилът не е намерен",
   "notFoundBody": "Възможно е потребителят да е изтрил профила си.",
   "backToListings": "Към всички обяви",
-  "memberSince": "В Stay.bg от",
+  "memberSince": "В RentBee от",
   "location": "Локация",
   "reviewCount": "{count, plural, one {# отзив} other {# отзива}}",
   "tabsLabel": "Секции в профила",
@@ -43,7 +43,7 @@
   "reviews": {
     "heading": "Отзиви",
     "empty": "Няма отзиви",
-    "emptyBody": "Отзиви се появяват след потвърден оглед или наем.",
+    "emptyBody": "Тук се показват отзиви от хора, които са си разменили съобщения.",
     "previous": "Назад",
     "next": "Напред",
     "pageOf": "Страница {page} от {total}"

@@ -70,6 +70,17 @@ let nextConfig = {
     return [{ source: '/:path*', headers: securityHeaders }];
   },
 
+  async redirects() {
+    return [
+      {
+        source: '/:locale(bg|en)/why-stay',
+        destination: '/:locale/why-rentbee',
+        permanent: true,
+      },
+      { source: '/why-stay', destination: '/bg/why-rentbee', permanent: true },
+    ];
+  },
+
   experimental: {
     typedRoutes: true,
     // 14.x reuses a dynamic page's client payload for 30s, so /saved and /messages

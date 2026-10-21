@@ -1,0 +1,1 @@
+ALTER TYPE "public"."reviewer_role" ADD VALUE 'MEMBER' BEFORE 'TENANT';

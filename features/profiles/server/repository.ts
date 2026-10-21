@@ -11,6 +11,8 @@ import { getUserReviewSummary } from '@/features/reviews/server/repository';
 import { isCityId, isNeighborhoodInCity } from '@/lib/areas';
 import type { ProfileTrait } from '@/lib/labels';
 import { ApiError } from '@/lib/server/api';
+import { publicListingLocation } from '@/lib/server/listing-location';
+import { publicUserCondition } from '@/lib/server/public-user';
 
 import { parseProfileTraits, parseRoommatePreferences, type UpdateProfileInput } from '../schemas';
 
@@ -31,7 +33,7 @@ export type PublicProfilesFilters = {
  * accounts (no bio, no city) stay invisible.
  */
 export async function listPublicProfiles(filters: PublicProfilesFilters) {
-  const conditions: ReturnType<typeof eq>[] = [];
+  const conditions: ReturnType<typeof eq>[] = [publicUserCondition()];
 
   if (filters.citySlug) {
     conditions.push(eq(userProfiles.citySlug, filters.citySlug));
@@ -127,7 +129,7 @@ export async function getPublicProfile(userId: string) {
     })
     .from(user)
     .leftJoin(userProfiles, eq(user.id, userProfiles.userId))
-    .where(eq(user.id, userId))
+    .where(and(eq(user.id, userId), publicUserCondition()))
     .limit(1);
 
   if (!profile) {
@@ -296,7 +298,10 @@ export async function listProfileListings(profileUserId: string) {
       listing: listings,
     })
     .from(listings)
-    .where(and(eq(listings.ownerId, profileUserId), eq(listings.status, 'PUBLISHED')))
+    .innerJoin(user, eq(user.id, listings.ownerId))
+    .where(
+      and(eq(listings.ownerId, profileUserId), eq(listings.status, 'PUBLISHED'), publicUserCondition()),
+    )
     .orderBy(desc(listings.publishedAt), desc(listings.createdAt));
 
   const listingIds = rows.map((row) => row.listing.id);
@@ -319,7 +324,7 @@ export async function listProfileListings(profileUserId: string) {
   }
 
   return rows.map((row) => ({
-    ...row.listing,
+    ...publicListingLocation(row.listing),
     images: imagesByListingId.get(row.listing.id) ?? [],
   }));
 }
@@ -365,7 +370,7 @@ export async function listSavedProfiles(userId: string) {
     .from(savedProfiles)
     .innerJoin(user, eq(savedProfiles.profileUserId, user.id))
     .leftJoin(userProfiles, eq(savedProfiles.profileUserId, userProfiles.userId))
-    .where(eq(savedProfiles.userId, userId))
+    .where(and(eq(savedProfiles.userId, userId), publicUserCondition()))
     .orderBy(desc(savedProfiles.createdAt));
 }
 
@@ -376,7 +381,8 @@ export async function getProfilePhoneForViewer(viewerId: string, profileUserId: 
       publicContactAllowed: userProfiles.publicContactAllowed,
     })
     .from(userProfiles)
-    .where(eq(userProfiles.userId, profileUserId))
+    .innerJoin(user, eq(user.id, userProfiles.userId))
+    .where(and(eq(userProfiles.userId, profileUserId), publicUserCondition()))
     .limit(1);
 
   if (!profile?.phoneNumber) {

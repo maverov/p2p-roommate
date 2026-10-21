@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const reviewTargetTypeSchema = z.enum(['LISTING', 'USER']);
-export const reviewerRoleSchema = z.enum(['TENANT', 'OWNER']);
+export const reviewerRoleSchema = z.enum(['TENANT', 'OWNER', 'MEMBER']);
 
 const reviewContentSchema = {
   rating: z.number().int().min(1).max(5),

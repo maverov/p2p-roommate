@@ -1,6 +1,7 @@
-# P2P Roommate Finder - Stay.bg
+# RentBee
 
-Stay.bg is a full-stack Next.js application for roommate and rental discovery in Bulgaria.
+RentBee is a full-stack Next.js application for roommate and rental discovery in Bulgaria.
+
 - Next.js 14 (App Router)
 - TypeScript
 - Tailwind CSS
@@ -24,8 +25,7 @@ Stay.bg is a full-stack Next.js application for roommate and rental discovery in
 - Publish a "room wanted" post (areas, budget, move-in date, length of stay) so owners can find and message you.
 - Save listings and profiles to a Saved page.
 - Message an owner from a listing; replies arrive by polling.
-- Request a viewing at a chosen time, and track or cancel requests on Applied Listings.
-- After an accepted viewing has taken place, review the listing and the owner.
+- Review a listing or person after a two-way message exchange.
 
 **Owners**
 
@@ -33,27 +33,27 @@ Stay.bg is a full-stack Next.js application for roommate and rental discovery in
 - Describe the room (type, private bathroom, minimum and maximum stay) and the household (size, ages, occupation, habits), and drop a pin on a map.
 - Find people looking for a room and message them, offering one of your listings.
 - Keep listings as drafts, publish, pause, or archive them from My Listings.
-- Accept or decline viewing requests on My Listings, and review the tenant once the viewing has taken place.
+- Arrange visits through messaging and review people after exchanging messages.
 
 **Accounts and privacy**
 
 - Email and password sign-up with required email verification, and password reset by email.
 - Continue with Google or Facebook (each on when its keys are set); Google joins an existing account with the same email.
-- Email notifications for new messages and viewing-request updates, in the user's chosen language.
+- Email notifications for new messages, in the user's chosen language.
 - A settings page for the profile (photo, bio, phone and whether signed-in users may see it, city, languages, lifestyle tags, roommate preferences, "room wanted" post), blocked users, and email language.
 - Download all of one's own data as JSON, or delete the account (confirmed with the password).
 
 **Trust and safety**
 
 - Report a listing or a user with a structured reason.
-- Block a user: neither side can then message, request a viewing, or see the other's phone number.
+- Block a user: neither side can then message or see the other's phone number.
 - Phone numbers and emails typed into listings and bios are hidden from signed-out visitors.
 - A Safety tips page (payments, common scams, viewings, checking ownership, contracts), linked from listings and conversations.
 - Printable templates (`/templates`), in Bulgarian and English: a rental agreement, a handover protocol (приемо-предавателен протокол) and house rules. The copy lives in `locales/*/templates.json`.
-- Reviews only between people who had an accepted viewing.
+- Reviews require both people to have sent messages in the same conversation.
 - Public profiles with lifestyle tags, listings, and reviews. Verification badges exist but are hidden (`VERIFICATION_BADGES` in `lib/feature-flags.ts`) until there is a way to earn one.
 - An admin panel (`/admin`) to triage reports, archive listings, and ban users.
-- Per-user rate limits on messaging, listings, viewing requests, reviews, reports, and uploads.
+- Per-user rate limits on messaging, listings, reviews, reports, and uploads.
 
 **Languages**
 
@@ -113,7 +113,7 @@ Backend functionality is exposed through App Router route handlers under `app/ap
 
 - [Backend API guide](docs/README.backend.md)
 
-The backend covers listings, favorites, profiles, saved profiles, reviews, viewing requests, reports, conversations/messages, photo uploads, account data export, email notifications, and admin moderation (reports, listing archiving, user bans).
+The backend covers listings, favorites, profiles, saved profiles, reviews, reports, conversations/messages, photo uploads, account data export, email notifications, and admin moderation (reports, listing archiving, user bans).
 
 The OpenAPI 3.1 document for the public and signed-in-user API is at
 [`docs/openapi.json`](docs/openapi.json). It can be imported directly into

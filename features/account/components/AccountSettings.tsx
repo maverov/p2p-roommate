@@ -116,7 +116,7 @@ function DataExportSection() {
       }
 
       const disposition = response.headers.get('Content-Disposition') ?? '';
-      const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'stay-bg-data.json';
+      const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'rentbee-data.json';
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
 

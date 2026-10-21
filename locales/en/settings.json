@@ -48,7 +48,7 @@
     "heading": "Account and notifications",
     "email": "Email",
     "emailLanguage": "Email language",
-    "emailLanguageHint": "We send message and viewing notifications in this language.",
+    "emailLanguageHint": "We send message notifications in this language.",
     "languageNames": {
       "bg": "Български",
       "en": "English"
@@ -56,7 +56,7 @@
   },
   "data": {
     "heading": "Your data",
-    "description": "Download a copy of everything we store about you: profile, listings, messages, reviews and requests.",
+    "description": "Download a copy of your account data, including your profile, listings, messages, reviews and archived records.",
     "export": "Download my data",
     "exporting": "Preparing…",
     "exportFailed": "The download failed. Please try again."
@@ -91,7 +91,7 @@
   },
   "blocked": {
     "heading": "Blocked users",
-    "hint": "People you block cannot message you or request viewings of your listings, and you cannot contact them.",
+    "hint": "People you block cannot message you, and you cannot contact them.",
     "empty": "You have not blocked anyone.",
     "blockedOn": "Blocked on {date}",
     "unblock": "Unblock",

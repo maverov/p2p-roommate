@@ -24,7 +24,6 @@ import {
   reviews,
   user,
   userProfiles,
-  viewingRequests,
 } from './schema';
 import { PLATFORM_CURRENCY } from '../lib/currency';
 import type { ProfileTrait } from '../lib/labels';
@@ -68,7 +67,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-maria',
     name: 'Мария Петрова',
-    email: 'maria@stay.bg',
+    email: 'maria@rentbee.bg',
     bio: 'Здравейте! Казвам се Мария и отдавам апартаментите си под наем в Лозенец. Стремя се да поддържам чиста и спокойна среда, в която наемателите да се чувстват като у дома си. Обичам реда, комуникацията и коректните хора.',
     phoneNumber: '+359 88 123 4567',
     citySlug: 'sofia',
@@ -96,7 +95,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-ivan',
     name: 'Иван Иванов',
-    email: 'ivan@stay.bg',
+    email: 'ivan@rentbee.bg',
     bio: 'Отдавам два имота в центъра на София. Отговарям бързо и държа на ясни условия от самото начало.',
     phoneNumber: '+359 88 234 5678',
     citySlug: 'sofia',
@@ -119,7 +118,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-georgi',
     name: 'Георги Колев',
-    email: 'georgi@stay.bg',
+    email: 'georgi@rentbee.bg',
     bio: 'Инвестирам в имоти в южните квартали на София. Всички обяви са с реални снимки и без скрити такси.',
     phoneNumber: '+359 88 345 6789',
     citySlug: 'sofia',
@@ -136,7 +135,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-elena',
     name: 'Елена Димитрова',
-    email: 'elena@stay.bg',
+    email: 'elena@rentbee.bg',
     bio: 'Управлявам няколко апартамента, подходящи за съквартиранти и студенти. Гъвкава съм за срока на наема.',
     phoneNumber: '+359 88 456 7890',
     citySlug: 'sofia',
@@ -153,7 +152,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-petar',
     name: 'Петър Николов',
-    email: 'petar@stay.bg',
+    email: 'petar@rentbee.bg',
     bio: 'Отдавам семейния си апартамент в Овча купел. Предпочитам дългосрочни наематели.',
     phoneNumber: '+359 88 567 8901',
     citySlug: 'sofia',
@@ -170,7 +169,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-desislava',
     name: 'Десислава Стоянова',
-    email: 'desislava@stay.bg',
+    email: 'desislava@rentbee.bg',
     bio: 'Търся стая в Студентски град или Лозенец. Работя от офис, тиха съм и обичам реда.',
     phoneNumber: '+359 88 678 9012',
     citySlug: 'sofia',
@@ -194,7 +193,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-simona',
     name: 'Симона Тодорова',
-    email: 'simona@stay.bg',
+    email: 'simona@rentbee.bg',
     bio: 'Живях под наем в София 3 години. Оставям честни ревюта за наемодателите, с които съм работила.',
     phoneNumber: '+359 88 789 0123',
     citySlug: 'sofia',
@@ -211,7 +210,7 @@ const SEED_USERS: SeedUser[] = [
   {
     id: 'seed-user-andrey',
     name: 'Андрей Кръстев',
-    email: 'andrey@stay.bg',
+    email: 'andrey@rentbee.bg',
     bio: 'Студент по архитектура. Търся тихо място за живеене близо до университета.',
     phoneNumber: '+359 88 890 1234',
     citySlug: 'sofia',
@@ -905,64 +904,6 @@ const SEED_USER_REVIEWS: SeedUserReview[] = [
   },
 ];
 
-type SeedViewingRequest = {
-  id: string;
-  listingId: string;
-  requesterId: string;
-  ownerId: string;
-  inDays: number;
-  message: string;
-  status: 'REQUESTED' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
-};
-
-const SEED_VIEWING_REQUESTS: SeedViewingRequest[] = [
-  {
-    id: 'seed-viewing-01',
-    listingId: 'seed-listing-01',
-    requesterId: 'seed-user-desislava',
-    ownerId: 'seed-user-maria',
-    inDays: 3,
-    message: 'Здравейте! Възможно ли е оглед в събота следобед?',
-    status: 'REQUESTED',
-  },
-  {
-    id: 'seed-viewing-02',
-    listingId: 'seed-listing-01',
-    requesterId: 'seed-user-andrey',
-    ownerId: 'seed-user-maria',
-    inDays: -30,
-    message: 'Интересувам се от стаята. Свободен съм следващата седмица.',
-    status: 'ACCEPTED',
-  },
-  {
-    id: 'seed-viewing-03',
-    listingId: 'seed-listing-06',
-    requesterId: 'seed-user-desislava',
-    ownerId: 'seed-user-georgi',
-    inDays: 5,
-    message: 'Може ли оглед в петък около 18:00?',
-    status: 'REQUESTED',
-  },
-  {
-    id: 'seed-viewing-04',
-    listingId: 'seed-listing-04',
-    requesterId: 'seed-user-simona',
-    ownerId: 'seed-user-ivan',
-    inDays: -14,
-    message: 'Здравейте, интересува ме апартаментът.',
-    status: 'ACCEPTED',
-  },
-  {
-    id: 'seed-viewing-05',
-    listingId: 'seed-listing-10',
-    requesterId: 'seed-user-andrey',
-    ownerId: 'seed-user-elena',
-    inDays: -5,
-    message: 'Търсим апартамент за трима студенти.',
-    status: 'DECLINED',
-  },
-];
-
 const LOCAL_DATABASE_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', 'host.docker.internal']);
 
 /**
@@ -1137,18 +1078,6 @@ async function main() {
         })),
       ]);
 
-      await tx.insert(viewingRequests).values(
-        SEED_VIEWING_REQUESTS.map((request) => ({
-          id: request.id,
-          listingId: request.listingId,
-          requesterId: request.requesterId,
-          ownerId: request.ownerId,
-          requestedStartAt: daysFromNow(request.inDays),
-          message: request.message,
-          status: request.status,
-        })),
-      );
-
       await tx.insert(favorites).values([
         { userId: 'seed-user-desislava', listingId: 'seed-listing-01' },
         { userId: 'seed-user-desislava', listingId: 'seed-listing-06' },
@@ -1243,12 +1172,11 @@ async function main() {
     console.log(
       `  reviews            ${SEED_LISTING_REVIEWS.length + SEED_USER_REVIEWS.length}`,
     );
-    console.log(`  viewing requests   ${SEED_VIEWING_REQUESTS.length}`);
     console.log(`  conversations      2`);
     console.log('');
     console.log(`Sign in with any seeded email and password "${SEED_PASSWORD}", e.g.`);
-    console.log('  maria@stay.bg      (owner, 3 listings, verified)');
-    console.log('  desislava@stay.bg  (tenant, favourites + messages)');
+    console.log('  maria@rentbee.bg      (owner, 3 listings, verified)');
+    console.log('  desislava@rentbee.bg  (tenant, favourites + messages)');
   } finally {
     await client.end();
   }

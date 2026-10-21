@@ -93,22 +93,15 @@ export async function GET(request: Request) {
 }
 ```
 
-A write route, from `app/api/viewing-requests/[id]/route.ts`:
+A write route, from `app/api/reviews/route.ts`:
 
 ```ts
-export async function PATCH(request: Request, { params }: ViewingRequestRouteContext) {
+export async function POST(request: Request) {
   return handleApiRoute(async () => {
     const user = await requireCurrentUser(request);
-    await enforceRateLimit('updateViewingRequest', user.id);
-    const input = await parseJsonBody(request, updateViewingRequestInputSchema);
-    const viewingRequest = await updateViewingRequest(params.id, user.id, input);
-
-    runInBackground(
-      notifyViewingRequestStatus(viewingRequest.id, input.status),
-      'notify viewing request status',
-    );
-
-    return apiOk(viewingRequest);
+    await enforceRateLimit('review', user.id);
+    const input = await parseJsonBody(request, createReviewInputSchema);
+    return apiCreated(await createReview(user.id, input));
   });
 }
 ```
@@ -397,7 +390,7 @@ From `lib/auth.ts` (abridged):
 
 ```ts
 export const auth = betterAuth({
-  appName: 'Stay.bg',
+  appName: 'RentBee',
   baseURL: serverEnv.BETTER_AUTH_URL,
   secret: serverEnv.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {

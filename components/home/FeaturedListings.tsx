@@ -15,7 +15,7 @@ import { safeQuery } from '@/lib/server/safe';
 import { pageContactMasker } from '@/lib/server/contact-visibility';
 import { getServerUser } from '@/lib/server/session';
 
-const FEATURED_COUNT = 5;
+const FEATURED_COUNT = 15;
 
 type FeaturedListingsProps = {
   locale: Locale;

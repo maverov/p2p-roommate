@@ -17,6 +17,7 @@ import { getSavedListingIds } from '@/features/listings/server/repository';
 import { ContactProfilePanel } from '@/features/profiles/components/ContactProfilePanel';
 import { RoomWantedCard } from '@/features/profiles/components/RoomWantedCard';
 import { SaveProfileButton } from '@/features/profiles/components/SaveProfileButton';
+import { WriteReviewButton } from '@/features/reviews/components/WriteReviewButton';
 import { ReportButton } from '@/features/reports/components/ReportButton';
 import { parseRoommatePreferences } from '@/features/profiles/schemas';
 import {
@@ -24,7 +25,7 @@ import {
   isProfileSaved,
   listProfileListings,
 } from '@/features/profiles/server/repository';
-import { listUserReviews } from '@/features/reviews/server/repository';
+import { canReview, listUserReviews } from '@/features/reviews/server/repository';
 import { getCityLabel, getNeighborhoodLabel } from '@/lib/areas';
 import { PLATFORM_CURRENCY } from '@/lib/currency';
 import { formatDate, formatMoneyFromCents, formatMonthYear } from '@/lib/format';
@@ -92,10 +93,10 @@ export async function generateMetadata({
 
   // Metadata is for crawlers, which are never signed in.
   const profile = (await pageContactMasker(locale, false)).profile(outcome.data);
-  // The root layout's `%s | Stay.bg` template brands `metadata.title` for us, but
+  // The root layout's `%s | RentBee` template brands `metadata.title` for us, but
   // Open Graph and Twitter titles bypass that template, so they get it spelled out.
   const title = profile.displayName;
-  const socialTitle = `${title} | Stay.bg`;
+  const socialTitle = `${title} | RentBee`;
   const description =
     profile.bio?.slice(0, 300) ??
     `${profile.displayName} — ${t('stats.activeListings')}: ${profile.activeListingCount}.`;
@@ -166,6 +167,9 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
   const tab = resolveTab(searchParams.tab);
   const reviewsPage = resolvePage(searchParams.page);
   const isOwnProfile = viewer?.id === profile.userId;
+  const reviewTarget = { targetType: 'USER' as const, targetUserId: profile.userId };
+  const reviewAllowed = viewer ? await safeQuery(canReview(viewer.id, reviewTarget), 'review eligibility') : false;
+  const tReview = await getTranslations({ locale, namespace: 'reviews.write' });
 
   // The listing list feeds both the listings tab and the contact panel's picker,
   // so it is fetched on every tab; the rest is scoped to the tab being rendered.
@@ -211,7 +215,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
   const stats = [{ label: t('stats.activeListings'), value: String(profile.activeListingCount) }];
 
   const breadcrumbItems = [
-    { name: 'Stay.bg', url: `${appUrl}${routes.home(locale)}` },
+    { name: 'RentBee', url: `${appUrl}${routes.home(locale)}` },
     { name: profile.displayName, url: `${appUrl}${routes.profile(locale, profile.userId)}` },
   ];
 
@@ -234,7 +238,7 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link className="hover:text-brand-terracotta" href={routes.home(locale)}>
-                Stay.bg
+                RentBee
               </Link>
             </li>
             <li aria-hidden="true">/</li>
@@ -339,6 +343,9 @@ export default async function ProfilePage({ params, searchParams }: ProfilePageP
                 />
               )}
 
+              {tab === 'reviews' && reviewAllowed && (
+                <div className="mb-4"><WriteReviewButton target={reviewTarget} label={tReview('reviewPerson', { name: profile.displayName })} /></div>
+              )}
               {tab === 'reviews' && (
                 <ReviewsTab
                   locale={locale}

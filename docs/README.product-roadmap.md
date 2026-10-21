@@ -4,7 +4,7 @@ This document summarizes the older pitch/business-plan materials and compares th
 
 ## What the business plan is trying to build
 
-stay.bg is meant to be a peer-to-peer rental marketplace for Bulgaria.
+rentbee.bg is meant to be a peer-to-peer rental marketplace for Bulgaria.
 
 Main idea:
 - no agents
@@ -68,7 +68,6 @@ The current project already has a strong base for the marketplace:
 - reviews
 - reports
 - conversations / messaging
-- viewing requests
 - email notifications
 
 This means the project is already beyond a very early MVP stage.
@@ -80,8 +79,7 @@ One of the main promises of the business plan is direct communication without br
 That is already reflected in the product through:
 - conversations/messages
 - owner contact flows
-- viewing requests, which owners accept or decline from My Listings
-- email notifications for new messages and viewing-request updates
+- email notifications for new messages
 - saved/favorite actions
 - profile-based interactions
 
@@ -105,10 +103,10 @@ The business plan depends heavily on trust.
 The current app already includes important parts of that base:
 - user accounts with a verified email address
 - profile data
-- reviews (gated on an accepted viewing request, and offered once the viewing has taken place)
+- reviews (after a two-way message exchange)
 - reporting flows with structured reasons
 - an admin panel (`/admin`) for triaging reports, archiving listings, and banning users
-- protected user actions, with per-user rate limits on messaging, listings, viewing requests, reviews, reports, and uploads
+- protected user actions, with per-user rate limits on messaging, listings, reviews, reports, and uploads
 
 So the trust layer has started, even if the full verification vision is not complete yet.
 
@@ -220,7 +218,7 @@ Status: **still left to build**
 
 ### 6. Advanced notifications and alerts
 
-Transactional emails exist (email verification, password reset, new messages, viewing-request updates), but the broader roadmap suggests:
+Transactional emails exist (email verification, password reset, new messages), but the broader roadmap suggests:
 - proactive alerts
 - push-style notifications
 - stronger re-engagement flows
@@ -274,7 +272,6 @@ Status: **partially achieved**
 - reviews
 - reports
 - messaging
-- viewing requests
 - email verification and password reset
 - email notifications
 - photo uploads
