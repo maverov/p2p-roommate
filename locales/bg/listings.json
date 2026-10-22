@@ -8,7 +8,8 @@
     "signInToSave": "Влез, за да запазиш",
     "retry": "Опитай отново",
     "loadFailed": "Данните не се заредиха.",
-    "listedBy": "Публикувана от {name}"
+    "listedBy": "Публикувана от {name}",
+    "vehicleLengthMetres": "до {metres} м"
   },
   "detail": {
     "photoCount": "{count, plural, one {# снимка} other {# снимки}}",
@@ -246,7 +247,18 @@
     "mapPin": "Място на картата",
     "mapPinHint": "Кликни на картата, за да поставиш маркер, и го премести при нужда. Посетителите виждат района, не точното място.",
     "mapPinClear": "Премахни маркера",
-    "mapPinMarker": "Местоположение на обявата"
+    "mapPinMarker": "Местоположение на обявата",
+    "sectionKind": "Какво обявявате?",
+    "parkingType": "Вид място",
+    "parkingLevel": "Ниво",
+    "maxVehicleLength": "Най-дълго превозно средство (см)",
+    "maxVehicleLengthHint": "Оставете празно, ако няма ограничение.",
+    "evCharging": "Зарядна станция",
+    "gatedAccess": "Контролиран достъп",
+    "kindHint": {
+      "HOME": "Стая, апартамент или къща",
+      "PARKING": "Гараж или паркомясто"
+    }
   },
   "myListings": {
     "heading": "Моите обяви",
@@ -268,5 +280,19 @@
     "updatedAt": "Обновена",
     "publishedAt": "Публикувана",
     "unpublished": "Непубликувана"
+  },
+  "parking": {
+    "heading": "Паркоместа",
+    "headingIn": "Паркоместа в {city}",
+    "metaDescription": "Гаражи и паркоместа под наем, директно от собственика.",
+    "resultCount": "{count, plural, =0 {Няма паркоместа} one {# паркомясто} other {# паркоместа}}",
+    "empty": "Няма намерени паркоместа",
+    "emptyBody": "Опитайте по-широк район или премахнете филтри.",
+    "type": "Вид място",
+    "vehicleLength": "Моето превозно средство",
+    "anyVehicleLength": "Всяка дължина",
+    "evCharging": "Зарядна станция",
+    "gatedAccess": "Контролиран достъп",
+    "level": "Ниво"
   }
 }

@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
-import { BedDouble, Maximize2, ShieldCheck, UsersRound } from 'lucide-react';
+import { BedDouble, Car, Maximize2, ShieldCheck, UsersRound } from 'lucide-react';
 
 import { Avatar } from '@/components/shared/Avatar';
 import { MatchBadge } from '@/features/compatibility/components/MatchBadge';
@@ -24,10 +24,15 @@ export type ListingCardData = {
   neighborhoodSlug: string | null;
   monthlyRentCents: number;
   currency: string;
-  propertyType: 'APARTMENT' | 'HOUSE' | 'STUDIO' | 'ROOM';
-  bedroomCount: number;
+  kind: 'HOME' | 'PARKING';
+  /** Null on a parking spot, which has no property type, rooms or occupants. */
+  propertyType: 'APARTMENT' | 'HOUSE' | 'STUDIO' | 'ROOM' | null;
+  bedroomCount: number | null;
   sizeSqm: number | null;
-  maxOccupants: number;
+  maxOccupants: number | null;
+  /** Null on a home. */
+  parkingType: 'GARAGE' | 'UNDERGROUND' | 'COVERED' | 'OPEN' | null;
+  maxVehicleLengthCm: number | null;
   isVerified: boolean;
   publishedAt: Date | null;
   images: Array<{ id: string; url: string; alt: string }>;
@@ -112,7 +117,8 @@ export async function ListingCard({
               </span>
             )}
 
-            {matchScore !== null && (
+            {/* Compatibility is a roommate idea; a parking spot has nobody to match. */}
+            {matchScore !== null && listing.kind === 'HOME' && (
               <MatchBadge locale={locale} score={matchScore} variant="overlay" />
             )}
           </div>
@@ -147,12 +153,20 @@ export async function ListingCard({
           <p className="mt-0.5 line-clamp-1 text-[13px] leading-5 text-brand-muted">{location}</p>
 
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] leading-4 text-brand-muted">
-            <span>{tEnums(`propertyType.${listing.propertyType}`)}</span>
+            {listing.propertyType !== null && (
+              <span>{tEnums(`propertyType.${listing.propertyType}`)}</span>
+            )}
 
-            <span className="flex items-center gap-1">
-              <BedDouble aria-hidden="true" size={13} strokeWidth={1.8} />
-              {listing.bedroomCount}
-            </span>
+            {listing.parkingType !== null && (
+              <span>{tEnums(`parkingType.${listing.parkingType}`)}</span>
+            )}
+
+            {listing.bedroomCount !== null && (
+              <span className="flex items-center gap-1">
+                <BedDouble aria-hidden="true" size={13} strokeWidth={1.8} />
+                {listing.bedroomCount}
+              </span>
+            )}
 
             {listing.sizeSqm !== null && (
               <span className="flex items-center gap-1">
@@ -170,10 +184,22 @@ export async function ListingCard({
               </span>
             </p>
 
-            <span className="flex items-center gap-1 text-[13px] text-brand-muted">
-              <UsersRound aria-hidden="true" size={15} strokeWidth={1.8} />
-              {listing.maxOccupants}
-            </span>
+            {listing.maxOccupants !== null && (
+              <span className="flex items-center gap-1 text-[13px] text-brand-muted">
+                <UsersRound aria-hidden="true" size={15} strokeWidth={1.8} />
+                {listing.maxOccupants}
+              </span>
+            )}
+
+            {/* The one number that decides whether a car fits, so it earns the same slot. */}
+            {listing.maxVehicleLengthCm !== null && (
+              <span className="flex items-center gap-1 text-[13px] text-brand-muted">
+                <Car aria-hidden="true" size={15} strokeWidth={1.8} />
+                {t('common.vehicleLengthMetres', {
+                  metres: (listing.maxVehicleLengthCm / 100).toFixed(1),
+                })}
+              </span>
+            )}
           </div>
         </div>
       </div>

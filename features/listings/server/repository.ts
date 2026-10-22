@@ -137,6 +137,20 @@ export async function updateListing(
 ) {
   const existing = await getOwnedListingOrThrow(listingId, ownerId);
   const { images, ...listingInput } = input;
+  const merged = <TField extends keyof typeof existing>(field: TField) =>
+    listingInput[field as keyof typeof listingInput] !== undefined
+      ? (listingInput[field as keyof typeof listingInput] as (typeof existing)[TField])
+      : existing[field];
+
+  assertKindUnchanged(existing.kind, input.kind);
+  assertKindFields(existing.kind, {
+    propertyType: merged('propertyType'),
+    bedroomCount: merged('bedroomCount'),
+    bathroomCount: merged('bathroomCount'),
+    maxOccupants: merged('maxOccupants'),
+    roomType: merged('roomType'),
+    parkingType: merged('parkingType'),
+  });
   assertStayRange(
     input.minStayMonths !== undefined ? input.minStayMonths : existing.minStayMonths,
     input.maxStayMonths !== undefined ? input.maxStayMonths : existing.maxStayMonths,
@@ -175,6 +189,59 @@ export async function updateListing(
   });
 
   return getOwnedListingOrThrow(listingId, ownerId);
+}
+
+/**
+ * A listing never changes kind. Its reviews and conversations were written about what it was,
+ * and a home that became a parking spot would carry all of them into the wrong subject.
+ */
+function assertKindUnchanged(current: ListingRow['kind'], next: ListingRow['kind'] | undefined) {
+  if (next !== undefined && next !== current) {
+    throw new ApiError(
+      400,
+      'LISTING_KIND_IMMUTABLE',
+      'A listing cannot change between a home and a parking spot. Create a new listing instead.',
+    );
+  }
+}
+
+/** A 400 instead of the `listing_home_shape` / `listing_parking_shape` constraints' 500. */
+function assertKindFields(
+  kind: ListingRow['kind'],
+  row: Pick<
+    ListingRow,
+    'propertyType' | 'bedroomCount' | 'bathroomCount' | 'maxOccupants' | 'roomType' | 'parkingType'
+  >,
+) {
+  const homeFields = [row.propertyType, row.bedroomCount, row.bathroomCount, row.maxOccupants];
+
+  if (kind === 'HOME') {
+    if (homeFields.some((value) => value == null)) {
+      throw new ApiError(
+        400,
+        'INVALID_LISTING_SHAPE',
+        'A home listing needs a property type, rooms, bathrooms and a maximum number of occupants.',
+      );
+    }
+
+    return;
+  }
+
+  if (row.parkingType == null) {
+    throw new ApiError(
+      400,
+      'INVALID_LISTING_SHAPE',
+      'A parking listing needs the kind of parking space.',
+    );
+  }
+
+  if (homeFields.some((value) => value != null) || row.roomType != null) {
+    throw new ApiError(
+      400,
+      'INVALID_LISTING_SHAPE',
+      'A parking listing cannot carry the fields of a home.',
+    );
+  }
 }
 
 /** A 400 instead of the `listing_stay_order` constraint's 500. */
@@ -332,9 +399,22 @@ export async function listSimilarListings(listingId: string, limit = 6) {
   const conditions = [
     eq(listings.status, 'PUBLISHED'),
     eq(listings.citySlug, source.citySlug),
-    eq(listings.propertyType, source.propertyType),
+    eq(listings.kind, source.kind),
     ne(listings.id, listingId),
   ];
+
+  /*
+   * Likeness means a different column per kind: a flat is like another flat, a garage like
+   * another garage. `property_type` is null on parking, so matching on it there would match
+   * nothing at all.
+   */
+  if (source.kind === 'PARKING') {
+    if (source.parkingType) {
+      conditions.push(eq(listings.parkingType, source.parkingType));
+    }
+  } else if (source.propertyType) {
+    conditions.push(eq(listings.propertyType, source.propertyType));
+  }
 
   if (source.neighborhoodSlug) {
     conditions.push(eq(listings.neighborhoodSlug, source.neighborhoodSlug));
@@ -445,7 +525,9 @@ export async function listPublishedListingsForMap(filters: ListListingsQuery) {
 
 /** The `where` for a listing search; area pages reuse it so their counts match the search. */
 export function buildPublishedListingWhere(filters: ListListingsQuery) {
-  const conditions = [eq(listings.status, 'PUBLISHED')];
+  // `kind` is defaulted by the query schema, so every caller that predates parking keeps
+  // searching homes without passing anything, and the two kinds never mix in one result set.
+  const conditions = [eq(listings.status, 'PUBLISHED'), eq(listings.kind, filters.kind)];
 
   if (filters.citySlug) {
     conditions.push(eq(listings.citySlug, filters.citySlug));
@@ -465,6 +547,28 @@ export function buildPublishedListingWhere(filters: ListListingsQuery) {
 
   if (filters.roomType?.length) {
     conditions.push(inArray(listings.roomType, filters.roomType));
+  }
+
+  if (filters.parkingType?.length) {
+    conditions.push(inArray(listings.parkingType, filters.parkingType));
+  }
+
+  if (filters.evCharging !== undefined) {
+    conditions.push(eq(listings.evCharging, filters.evCharging));
+  }
+
+  if (filters.gatedAccess !== undefined) {
+    conditions.push(eq(listings.gatedAccess, filters.gatedAccess));
+  }
+
+  if (filters.vehicleLengthCm !== undefined) {
+    // No stated limit means the owner did not measure it, so it admits any car.
+    conditions.push(
+      or(
+        isNull(listings.maxVehicleLengthCm),
+        gte(listings.maxVehicleLengthCm, filters.vehicleLengthCm),
+      )!,
+    );
   }
 
   if (filters.stayMonths !== undefined) {

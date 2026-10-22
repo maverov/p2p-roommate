@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { createListingInputSchema, listingImageInputSchema, updateListingInputSchema } from '.';
+import {
+  createListingInputSchema,
+  listingImageInputSchema,
+  listListingsQuerySchema,
+  updateListingInputSchema,
+} from '.';
 
 describe('listing currency', () => {
   const currency = createListingInputSchema.shape.currency;
@@ -19,6 +24,61 @@ describe('listing currency', () => {
 
   it('is left alone by a partial update that omits it', () => {
     expect(updateListingInputSchema.parse({})).not.toHaveProperty('currency');
+  });
+});
+
+describe('listing kind', () => {
+  const shared = {
+    title: 'A place',
+    description: 'Long enough to pass the minimum description length.',
+    citySlug: 'sofia',
+    monthlyRentCents: 50_000,
+  };
+  const home = {
+    ...shared,
+    propertyType: 'APARTMENT',
+    bedroomCount: 2,
+    bathroomCount: 1,
+    maxOccupants: 3,
+  };
+  const parking = { ...shared, kind: 'PARKING', parkingType: 'GARAGE' };
+
+  const issuePaths = (input: unknown) => {
+    const result = createListingInputSchema.safeParse(input);
+
+    return result.success ? [] : result.error.issues.map((issue) => issue.path.join('.'));
+  };
+
+  it('defaults to a home, so a pre-parking payload still parses', () => {
+    expect(createListingInputSchema.parse(home).kind).toBe('HOME');
+  });
+
+  it('requires the home fields on a home', () => {
+    expect(issuePaths({ ...shared, kind: 'HOME' })).toEqual([
+      'propertyType',
+      'bedroomCount',
+      'bathroomCount',
+      'maxOccupants',
+    ]);
+  });
+
+  it('accepts a parking spot without any of them', () => {
+    expect(createListingInputSchema.safeParse(parking).success).toBe(true);
+  });
+
+  it('requires the kind of space on a parking spot', () => {
+    expect(issuePaths({ ...shared, kind: 'PARKING' })).toEqual(['parkingType']);
+  });
+
+  it('rejects home fields on a parking spot', () => {
+    expect(issuePaths({ ...parking, bedroomCount: 2, roomType: 'SINGLE' })).toEqual([
+      'bedroomCount',
+      'roomType',
+    ]);
+  });
+
+  it('searches homes when a URL does not say otherwise', () => {
+    expect(listListingsQuerySchema.parse({}).kind).toBe('HOME');
   });
 });
 

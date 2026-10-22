@@ -21,6 +21,13 @@ export const routes = {
   home: (locale: Locale) => route(`/${locale}`),
   listings: (locale: Locale, search?: string) =>
     route(search ? `/${locale}/listings?${search}` : `/${locale}/listings`),
+  /**
+   * Parking has a search of its own because almost none of the home filters apply to it.
+   * A parking spot's detail page is still `listing` — it is the same record, so its saves,
+   * conversations and shared links all keep working.
+   */
+  parking: (locale: Locale, search?: string) =>
+    route(search ? `/${locale}/parking?${search}` : `/${locale}/parking`),
   listing: (locale: Locale, id: string) => route(`/${locale}/listings/${id}`),
   editListing: (locale: Locale, id: string) => route(`/${locale}/listings/${id}/edit`),
   profile: (locale: Locale, id: string, search?: string) =>

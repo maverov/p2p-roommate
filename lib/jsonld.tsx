@@ -80,8 +80,10 @@ export function ListingJsonLd({
     address?: string;
     monthlyRent: number;
     currency: string;
-    bedroomCount: number;
-    bathroomCount: number;
+    /** Decides the schema.org type: a parking spot is not an `Apartment`. */
+    kind?: 'HOME' | 'PARKING';
+    bedroomCount?: number;
+    bathroomCount?: number;
     sizeSqm?: number;
     image?: string;
     /** Absolute canonical URL. Passed in because listing pages are locale-prefixed. */
@@ -91,7 +93,7 @@ export function ListingJsonLd({
 }): ReactNode {
   const listingData: Record<string, unknown> = {
     '@context': 'https://schema.org',
-    '@type': 'Apartment',
+    '@type': listing.kind === 'PARKING' ? 'ParkingFacility' : 'Apartment',
     name: listing.title,
     description: listing.description,
     url: listing.url,

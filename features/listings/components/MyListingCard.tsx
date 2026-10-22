@@ -85,8 +85,9 @@ export function MyListingCard({ listing, locale }: Props) {
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
           <p className="text-[13px] text-brand-muted">
-            {tEnums(`propertyType.${listing.propertyType}`)} · {rent}/
-            {tListings('common.perMonth')}
+            {listing.propertyType !== null &&
+              `${tEnums(`propertyType.${listing.propertyType}`)} · `}
+            {rent}/{tListings('common.perMonth')}
           </p>
           <h3 className="mt-0.5 line-clamp-2 text-[15px] font-semibold text-brand-ink">
             {listing.title}

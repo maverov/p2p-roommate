@@ -6,6 +6,7 @@ import {
   ChevronDown,
   House,
   LayoutGrid,
+  SquareParking,
   type LucideIcon,
 } from 'lucide-react';
 import type { Route } from 'next';
@@ -19,9 +20,14 @@ import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
 import { cn } from '@/utils';
 
-type FindPlaceItem = 'all' | 'rooms' | 'apartments' | 'houses';
+type FindPlaceItem = 'all' | 'rooms' | 'apartments' | 'houses' | 'parking';
 
-/** The search, whole or pre-filtered by property type; studios sit with apartments. */
+/**
+ * The search, whole or pre-filtered by property type; studios sit with apartments.
+ *
+ * Parking is last and separated, because it is not a kind of home but a different thing
+ * to rent — and it points at its own search rather than a filtered `/listings` URL.
+ */
 export const FIND_PLACE_ITEMS: ReadonlyArray<{
   id: FindPlaceItem;
   icon: LucideIcon;
@@ -35,6 +41,7 @@ export const FIND_PLACE_ITEMS: ReadonlyArray<{
     href: (locale) => routes.listings(locale, 'propertyType=APARTMENT,STUDIO'),
   },
   { id: 'houses', icon: House, href: (locale) => routes.listings(locale, 'propertyType=HOUSE') },
+  { id: 'parking', icon: SquareParking, href: (locale) => routes.parking(locale) },
 ];
 
 const ITEM_CLASSES =
@@ -95,6 +102,8 @@ export function FindPlaceMenu({ locale }: { locale: Locale }) {
               className={cn(
                 ITEM_CLASSES,
                 id === 'all' && 'mb-1.5 border-b border-brand-border pb-3',
+                // Parking is a different thing to rent, not another kind of home.
+                id === 'parking' && 'mt-1.5 border-t border-brand-border pt-3',
               )}
               href={href(locale)}
               key={id}

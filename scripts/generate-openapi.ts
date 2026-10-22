@@ -64,6 +64,12 @@ const reviewerRoleSchema: JsonObject = {
   enum: ['TENANT', 'OWNER', 'MEMBER'],
 };
 
+const listingKindSchema: JsonObject = { type: 'string', enum: ['HOME', 'PARKING'] };
+const parkingTypeSchema: JsonObject = {
+  type: 'string',
+  enum: ['GARAGE', 'UNDERGROUND', 'COVERED', 'OPEN'],
+};
+
 const roomTypeSchema: JsonObject = { type: 'string', enum: ROOM_TYPES };
 const profileTraitSchema: JsonObject = { type: 'string', enum: [...PROFILE_TRAITS] };
 const staySchema: JsonObject = { type: 'integer', minimum: 1, maximum: MAX_STAY_MONTHS };
@@ -76,7 +82,15 @@ const listingWritableProperties: Record<string, JsonObject> = {
   title: { type: 'string', minLength: 3, maxLength: 120 },
   description: { type: 'string', minLength: 20, maxLength: 5000 },
   status: listingStatusSchema,
-  propertyType: propertyTypeSchema,
+  kind: {
+    ...listingKindSchema,
+    description:
+      'What the listing offers. Fixed at creation: a listing cannot later change between a home and a parking spot.',
+  },
+  propertyType: {
+    anyOf: [propertyTypeSchema, { type: 'null' }],
+    description: 'Required on a `HOME`, and must be absent on a `PARKING` listing.',
+  },
   roommatePreference: roommatePreferenceSchema,
   citySlug: { type: 'string', minLength: 2, maxLength: 80 },
   neighborhoodSlug: { type: 'string', minLength: 2, maxLength: 100 },
@@ -96,9 +110,9 @@ const listingWritableProperties: Record<string, JsonObject> = {
     enum: [PLATFORM_CURRENCY],
     description: 'Case-insensitive on input. Only the platform currency is accepted.',
   },
-  bedroomCount: { type: 'integer', minimum: 0, maximum: 20 },
-  bathroomCount: { type: 'integer', minimum: 0, maximum: 20 },
-  maxOccupants: { type: 'integer', minimum: 1, maximum: 30 },
+  bedroomCount: { type: ['integer', 'null'], minimum: 0, maximum: 20 },
+  bathroomCount: { type: ['integer', 'null'], minimum: 0, maximum: 20 },
+  maxOccupants: { type: ['integer', 'null'], minimum: 1, maximum: 30 },
   sizeSqm: { type: 'integer', minimum: 1, maximum: 5000 },
   floor: { type: 'integer', minimum: -5, maximum: 200 },
   totalFloors: { type: 'integer', minimum: 0, maximum: 200 },
@@ -125,6 +139,18 @@ const listingWritableProperties: Record<string, JsonObject> = {
     description: 'Must not exceed `maxStayMonths` (checked against the stored value on update).',
   },
   maxStayMonths: nullableStaySchema,
+  parkingType: {
+    anyOf: [parkingTypeSchema, { type: 'null' }],
+    description: 'Required on a `PARKING` listing, and must be absent on a `HOME`.',
+  },
+  maxVehicleLengthCm: {
+    type: ['integer', 'null'],
+    minimum: 1,
+    maximum: 2000,
+    description: 'The longest vehicle that fits. `null` means the owner did not state a limit.',
+  },
+  evCharging: { type: 'boolean' },
+  gatedAccess: { type: 'boolean' },
   household: schemaRef('ListingHousehold'),
   isFurnished: { type: 'boolean' },
   internetIncluded: { type: 'boolean' },
@@ -230,6 +256,7 @@ const components: JsonObject = {
         'title',
         'description',
         'status',
+        'kind',
         'propertyType',
         'roommatePreference',
         'citySlug',
@@ -259,6 +286,10 @@ const components: JsonObject = {
         'smokingAllowed',
         'minStayMonths',
         'maxStayMonths',
+        'parkingType',
+        'maxVehicleLengthCm',
+        'evCharging',
+        'gatedAccess',
         'household',
         'availableFrom',
         'amenities',
@@ -273,7 +304,8 @@ const components: JsonObject = {
         title: { type: 'string' },
         description: { type: 'string' },
         status: listingStatusSchema,
-        propertyType: propertyTypeSchema,
+        kind: listingKindSchema,
+        propertyType: { anyOf: [propertyTypeSchema, { type: 'null' }] },
         roommatePreference: roommatePreferenceSchema,
         citySlug: { type: 'string' },
         neighborhoodSlug: nullableStringSchema,
@@ -281,9 +313,9 @@ const components: JsonObject = {
         monthlyRentCents: { type: 'integer' },
         depositCents: nullableIntegerSchema,
         currency: { type: 'string', enum: [PLATFORM_CURRENCY] },
-        bedroomCount: { type: 'integer' },
-        bathroomCount: { type: 'integer' },
-        maxOccupants: { type: 'integer' },
+        bedroomCount: nullableIntegerSchema,
+        bathroomCount: nullableIntegerSchema,
+        maxOccupants: nullableIntegerSchema,
         sizeSqm: nullableIntegerSchema,
         floor: nullableIntegerSchema,
         totalFloors: nullableIntegerSchema,
@@ -302,6 +334,10 @@ const components: JsonObject = {
         smokingAllowed: { type: 'boolean' },
         minStayMonths: nullableIntegerSchema,
         maxStayMonths: nullableIntegerSchema,
+        parkingType: { anyOf: [parkingTypeSchema, { type: 'null' }] },
+        maxVehicleLengthCm: nullableIntegerSchema,
+        evCharging: { type: 'boolean' },
+        gatedAccess: { type: 'boolean' },
         household: schemaRef('ListingHousehold'),
         availableFrom: nullableDateTimeSchema,
         amenities: { type: 'array', items: { type: 'string' } },
@@ -355,19 +391,17 @@ const components: JsonObject = {
     CreateListingInput: {
       type: 'object',
       additionalProperties: false,
-      required: [
-        'title',
-        'description',
-        'propertyType',
-        'citySlug',
-        'monthlyRentCents',
-        'bedroomCount',
-        'bathroomCount',
-        'maxOccupants',
-      ],
+      /*
+       * The per-kind fields cannot be listed here, because which ones are required depends on
+       * `kind`: a home needs `propertyType`, `bedroomCount`, `bathroomCount` and `maxOccupants`,
+       * while a parking spot needs `parkingType` and must omit all four. The server enforces
+       * that and answers with a 400 naming the offending field.
+       */
+      required: ['title', 'description', 'citySlug', 'monthlyRentCents'],
       properties: {
         ...listingWritableProperties,
         status: { ...listingStatusSchema, default: 'DRAFT' },
+        kind: { ...listingKindSchema, default: 'HOME' },
         roommatePreference: {
           ...roommatePreferenceSchema,
           default: 'ANY',
@@ -1062,9 +1096,16 @@ const applicationPaths: Record<string, PathItem> = {
           },
         },
         {
+          name: 'kind',
+          in: 'query',
+          description:
+            'Which kind of listing to search. Homes and parking spots never appear in the same results.',
+          schema: { ...listingKindSchema, default: 'HOME' },
+        },
+        {
           name: 'propertyType',
           in: 'query',
-          description: 'Comma-separated property types.',
+          description: 'Comma-separated property types. Homes only.',
           style: 'form',
           explode: false,
           schema: {
@@ -1073,6 +1114,36 @@ const applicationPaths: Record<string, PathItem> = {
             maxItems: 4,
             items: propertyTypeSchema,
           },
+        },
+        {
+          name: 'parkingType',
+          in: 'query',
+          description: 'Comma-separated parking space types. Parking only.',
+          style: 'form',
+          explode: false,
+          schema: {
+            type: 'array',
+            minItems: 1,
+            maxItems: 4,
+            items: parkingTypeSchema,
+          },
+        },
+        {
+          name: 'vehicleLengthCm',
+          in: 'query',
+          description:
+            'Spots that fit a vehicle this long, including spots that state no limit. Parking only.',
+          schema: { type: 'integer', minimum: 1, maximum: 2000 },
+        },
+        {
+          name: 'evCharging',
+          in: 'query',
+          schema: { type: 'boolean' },
+        },
+        {
+          name: 'gatedAccess',
+          in: 'query',
+          schema: { type: 'boolean' },
         },
         {
           name: 'roommatePreference',

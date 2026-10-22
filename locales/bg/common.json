@@ -6,7 +6,8 @@
       "all": "Всички обяви",
       "rooms": "Стаи",
       "apartments": "Апартаменти и студиа",
-      "houses": "Къщи"
+      "houses": "Къщи",
+      "parking": "Паркоместа"
     },
     "findRoommate": "Намери съквартирант",
     "listProperty": "Публикувай имот",
@@ -41,7 +42,12 @@
     "madeWith": "Направено с",
     "inBulgaria": "в България",
     "templates": "Образци на документи",
-    "citiesHeading": "Намери стая по град",
+    "citiesHeading": "Търси по град",
+    "cityApartments": "Апартаменти и къщи",
+    "cityRooms": "Стаи",
+    "cityRoommates": "Съквартиранти",
+    "cityParking": "Паркоместа",
+    "copyright": "© {year} RentBee. Всички права запазени.",
     "faq": "Често задавани въпроси",
     "whyUs": "Защо RentBee?",
     "howItWorks": "Как работи RentBee",

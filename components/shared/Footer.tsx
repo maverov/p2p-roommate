@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import type { ComponentType, SVGProps } from 'react';
 import { Heart } from 'lucide-react';
-import { CITY_IDS, getCityLabel } from '@/lib/areas';
+import { CITY_IDS, getCityLabel, type CityId } from '@/lib/areas';
 import { caveat } from '@/lib/fonts';
 import type { Locale } from '@/lib/i18n';
 import { routes } from '@/lib/routes';
@@ -46,8 +46,30 @@ const FOOTER_COLUMNS = [
   },
 ] as const;
 
-/** The city list and the link columns share this grid, so their columns line up. */
+/**
+ * Links under each city, in display order. Each one is a city-scoped page, so the
+ * same arguments build the link for every city.
+ */
+const CITY_LINKS = [
+  {
+    label: 'cityApartments',
+    href: (locale: Locale, citySlug: CityId) => routes.areaKind(locale, 'apartments', citySlug),
+  },
+  { label: 'cityRooms', href: (locale: Locale, citySlug: CityId) => routes.area(locale, citySlug) },
+  {
+    label: 'cityRoommates',
+    href: (locale: Locale, citySlug: CityId) => routes.findRoommate(locale, `citySlug=${citySlug}`),
+  },
+  {
+    label: 'cityParking',
+    href: (locale: Locale, citySlug: CityId) => routes.areaKind(locale, 'parking', citySlug),
+  },
+] as const;
+
 const COLUMNS = 'grid grid-cols-2 gap-x-10 sm:grid-cols-4 lg:gap-x-8 xl:gap-x-12';
+
+/** Five cities to a row on larger screens. Only the city list uses it, so the link columns below keep the four-column grid. */
+const CITY_COLUMNS = 'grid grid-cols-2 gap-x-10 sm:grid-cols-5 lg:gap-x-8 xl:gap-x-12';
 
 // lucide-react no longer ships brand icons — minimal inline glyphs instead.
 function FacebookIcon(props: SVGProps<SVGSVGElement>) {
@@ -117,15 +139,18 @@ export async function Footer({ locale }: { locale: Locale }) {
           middle track, while the logo and socials share the links' row below the divider.
         */}
         <div className="mx-auto grid w-full max-w-[2000px] gap-10 lg:grid-cols-[auto_minmax(0,48rem)_1fr] lg:gap-x-12 xl:gap-x-24">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="justify-self-start lg:col-start-1 lg:row-start-3 lg:self-center"
-          >
-            <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
-              Rent<span className="text-brand-ink">Bee</span>
-            </span>
-          </Link>
+          {/* Logo + copyright */}
+          <div className="flex flex-col items-start gap-2 justify-self-start lg:col-start-1 lg:row-start-3 lg:self-center">
+            <Link href="/">
+              <span className="text-[1.75rem] font-bold tracking-tight text-brand-terracotta">
+                Rent<span className="text-brand-ink">Bee</span>
+              </span>
+            </Link>
+
+            <p className="text-[11px] font-medium leading-4 tracking-wide text-brand-olive">
+              {t('copyright', { year: new Date().getFullYear() })}
+            </p>
+          </div>
 
           <nav aria-labelledby="footer-cities-heading" className="lg:col-start-2 lg:row-start-1">
             <h3
@@ -135,15 +160,30 @@ export async function Footer({ locale }: { locale: Locale }) {
               {t('citiesHeading')}
             </h3>
 
-            <ul className={cn(COLUMNS, 'mt-3 gap-y-2')}>
+            <ul className={cn(CITY_COLUMNS, 'mt-3 gap-y-8')}>
               {CITY_IDS.map((citySlug) => (
                 <li key={citySlug}>
-                  <Link
-                    href={routes.area(locale, citySlug)}
-                    className="text-[13px] leading-5 text-brand-muted transition hover:text-brand-terracotta"
-                  >
-                    {getCityLabel(citySlug, locale)}
-                  </Link>
+                  <h4>
+                    <Link
+                      href={routes.area(locale, citySlug)}
+                      className="text-[13px] font-semibold leading-5 text-brand-ink underline underline-offset-4 transition hover:text-brand-terracotta"
+                    >
+                      {getCityLabel(citySlug, locale)}
+                    </Link>
+                  </h4>
+
+                  <ul className="mt-2 space-y-1.5">
+                    {CITY_LINKS.map((link) => (
+                      <li key={link.label}>
+                        <Link
+                          href={link.href(locale, citySlug)}
+                          className="text-[13px] leading-5 text-brand-muted transition hover:text-brand-terracotta"
+                        >
+                          {t(link.label)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>

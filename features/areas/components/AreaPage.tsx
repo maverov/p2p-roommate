@@ -103,6 +103,8 @@ export async function AreaPage(props: AreaPageProps) {
   const { citySlug, kind, locale, neighborhoodSlug } = props;
   const area = describeArea(props);
   const kindFilters = kind ? AREA_KIND_FILTERS[kind] : {};
+  // Parking is the one kind that is not a home, so the roommate parts of this page drop away.
+  const isParking = kind === 'parking';
   const [t, tListings, viewer] = await Promise.all([
     getTranslations({ locale, namespace: 'areas' }),
     getTranslations({ locale, namespace: 'listings' }),
@@ -223,13 +225,23 @@ export async function AreaPage(props: AreaPageProps) {
 
           <div className="mt-5 flex flex-wrap gap-3">
             {total > 0 && (
-              <Link className={PRIMARY} href={routes.listings(locale, searchParams.toString())}>
+              <Link
+                className={PRIMARY}
+                href={
+                  isParking
+                    ? routes.parking(locale, searchParams.toString())
+                    : routes.listings(locale, searchParams.toString())
+                }
+              >
                 {t('seeAll', { count: total })}
               </Link>
             )}
-            <Link className={SECONDARY} href={routes.findRoommate(locale, `citySlug=${citySlug}`)}>
-              {t('findRoommate', { inCity: area.inCity })}
-            </Link>
+            {/* Nobody browsing parking is looking for a flatmate. */}
+            {!isParking && (
+              <Link className={SECONDARY} href={routes.findRoommate(locale, `citySlug=${citySlug}`)}>
+                {t('findRoommate', { inCity: area.inCity })}
+              </Link>
+            )}
           </div>
         </header>
 
@@ -245,7 +257,7 @@ export async function AreaPage(props: AreaPageProps) {
           </nav>
         )}
 
-        {seekers ? (
+        {seekers && !isParking ? (
           <aside className="mt-6 flex max-w-3xl flex-wrap items-center justify-between gap-3 rounded-[15px] border border-brand-terracotta/30 bg-white px-5 py-4">
             <p className="text-[15px] font-bold text-brand-ink">
               {t('seekers', { count: seekers, place: area.place })}

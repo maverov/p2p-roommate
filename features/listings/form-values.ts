@@ -15,7 +15,16 @@ import type { ListingDTO } from './server/repository';
  */
 export type ListingFormValues = {
   title: string;
+  /**
+   * Chosen first, and only when creating: it decides which half of the form is shown, and a
+   * stored listing can never move between the two.
+   */
+  kind: 'HOME' | 'PARKING';
   propertyType: string;
+  parkingType: string;
+  maxVehicleLengthCm: string;
+  evCharging: boolean;
+  gatedAccess: boolean;
   citySlug: string;
   neighborhoodSlug: string;
   roommatePreference: string;
@@ -89,7 +98,12 @@ const emptyHousehold = (): HouseholdFormValues => ({
 
 export const emptyListingFormValues = (): ListingFormValues => ({
   title: '',
+  kind: 'HOME',
   propertyType: 'ROOM',
+  parkingType: 'GARAGE',
+  maxVehicleLengthCm: '',
+  evCharging: false,
+  gatedAccess: false,
   citySlug: 'sofia',
   neighborhoodSlug: '',
   roommatePreference: 'ANY',
@@ -138,13 +152,20 @@ const dateToInput = (value: Date | string | null) => {
 export function listingToFormValues(listing: ListingDTO): ListingFormValues {
   return {
     title: listing.title,
-    propertyType: listing.propertyType,
+    kind: listing.kind,
+    // The other kind's fields keep the empty form's defaults, so switching is impossible
+    // rather than merely discouraged: the form never shows them for the stored kind.
+    propertyType: listing.propertyType ?? 'ROOM',
+    parkingType: listing.parkingType ?? 'GARAGE',
+    maxVehicleLengthCm: numberToInput(listing.maxVehicleLengthCm),
+    evCharging: listing.evCharging,
+    gatedAccess: listing.gatedAccess,
     citySlug: listing.citySlug,
     neighborhoodSlug: listing.neighborhoodSlug ?? '',
     roommatePreference: listing.roommatePreference,
-    bedroomCount: String(listing.bedroomCount),
-    bathroomCount: String(listing.bathroomCount),
-    maxOccupants: String(listing.maxOccupants),
+    bedroomCount: numberToInput(listing.bedroomCount),
+    bathroomCount: numberToInput(listing.bathroomCount),
+    maxOccupants: numberToInput(listing.maxOccupants),
     sizeSqm: numberToInput(listing.sizeSqm),
     floor: numberToInput(listing.floor),
     totalFloors: numberToInput(listing.totalFloors),

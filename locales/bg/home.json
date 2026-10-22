@@ -6,25 +6,39 @@
     "imageAlt": "Балкон с изглед към българско крайбрежно градче"
   },
   "search": {
+    "tabsLabel": "Какво търсиш?",
+    "tabs": {
+      "apartment": "Апартамент",
+      "room": "Стая",
+      "roommate": "Съквартирант",
+      "parking": "Паркинг"
+    },
     "whereLabel": "Къде?",
-    "whatLabel": "Какво?",
-    "budgetLabel": "Бюджет?",
-    "budgetPlaceholder": "Макс.",
-    "peopleLabel": "Колко души?",
+    "wherePlaceholder": "Избери град",
+    "budgetLabel": "Бюджет",
+    "budgetPlaceholder": "Мин – Макс",
+    "budgetMin": "Минимален наем",
+    "budgetMax": "Максимален наем",
+    "budgetMinPlaceholder": "Мин",
+    "budgetMaxPlaceholder": "Макс",
+    "budgetFrom": "от {min}",
+    "budgetTo": "до {max}",
+    "peopleLabel": "Хора",
+    "peoplePlaceholder": "1–5+",
+    "preferencesLabel": "Предпочитания",
+    "preferencesPlaceholder": "Без значение",
+    "preferencesSelected": "{count, plural, one {# избрано} other {# избрани}}",
     "searchButton": "Търсене",
     "searching": "Търсене…",
     "cityRequired": "Моля, избери град",
     "selectOption": "Избери {label}: {value}",
     "optionsLabel": "Опции за {label}",
-    "propertyTypes": {
-      "room": "Стая",
-      "apartment": "Апартамент",
-      "roommate": "Съквартирант"
-    },
     "flags": {
       "furnished": "С обзавеждане",
       "petsOk": "Домашни любимци ОК",
       "girlsOnly": "Само момичета",
+      "evCharging": "Зарядна станция",
+      "gatedAccess": "Контролиран достъп",
       "nearMetro": "Близо до метро"
     }
   },

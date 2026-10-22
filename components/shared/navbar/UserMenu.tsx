@@ -59,16 +59,16 @@ export function UserMenu({ user, locale }: UserMenuProps) {
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={t('accountMenu', { name: user.name })}
-        className="flex items-center gap-1.5 rounded-full transition hover:opacity-90"
+        className="flex items-center gap-2 rounded-full border border-brand-border/70 bg-brand-chip py-1 pl-1 pr-2.5 transition hover:border-brand-terracotta/40 focus-visible:outline-2 focus-visible:outline-brand-terracotta"
         onClick={() => setIsOpen((previous) => !previous)}
         ref={triggerRef}
         type="button"
       >
-        <Avatar name={user.name} size={38} src={user.image} />
+        <Avatar name={user.name} size={34} src={user.image} />
         <ChevronDown
           aria-hidden="true"
-          className={cn('text-brand-ink transition-transform', isOpen && 'rotate-180')}
-          size={16}
+          className={cn('text-brand-olive transition-transform', isOpen && 'rotate-180')}
+          size={15}
           strokeWidth={2}
         />
       </button>

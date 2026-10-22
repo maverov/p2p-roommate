@@ -33,6 +33,7 @@ export default async function FeaturedListings({ locale }: FeaturedListingsProps
     getServerUser(),
     safeQuery(
       listPublishedListings({
+        kind: 'HOME',
         sort: 'newest',
         // Featured means verified once badges exist; until then, the newest listings.
         isVerified: VERIFICATION_BADGES ? true : undefined,

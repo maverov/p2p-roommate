@@ -6,7 +6,8 @@
       "all": "All listings",
       "rooms": "Rooms",
       "apartments": "Apartments & studios",
-      "houses": "Houses"
+      "houses": "Houses",
+      "parking": "Parking spots"
     },
     "findRoommate": "Find Roommate",
     "listProperty": "List your property",
@@ -41,7 +42,12 @@
     "madeWith": "Made with",
     "inBulgaria": "in Bulgaria",
     "templates": "Rental templates",
-    "citiesHeading": "Find a room by city",
+    "citiesHeading": "Search by city",
+    "cityApartments": "Apartments & houses",
+    "cityRooms": "Rooms",
+    "cityRoommates": "Roommates",
+    "cityParking": "Parking spots",
+    "copyright": "© {year} RentBee. All rights reserved.",
     "faq": "FAQs",
     "whyUs": "Why use RentBee?",
     "howItWorks": "How RentBee works",

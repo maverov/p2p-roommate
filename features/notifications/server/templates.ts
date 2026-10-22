@@ -68,7 +68,7 @@ export function renderEmail(content: EmailContent): OutgoingEmail {
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e8dfd2;border-radius:12px;padding:32px">
 <tr><td>
-<p style="margin:0 0 24px;font-size:22px;font-weight:bold;color:#c85b36">Rent<span style="color:#303329">Bee</span></p>
+<p style="margin:0 0 24px;font-size:26px;font-weight:bold;color:#c85b36">Rent<span style="color:#303329">Bee</span></p>
 <h1 style="margin:0 0 16px;font-size:22px;line-height:28px;color:#303329">${escapeHtml(content.heading)}</h1>
 ${paragraphs}${quote}
 <p style="margin:8px 0 24px"><a href="${url}" style="display:inline-block;background:#c85b36;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;padding:12px 20px;border-radius:8px">${escapeHtml(content.action.label)}</a></p>

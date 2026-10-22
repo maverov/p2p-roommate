@@ -27,7 +27,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <NextIntlClientProvider locale={locale} messages={{ auth }} timeZone={APP_TIME_ZONE}>
       <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-brand-cream px-6 py-12">
         <Link href={routes.home(locale)}>
-          <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
+          <span className="text-[1.75rem] font-bold tracking-tight text-brand-terracotta">
             Rent<span className="text-brand-ink">Bee</span>
           </span>
         </Link>

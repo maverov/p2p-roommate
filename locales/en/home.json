@@ -6,25 +6,39 @@
     "imageAlt": "Balcony overlooking a Bulgarian coastal town"
   },
   "search": {
+    "tabsLabel": "What are you looking for?",
+    "tabs": {
+      "apartment": "Apartment",
+      "room": "Room",
+      "roommate": "Roommate",
+      "parking": "Parking"
+    },
     "whereLabel": "Where?",
-    "whatLabel": "What?",
-    "budgetLabel": "Budget?",
-    "budgetPlaceholder": "Max",
-    "peopleLabel": "People?",
+    "wherePlaceholder": "Choose a city",
+    "budgetLabel": "Budget",
+    "budgetPlaceholder": "Min – Max",
+    "budgetMin": "Minimum rent",
+    "budgetMax": "Maximum rent",
+    "budgetMinPlaceholder": "Min",
+    "budgetMaxPlaceholder": "Max",
+    "budgetFrom": "from {min}",
+    "budgetTo": "up to {max}",
+    "peopleLabel": "People",
+    "peoplePlaceholder": "1–5+",
+    "preferencesLabel": "Preferences",
+    "preferencesPlaceholder": "Any",
+    "preferencesSelected": "{count, plural, one {# selected} other {# selected}}",
     "searchButton": "Search",
     "searching": "Searching...",
     "cityRequired": "Please select a city",
     "selectOption": "Select {label}: {value}",
     "optionsLabel": "{label} options",
-    "propertyTypes": {
-      "room": "Room",
-      "apartment": "Apartment",
-      "roommate": "Roommate"
-    },
     "flags": {
       "furnished": "Furnished",
       "petsOk": "Pets OK",
       "girlsOnly": "Girls only",
+      "evCharging": "EV charging",
+      "gatedAccess": "Gated access",
       "nearMetro": "Near metro"
     }
   },

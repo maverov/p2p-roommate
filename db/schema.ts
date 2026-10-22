@@ -124,7 +124,19 @@ export const apiRateLimits = pgTable('api_rate_limit', {
 
 export const listingStatus = pgEnum('listing_status', ['DRAFT', 'PUBLISHED', 'PAUSED', 'ARCHIVED']);
 
+/**
+ * What a listing offers. `HOME` is everything the platform launched with — a room, flat or
+ * house. `PARKING` is a parking spot: it shares this table, and so inherits photos, favourites,
+ * conversations, reviews and reports unchanged, but has none of the roommate shape.
+ *
+ * Immutable once set. Flipping a listing between kinds would leave its existing reviews and
+ * conversations attached to something they were never about, so the API refuses the change.
+ */
+export const listingKind = pgEnum('listing_kind', ['HOME', 'PARKING']);
+
 export const propertyType = pgEnum('property_type', ['APARTMENT', 'HOUSE', 'STUDIO', 'ROOM']);
+
+export const parkingType = pgEnum('parking_type', ['GARAGE', 'UNDERGROUND', 'COVERED', 'OPEN']);
 
 export const roommatePreference = pgEnum('roommate_preference', [
   'ANY',
@@ -206,7 +218,10 @@ export const listings = pgTable(
     title: text('title').notNull(),
     description: text('description').notNull(),
     status: listingStatus('status').default('DRAFT').notNull(),
-    propertyType: propertyType('property_type').notNull(),
+    kind: listingKind('kind').default('HOME').notNull(),
+    /** Homes only; null on parking. Required for `HOME` by `listing_home_shape`. */
+    propertyType: propertyType('property_type'),
+    /** Homes only. Parking rows keep the `ANY` default, which nothing reads. */
     roommatePreference: roommatePreference('roommate_preference').default('ANY').notNull(),
     citySlug: text('city_slug').notNull(),
     neighborhoodSlug: text('neighborhood_slug'),
@@ -215,9 +230,10 @@ export const listings = pgTable(
     depositCents: integer('deposit_cents'),
     /** Always `PLATFORM_CURRENCY` (`lib/currency.ts`); see `listing_currency_eur`. */
     currency: text('currency').default('EUR').notNull(),
-    bedroomCount: integer('bedroom_count').notNull(),
-    bathroomCount: integer('bathroom_count').notNull(),
-    maxOccupants: integer('max_occupants').notNull(),
+    /** The three below are homes only; null on parking (`listing_home_shape`). */
+    bedroomCount: integer('bedroom_count'),
+    bathroomCount: integer('bathroom_count'),
+    maxOccupants: integer('max_occupants'),
     sizeSqm: integer('size_sqm'),
     floor: integer('floor'),
     totalFloors: integer('total_floors'),
@@ -237,6 +253,12 @@ export const listings = pgTable(
     smokingAllowed: boolean('smoking_allowed').default(false).notNull(),
     minStayMonths: integer('min_stay_months'),
     maxStayMonths: integer('max_stay_months'),
+    /** Parking only. The kind of space on offer; required for `PARKING`. */
+    parkingType: parkingType('parking_type'),
+    /** Parking only. The longest vehicle that fits, in centimetres. */
+    maxVehicleLengthCm: integer('max_vehicle_length_cm'),
+    evCharging: boolean('ev_charging').default(false).notNull(),
+    gatedAccess: boolean('gated_access').default(false).notNull(),
     /** Who lives there now and how (`listingHouseholdSchema`); display only, never filtered. */
     household: jsonb('household').$type<Record<string, unknown>>().default({}).notNull(),
     availableFrom: timestamp('available_from', { withTimezone: true }),
@@ -253,6 +275,14 @@ export const listings = pgTable(
     index('listing_verified_idx').on(table.isVerified),
     index('listing_available_from_idx').on(table.availableFrom),
     index('listing_status_published_idx').on(table.status, table.publishedAt),
+    /*
+     * Parking is a thin slice of this table and homes are the rest, so `kind` makes a poor
+     * leading index column. A partial index serves the parking search precisely instead, and
+     * leaves every existing home query walking the indexes it already used.
+     */
+    index('listing_parking_city_status_idx')
+      .on(table.citySlug, table.status)
+      .where(sql`${table.kind} = 'PARKING'`),
     check('listing_monthly_rent_positive', sql`${table.monthlyRentCents} > 0`),
     check('listing_deposit_nonnegative', sql`${table.depositCents} >= 0`),
     check('listing_currency_eur', sql`${table.currency} = 'EUR'`),
@@ -261,6 +291,19 @@ export const listings = pgTable(
     check(
       'listing_stay_order',
       sql`${table.minStayMonths} IS NULL OR ${table.maxStayMonths} IS NULL OR ${table.minStayMonths} <= ${table.maxStayMonths}`,
+    ),
+    /*
+     * The home-shape columns are nullable so parking can leave them empty, which would
+     * otherwise let a home be saved without them. These two constraints put that requirement
+     * back, per kind, and keep parking from carrying roommate fields that nothing would show.
+     */
+    check(
+      'listing_home_shape',
+      sql`${table.kind} <> 'HOME' OR (${table.propertyType} IS NOT NULL AND ${table.bedroomCount} IS NOT NULL AND ${table.bathroomCount} IS NOT NULL AND ${table.maxOccupants} IS NOT NULL)`,
+    ),
+    check(
+      'listing_parking_shape',
+      sql`${table.kind} <> 'PARKING' OR (${table.parkingType} IS NOT NULL AND ${table.propertyType} IS NULL AND ${table.roomType} IS NULL AND ${table.bedroomCount} IS NULL AND ${table.bathroomCount} IS NULL AND ${table.maxOccupants} IS NULL)`,
     ),
   ],
 );

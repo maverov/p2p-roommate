@@ -17,6 +17,8 @@ export type RoommatePreference =
 export type ReportStatus = 'OPEN' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
 export type ReviewerRole = 'TENANT' | 'OWNER' | 'MEMBER';
 export type RoomType = 'SINGLE' | 'DOUBLE' | 'SHARED';
+export type ListingKind = 'HOME' | 'PARKING';
+export type ParkingType = 'GARAGE' | 'UNDERGROUND' | 'COVERED' | 'OPEN';
 
 export const PROPERTY_TYPES: PropertyType[] = [
   'ROOM',
@@ -34,6 +36,11 @@ export const ROOMMATE_PREFERENCES: RoommatePreference[] = [
 ];
 
 export const ROOM_TYPES: RoomType[] = ['SINGLE', 'DOUBLE', 'SHARED'];
+
+export const LISTING_KINDS: ListingKind[] = ['HOME', 'PARKING'];
+
+/** Most enclosed first: that is the order people shop in, and roughly the price order. */
+export const PARKING_TYPES: ParkingType[] = ['GARAGE', 'UNDERGROUND', 'COVERED', 'OPEN'];
 
 /**
  * Household and lifestyle scales. Unlike the lists above these are not DB enums:

@@ -1,25 +1,17 @@
 'use client';
 
-import {
-  Heart,
-  Home,
-  LogOut,
-  Menu,
-  MessageSquare,
-  ShieldCheck,
-  User,
-  X,
-} from 'lucide-react';
+import { Heart, Home, LogOut, Menu, MessageSquare, ShieldCheck, User, X } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/shared/Avatar';
 import { useSignOut, type SessionUser } from '@/features/auth';
 import { locales, type Locale } from '@/lib/i18n';
 import { isAdmin } from '@/lib/roles';
 import { routes, withLocale } from '@/lib/routes';
+import { cn } from '@/utils';
 
 import { FIND_PLACE_ITEMS, FindPlaceMenu } from './FindPlaceMenu';
 import { UserMenu } from './UserMenu';
@@ -49,7 +41,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
         <div className="flex h-19 items-center">
           {/* Wordmark */}
           <Link href={routes.home(locale)} className="shrink-0">
-            <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
+            <span className="text-[1.75rem] font-bold tracking-tight text-brand-terracotta">
               Rent<span className="text-brand-ink">Bee</span>
             </span>
           </Link>
@@ -93,11 +85,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
             </Link>
 
             {/* Language Switcher */}
-            <LocaleLinks
-              className="hidden items-center text-[15px] font-semibold lg:flex"
-              locale={locale}
-              pathname={pathname}
-            />
+            <LocaleLinks className="hidden lg:flex" locale={locale} pathname={pathname} />
 
             {/* Account */}
             {user ? (
@@ -207,11 +195,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
                 </>
               )}
 
-              <LocaleLinks
-                className="mt-3 flex items-center text-[15px] font-semibold"
-                locale={locale}
-                pathname={pathname}
-              />
+              <LocaleLinks className="mt-3 flex" locale={locale} pathname={pathname} />
 
               {user ? (
                 <div className="mt-4 flex items-center gap-3 border-t border-brand-border pt-4">
@@ -264,24 +248,30 @@ function LocaleLinks({ className, locale, pathname }: LocaleLinksProps) {
   const t = useTranslations('common.nav');
 
   return (
-    <div aria-label={t('switchLanguage')} className={className} role="group">
-      {locales.map((candidate, index) => (
-        <Fragment key={candidate}>
-          {index > 0 && <span className="mx-0.5 text-brand-terracotta">/</span>}
-          <Link
-            aria-current={candidate === locale ? 'true' : undefined}
-            className={
-              candidate === locale
-                ? 'text-brand-terracotta transition hover:text-brand-terracotta-hover'
-                : 'text-brand-ink transition hover:text-brand-terracotta'
-            }
-            href={withLocale(pathname, candidate)}
-            prefetch={false}
-            hrefLang={candidate}
-          >
-            {candidate.toUpperCase()}
-          </Link>
-        </Fragment>
+    <div
+      aria-label={t('switchLanguage')}
+      className={cn(
+        'items-center gap-0.5 rounded-full border border-brand-border/70 bg-brand-chip p-1 text-[14px] font-semibold',
+        className,
+      )}
+      role="group"
+    >
+      {locales.map((candidate) => (
+        <Link
+          aria-current={candidate === locale ? 'true' : undefined}
+          className={cn(
+            'rounded-full px-2.5 py-1 leading-5 transition',
+            candidate === locale
+              ? 'bg-brand-terracotta/10 text-brand-terracotta'
+              : 'text-brand-ink hover:text-brand-terracotta',
+          )}
+          href={withLocale(pathname, candidate)}
+          key={candidate}
+          prefetch={false}
+          hrefLang={candidate}
+        >
+          {candidate.toUpperCase()}
+        </Link>
       ))}
     </div>
   );

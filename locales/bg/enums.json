@@ -70,5 +70,15 @@
     "HAS_PET": "Има домашен любимец",
     "VEGETARIAN": "Вегетарианец",
     "LGBTQ_FRIENDLY": "Подкрепя ЛГБТК+"
+  },
+  "listingKind": {
+    "HOME": "Жилище",
+    "PARKING": "Паркомясто"
+  },
+  "parkingType": {
+    "GARAGE": "Гараж",
+    "UNDERGROUND": "Подземно",
+    "COVERED": "Покрито",
+    "OPEN": "Открито"
   }
 }

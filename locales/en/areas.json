@@ -41,6 +41,13 @@
       "metaDescription": "{count, plural, one {# room or flat} other {# rooms and flats}} for students {place}, straight from the owners. Typical rent {median} a month. No agents, no commissions.",
       "metaDescriptionEmpty": "Rooms and flats for students {place}, straight from the owners. No agents, no commissions.",
       "title": "Student housing {place}"
+    },
+    "parking": {
+      "label": "Parking spots",
+      "metaTitle": "Parking spots to rent {place}",
+      "metaDescription": "{count, plural, one {# parking spot} other {# parking spots}} to rent {place}, straight from the owners. Typical price {median} a month. No agents, no commissions.",
+      "metaDescriptionEmpty": "Parking spots and garages to rent {place}, straight from the owners. No agents, no commissions.",
+      "title": "Parking spots to rent {place}"
     }
   }
 }

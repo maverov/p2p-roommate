@@ -34,6 +34,7 @@ export type CompatibilityProfile = {
 };
 
 export type CompatibilityListing = {
+  kind: 'HOME' | 'PARKING';
   citySlug: string;
   neighborhoodSlug: string | null;
   monthlyRentCents: number;
@@ -296,6 +297,15 @@ export function scoreListing(
   seeker: CompatibilityProfile,
   listing: CompatibilityListing,
 ): number | null {
+  /*
+   * Every factor below weighs the viewer against the people they would be living with.
+   * A parking spot has none, so the honest answer is that there is nothing to score —
+   * not a low score, and not a score built from budget and area alone.
+   */
+  if (listing.kind === 'PARKING') {
+    return null;
+  }
+
   const home = parseListingHousehold(listing.household);
 
   return combine([

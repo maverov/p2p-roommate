@@ -22,7 +22,7 @@ export async function Navbar({ locale }: NavbarProps) {
   return (
     <nav
       aria-label={t('mainNavigation')}
-      className="w-full sticky top-0 z-50 bg-brand-cream"
+      className="w-full sticky top-0 z-50 border-b border-brand-border/35 bg-brand-surface"
     >
       <NavbarClient locale={locale} user={user} />
     </nav>

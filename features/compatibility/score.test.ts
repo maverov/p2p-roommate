@@ -23,6 +23,7 @@ function profile(overrides: Partial<CompatibilityProfile> = {}): CompatibilityPr
 
 function listing(overrides: Partial<CompatibilityListing> = {}): CompatibilityListing {
   return {
+    kind: 'HOME',
     citySlug: 'sofia',
     neighborhoodSlug: 'lozenets',
     monthlyRentCents: 50_000,
@@ -48,6 +49,12 @@ describe('scoreListing', () => {
     expect(scoreListing(profile(), listing())).toBeNull();
     // A city alone (weight 2) is below the evidence threshold.
     expect(scoreListing(profile({ citySlug: 'sofia' }), listing())).toBeNull();
+  });
+
+  it('declines to score a parking spot, which has nobody to be compatible with', () => {
+    expect(scoreListing(seeker, listing({ kind: 'PARKING' }))).toBeNull();
+    // The same listing as a home scores, so the null is the kind and not thin evidence.
+    expect(scoreListing(seeker, listing())).not.toBeNull();
   });
 
   it('scores a fit on every stated point high, but not 100 on thin evidence', () => {

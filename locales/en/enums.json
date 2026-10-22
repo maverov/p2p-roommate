@@ -70,5 +70,15 @@
     "HAS_PET": "Has a pet",
     "VEGETARIAN": "Vegetarian",
     "LGBTQ_FRIENDLY": "LGBTQ+ friendly"
+  },
+  "listingKind": {
+    "HOME": "Home",
+    "PARKING": "Parking spot"
+  },
+  "parkingType": {
+    "GARAGE": "Garage",
+    "UNDERGROUND": "Underground",
+    "COVERED": "Covered",
+    "OPEN": "Open air"
   }
 }

@@ -9,12 +9,14 @@ import {
   Building2,
   CalendarDays,
   CalendarRange,
+  Car,
   Check,
   DoorOpen,
   Droplets,
   Layers,
   MapPin,
   Maximize2,
+  Ruler,
   ShieldCheck,
   UsersRound,
 } from 'lucide-react';
@@ -197,22 +199,34 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
           : null;
 
   const facts = [
-    {
+    listing.propertyType !== null && {
       icon: Building2,
       label: t('detail.facts.propertyType'),
       value: tEnums(`propertyType.${listing.propertyType}`),
+    },
+    listing.parkingType !== null && {
+      icon: Car,
+      label: t('parking.type'),
+      value: tEnums(`parkingType.${listing.parkingType}`),
+    },
+    listing.maxVehicleLengthCm !== null && {
+      icon: Ruler,
+      label: t('parking.vehicleLength'),
+      value: t('common.vehicleLengthMetres', {
+        metres: (listing.maxVehicleLengthCm / 100).toFixed(1),
+      }),
     },
     listing.roomType !== null && {
       icon: DoorOpen,
       label: t('detail.facts.roomType'),
       value: tEnums(`roomType.${listing.roomType}`),
     },
-    {
+    listing.bedroomCount !== null && {
       icon: BedDouble,
       label: t('detail.facts.rooms'),
       value: String(listing.bedroomCount),
     },
-    {
+    listing.bathroomCount !== null && {
       icon: Droplets,
       label: t('detail.facts.bathrooms'),
       value: String(listing.bathroomCount),
@@ -230,7 +244,7 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
           ? t('detail.facts.floorOf', { floor: listing.floor, total: listing.totalFloors })
           : String(listing.floor),
     },
-    {
+    listing.maxOccupants !== null && {
       icon: UsersRound,
       label: t('detail.facts.occupants'),
       value: t('detail.facts.occupantsValue', { count: listing.maxOccupants }),
@@ -254,6 +268,8 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
     listing.privateBathroom && t('detail.included.privateBathroom'),
     listing.couplesAllowed && t('detail.included.couples'),
     listing.smokingAllowed && t('detail.included.smoking'),
+    listing.evCharging && t('parking.evCharging'),
+    listing.gatedAccess && t('parking.gatedAccess'),
   ].filter((term): term is string => Boolean(term));
 
   const breadcrumbItems = [
@@ -275,8 +291,9 @@ export default async function ListingDetailPage({ params }: ListingPageProps) {
           address: neighborhood ?? city,
           monthlyRent: Math.round(listing.monthlyRentCents / 100),
           currency: listing.currency,
-          bedroomCount: listing.bedroomCount,
-          bathroomCount: listing.bathroomCount,
+          kind: listing.kind,
+          bedroomCount: listing.bedroomCount ?? undefined,
+          bathroomCount: listing.bathroomCount ?? undefined,
           sizeSqm: listing.sizeSqm ?? undefined,
           image: listing.images[0]?.url,
           url: `${appUrl}${routes.listing(locale, listing.id)}`,

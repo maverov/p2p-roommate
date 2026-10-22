@@ -48,11 +48,20 @@ export const listingStatusSchema = z.enum([
   'ARCHIVED',
 ]);
 
+export const listingKindSchema = z.enum(['HOME', 'PARKING']);
+
 export const propertyTypeSchema = z.enum([
   'APARTMENT',
   'HOUSE',
   'STUDIO',
   'ROOM',
+]);
+
+export const parkingTypeSchema = z.enum([
+  'GARAGE',
+  'UNDERGROUND',
+  'COVERED',
+  'OPEN',
 ]);
 
 export const roommatePreferenceSchema = z.enum([
@@ -137,7 +146,14 @@ const listingFieldsSchema = z.object({
   title: z.string().trim().min(3).max(120),
   description: z.string().trim().min(20).max(5000),
   status: listingStatusSchema,
-  propertyType: propertyTypeSchema,
+  kind: listingKindSchema,
+  /*
+   * The per-kind fields are optional here and required by `assertKindShape` on create, rather
+   * than by splitting this into a discriminated union: `z.discriminatedUnion` has no
+   * `.partial()`, and the update schema below depends on getting one. A PATCH is checked
+   * against the stored row's kind instead, the way `assertStayRange` already works.
+   */
+  propertyType: propertyTypeSchema.nullable().optional(),
   roommatePreference: roommatePreferenceSchema,
   citySlug: z.string().trim().min(2).max(80),
   neighborhoodSlug: optionalString(z.string().trim().min(2).max(100)),
@@ -145,9 +161,9 @@ const listingFieldsSchema = z.object({
   monthlyRentCents: z.number().int().positive().max(50_000_000),
   depositCents: z.number().int().nonnegative().max(50_000_000).optional(),
   currency: currencySchema,
-  bedroomCount: z.number().int().min(0).max(20),
-  bathroomCount: z.number().int().min(0).max(20),
-  maxOccupants: z.number().int().min(1).max(30),
+  bedroomCount: z.number().int().min(0).max(20).nullable().optional(),
+  bathroomCount: z.number().int().min(0).max(20).nullable().optional(),
+  maxOccupants: z.number().int().min(1).max(30).nullable().optional(),
   sizeSqm: z.number().int().positive().max(5000).optional(),
   floor: z.number().int().min(-5).max(200).optional(),
   totalFloors: z.number().int().min(0).max(200).optional(),
@@ -168,6 +184,11 @@ const listingFieldsSchema = z.object({
   // since an update may send only one of them (`assertStayRange`).
   minStayMonths: staySchema.nullable().optional(),
   maxStayMonths: staySchema.nullable().optional(),
+  parkingType: parkingTypeSchema.nullable().optional(),
+  /** Centimetres, so a 5 m space is 500 — whole numbers keep the form free of decimals. */
+  maxVehicleLengthCm: z.number().int().positive().max(2000).nullable().optional(),
+  evCharging: z.boolean(),
+  gatedAccess: z.boolean(),
   household: listingHouseholdSchema,
   availableFrom: z.coerce.date().optional(),
   amenities: z.array(z.string().trim().min(1).max(80)).max(50),
@@ -175,24 +196,82 @@ const listingFieldsSchema = z.object({
   images: z.array(listingImageInputSchema).max(12),
 });
 
-export const createListingInputSchema = listingFieldsSchema.extend({
-  status: listingStatusSchema.default('DRAFT'),
-  roommatePreference: roommatePreferenceSchema.default('ANY'),
-  currency: currencySchema.default(PLATFORM_CURRENCY),
-  isFurnished: z.boolean().default(false),
-  internetIncluded: z.boolean().default(false),
-  utilitiesIncluded: z.boolean().default(false),
-  petsAllowed: z.boolean().default(false),
-  nearMetro: z.boolean().default(false),
-  roommateFriendly: z.boolean().default(false),
-  privateBathroom: z.boolean().default(false),
-  couplesAllowed: z.boolean().default(false),
-  smokingAllowed: z.boolean().default(false),
-  household: listingHouseholdSchema.default({}),
-  amenities: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
-  rules: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
-  images: z.array(listingImageInputSchema).max(12).default([]),
-});
+/** Required for a home, and meaningless on a parking spot. Mirrors `listing_home_shape`. */
+const HOME_ONLY_FIELDS = [
+  'propertyType',
+  'bedroomCount',
+  'bathroomCount',
+  'maxOccupants',
+] as const;
+
+type KindShapeInput = {
+  kind: z.infer<typeof listingKindSchema>;
+  parkingType?: unknown;
+  roomType?: unknown;
+} & Partial<Record<(typeof HOME_ONLY_FIELDS)[number], unknown>>;
+
+/**
+ * Enforces the per-kind field shape that the flat schema above cannot express on its own,
+ * matching the `listing_home_shape` and `listing_parking_shape` constraints so a bad payload
+ * comes back as a 400 naming the field rather than a 500 out of Postgres.
+ */
+export function assertKindShape(value: KindShapeInput, ctx: z.RefinementCtx) {
+  if (value.kind === 'HOME') {
+    for (const field of HOME_ONLY_FIELDS) {
+      if (value[field] == null) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'This field is required for a home listing.',
+          path: [field],
+        });
+      }
+    }
+
+    return;
+  }
+
+  if (value.parkingType == null) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Choose what kind of parking space this is.',
+      path: ['parkingType'],
+    });
+  }
+
+  for (const field of [...HOME_ONLY_FIELDS, 'roomType'] as const) {
+    if (value[field] != null) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'This field does not apply to a parking spot.',
+        path: [field],
+      });
+    }
+  }
+}
+
+export const createListingInputSchema = listingFieldsSchema
+  .extend({
+    status: listingStatusSchema.default('DRAFT'),
+    kind: listingKindSchema.default('HOME'),
+    roommatePreference: roommatePreferenceSchema.default('ANY'),
+    currency: currencySchema.default(PLATFORM_CURRENCY),
+    isFurnished: z.boolean().default(false),
+    internetIncluded: z.boolean().default(false),
+    utilitiesIncluded: z.boolean().default(false),
+    petsAllowed: z.boolean().default(false),
+    nearMetro: z.boolean().default(false),
+    roommateFriendly: z.boolean().default(false),
+    privateBathroom: z.boolean().default(false),
+    couplesAllowed: z.boolean().default(false),
+    smokingAllowed: z.boolean().default(false),
+    evCharging: z.boolean().default(false),
+    gatedAccess: z.boolean().default(false),
+    household: listingHouseholdSchema.default({}),
+    amenities: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
+    rules: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
+    images: z.array(listingImageInputSchema).max(12).default([]),
+  })
+  .superRefine(assertKindShape);
 
 /** A partial update: omitted fields are left untouched, never reset. */
 export const updateListingInputSchema = listingFieldsSchema.partial();
@@ -204,7 +283,17 @@ export const listListingsQuerySchema = z.object({
   q: optionalString(z.string().trim().min(1).max(120)),
   citySlug: optionalString(z.string().trim().min(2).max(80)),
   neighborhoodSlug: csvFromQuery(z.string().trim().min(2).max(100), 40),
+  /**
+   * Which kind of listing to search. Defaulting to homes is what keeps every existing URL,
+   * saved search and area page meaning exactly what it meant before parking existed.
+   */
+  kind: listingKindSchema.default('HOME'),
   propertyType: csvFromQuery(propertyTypeSchema, 4),
+  parkingType: csvFromQuery(parkingTypeSchema, 4),
+  evCharging: booleanFromQuery.optional(),
+  gatedAccess: booleanFromQuery.optional(),
+  /** The seeker's car: spots whose stated limit admits it, plus spots that state none. */
+  vehicleLengthCm: integerFromQuery.positive().max(2000).optional(),
   roommatePreference: roommatePreferenceSchema.optional(),
   roomType: csvFromQuery(roomTypeSchema, 3),
   /** How long the seeker will stay: listings whose min/max stay admits it. */
@@ -229,7 +318,9 @@ export const listListingsQuerySchema = z.object({
   perPage: integerFromQuery.min(1).max(50).default(20),
 });
 
+export type ListingKind = z.infer<typeof listingKindSchema>;
 export type PropertyType = z.infer<typeof propertyTypeSchema>;
+export type ParkingType = z.infer<typeof parkingTypeSchema>;
 export type RoommatePreference = z.infer<typeof roommatePreferenceSchema>;
 export type ListingSort = z.infer<typeof listingSortSchema>;
 export type CreateListingInput = z.infer<typeof createListingInputSchema>;

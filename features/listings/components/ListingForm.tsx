@@ -18,9 +18,10 @@ import { getNeighborhoodsByCity, hasMetro, isCityId } from '@/lib/areas';
 import { PLATFORM_CURRENCY } from '@/lib/currency';
 import { IMAGE_UPLOAD } from '@/lib/images';
 import type { Locale } from '@/lib/i18n';
-import { PROPERTY_TYPES, ROOMMATE_PREFERENCES } from '@/lib/labels';
+import { LISTING_KINDS, PARKING_TYPES, PROPERTY_TYPES, ROOMMATE_PREFERENCES } from '@/lib/labels';
 import { BULGARIA_CENTER, CITY_CENTERS } from '@/lib/map';
 import { routes } from '@/lib/routes';
+import { cn } from '@/utils';
 import {
   emptyListingFormValues,
   householdFromFormValues,
@@ -59,6 +60,7 @@ export function ListingForm({ locale, edit }: Props) {
   const { isRefreshing, refresh } = useRouterRefresh();
   const isEdit = edit !== undefined;
   const [form, setForm] = useState<ListingFormValues>(edit?.values ?? emptyListingFormValues);
+  const isParking = form.kind === 'PARKING';
   const [amenityInput, setAmenityInput] = useState('');
   const [ruleInput, setRuleInput] = useState('');
   const [savedListing, setSavedListing] = useState<ListingDTO | null>(null);
@@ -88,18 +90,13 @@ export function ListingForm({ locale, edit }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = (status: 'DRAFT' | 'PUBLISHED') => {
-    const shared = {
+    const common = {
       title: form.title,
-      propertyType: form.propertyType as CreateListingInput['propertyType'],
+      kind: form.kind,
       citySlug: form.citySlug,
       neighborhoodSlug: form.neighborhoodSlug || undefined,
-      roommatePreference: form.roommatePreference as CreateListingInput['roommatePreference'],
-      bedroomCount: Number(form.bedroomCount) || 0,
-      bathroomCount: Number(form.bathroomCount) || 0,
-      maxOccupants: Number(form.maxOccupants) || 1,
       sizeSqm: form.sizeSqm ? Number(form.sizeSqm) : undefined,
       floor: form.floor ? Number(form.floor) : undefined,
-      totalFloors: form.totalFloors ? Number(form.totalFloors) : undefined,
       // The form edits euros; the API stores integer cents in the platform currency.
       monthlyRentCents: Math.round(Number(form.monthlyRent) * 100),
       depositCents: form.deposit ? Math.round(Number(form.deposit) * 100) : undefined,
@@ -107,21 +104,46 @@ export function ListingForm({ locale, edit }: Props) {
       availableFrom: form.availableFrom ? new Date(form.availableFrom) : undefined,
       latitude: form.location?.latitude ?? null,
       longitude: form.location?.longitude ?? null,
-      isFurnished: form.isFurnished,
-      internetIncluded: form.internetIncluded,
-      utilitiesIncluded: form.utilitiesIncluded,
-      petsAllowed: form.petsAllowed,
       nearMetro: form.nearMetro,
-      roommateFriendly: form.roommateFriendly,
-      privateBathroom: form.privateBathroom,
-      couplesAllowed: form.couplesAllowed,
-      smokingAllowed: form.smokingAllowed,
-      ...householdFromFormValues(form.household),
       description: form.description,
       amenities: form.amenities,
       rules: form.rules,
       images: form.images.map((img, i) => ({ ...img, sortOrder: i })),
     };
+
+    /*
+     * Each kind sends only its own fields. The server rejects a home field on a parking
+     * listing outright, so the two branches are what keep a half-filled form from the
+     * other kind reaching the API at all.
+     */
+    const shared = isParking
+      ? {
+          ...common,
+          parkingType: form.parkingType as CreateListingInput['parkingType'],
+          maxVehicleLengthCm: form.maxVehicleLengthCm
+            ? Number(form.maxVehicleLengthCm)
+            : undefined,
+          evCharging: form.evCharging,
+          gatedAccess: form.gatedAccess,
+        }
+      : {
+          ...common,
+          propertyType: form.propertyType as CreateListingInput['propertyType'],
+          roommatePreference: form.roommatePreference as CreateListingInput['roommatePreference'],
+          bedroomCount: Number(form.bedroomCount) || 0,
+          bathroomCount: Number(form.bathroomCount) || 0,
+          maxOccupants: Number(form.maxOccupants) || 1,
+          totalFloors: form.totalFloors ? Number(form.totalFloors) : undefined,
+          isFurnished: form.isFurnished,
+          internetIncluded: form.internetIncluded,
+          utilitiesIncluded: form.utilitiesIncluded,
+          petsAllowed: form.petsAllowed,
+          roommateFriendly: form.roommateFriendly,
+          privateBathroom: form.privateBathroom,
+          couplesAllowed: form.couplesAllowed,
+          smokingAllowed: form.smokingAllowed,
+          ...householdFromFormValues(form.household),
+        };
 
     // Omitting `status` on edit leaves the stored value untouched.
     mutation.mutate(isEdit ? shared : { ...shared, status });
@@ -220,6 +242,42 @@ export function ListingForm({ locale, edit }: Props) {
         </p>
       )}
 
+      {/*
+        What is being listed, chosen before anything else because it decides which fields
+        follow. Edit mode omits it: a stored listing cannot change kind, and the server
+        refuses the attempt, so offering the choice here would only mislead.
+      */}
+      {!isEdit && (
+        <section className={SECTION}>
+          <h2 className={SECTION_TITLE}>{t('sectionKind')}</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {LISTING_KINDS.map((kind) => {
+              const isSelected = form.kind === kind;
+
+              return (
+                <button
+                  key={kind}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => set('kind', kind)}
+                  className={cn(
+                    'rounded-xl border px-4 py-3 text-left text-[14px] font-medium transition',
+                    isSelected
+                      ? 'border-brand-terracotta bg-white text-brand-terracotta ring-1 ring-brand-terracotta/30'
+                      : 'border-brand-border bg-white text-brand-ink hover:border-brand-terracotta/50',
+                  )}
+                >
+                  {tEnums(`listingKind.${kind}`)}
+                  <span className="mt-0.5 block text-[12px] font-normal text-brand-muted">
+                    {t(`kindHint.${kind}`)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Basic info */}
       <section className={SECTION}>
         <h2 className={SECTION_TITLE}>{t('sectionBasic')}</h2>
@@ -234,34 +292,68 @@ export function ListingForm({ locale, edit }: Props) {
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={LABEL}>{t('propertyType')}</label>
-            <select
-              className={FIELD}
-              value={form.propertyType}
-              onChange={(e) => set('propertyType', e.target.value)}
-            >
-              {PROPERTY_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {tEnums(`propertyType.${type}`)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={LABEL}>{t('roommatePreference')}</label>
-            <select
-              className={FIELD}
-              value={form.roommatePreference}
-              onChange={(e) => set('roommatePreference', e.target.value)}
-            >
-              {ROOMMATE_PREFERENCES.map((preference) => (
-                <option key={preference} value={preference}>
-                  {tEnums(`roommatePreference.${preference}`)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {isParking ? (
+            <>
+              <div>
+                <label className={LABEL}>{t('parkingType')}</label>
+                <select
+                  className={FIELD}
+                  value={form.parkingType}
+                  onChange={(e) => set('parkingType', e.target.value)}
+                >
+                  {PARKING_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {tEnums(`parkingType.${type}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={LABEL}>{t('maxVehicleLength')}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={2000}
+                  className={FIELD}
+                  value={form.maxVehicleLengthCm}
+                  onChange={(e) => set('maxVehicleLengthCm', e.target.value)}
+                  placeholder="500"
+                />
+                <p className="mt-1 text-[12px] text-brand-muted">{t('maxVehicleLengthHint')}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className={LABEL}>{t('propertyType')}</label>
+                <select
+                  className={FIELD}
+                  value={form.propertyType}
+                  onChange={(e) => set('propertyType', e.target.value)}
+                >
+                  {PROPERTY_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {tEnums(`propertyType.${type}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={LABEL}>{t('roommatePreference')}</label>
+                <select
+                  className={FIELD}
+                  value={form.roommatePreference}
+                  onChange={(e) => set('roommatePreference', e.target.value)}
+                >
+                  {ROOMMATE_PREFERENCES.map((preference) => (
+                    <option key={preference} value={preference}>
+                      {tEnums(`roommatePreference.${preference}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -320,17 +412,18 @@ export function ListingForm({ locale, edit }: Props) {
         </div>
       </section>
 
-      {/* Details */}
+      {/* Details. A parking spot has a size and a level, but no rooms or occupants. */}
       <section className={SECTION}>
         <h2 className={SECTION_TITLE}>{t('sectionDetails')}</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {(
-            [
-              ['bedroomCount', t('bedrooms')],
-              ['bathroomCount', t('bathrooms')],
-              ['maxOccupants', t('maxOccupants')],
-              ['sizeSqm', t('sizeSqm')],
-            ] as const
+          {(isParking
+            ? ([['sizeSqm', t('sizeSqm')]] as const)
+            : ([
+                ['bedroomCount', t('bedrooms')],
+                ['bathroomCount', t('bathrooms')],
+                ['maxOccupants', t('maxOccupants')],
+                ['sizeSqm', t('sizeSqm')],
+              ] as const)
           ).map(([key, label]) => (
             <div key={key}>
               <label className={LABEL}>{label}</label>
@@ -346,7 +439,7 @@ export function ListingForm({ locale, edit }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={LABEL}>{t('floor')}</label>
+            <label className={LABEL}>{isParking ? t('parkingLevel') : t('floor')}</label>
             <input
               type="number"
               className={FIELD}
@@ -354,16 +447,18 @@ export function ListingForm({ locale, edit }: Props) {
               onChange={(e) => set('floor', e.target.value)}
             />
           </div>
-          <div>
-            <label className={LABEL}>{t('totalFloors')}</label>
-            <input
-              type="number"
-              min={0}
-              className={FIELD}
-              value={form.totalFloors}
-              onChange={(e) => set('totalFloors', e.target.value)}
-            />
-          </div>
+          {!isParking && (
+            <div>
+              <label className={LABEL}>{t('totalFloors')}</label>
+              <input
+                type="number"
+                min={0}
+                className={FIELD}
+                value={form.totalFloors}
+                onChange={(e) => set('totalFloors', e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -415,18 +510,23 @@ export function ListingForm({ locale, edit }: Props) {
       <section className={SECTION}>
         <h2 className={SECTION_TITLE}>{t('sectionFeatures')}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {(
-            [
-              ['isFurnished', t('furnished')],
-              ['internetIncluded', t('internet')],
-              ['utilitiesIncluded', t('utilities')],
-              ['petsAllowed', t('pets')],
-              ['nearMetro', t('nearMetro')],
-              ['roommateFriendly', t('roommateFriendly')],
-              ['privateBathroom', t('privateBathroom')],
-              ['couplesAllowed', t('couplesAllowed')],
-              ['smokingAllowed', t('smokingAllowed')],
-            ] as const
+          {(isParking
+            ? ([
+                ['evCharging', t('evCharging')],
+                ['gatedAccess', t('gatedAccess')],
+                ['nearMetro', t('nearMetro')],
+              ] as const)
+            : ([
+                ['isFurnished', t('furnished')],
+                ['internetIncluded', t('internet')],
+                ['utilitiesIncluded', t('utilities')],
+                ['petsAllowed', t('pets')],
+                ['nearMetro', t('nearMetro')],
+                ['roommateFriendly', t('roommateFriendly')],
+                ['privateBathroom', t('privateBathroom')],
+                ['couplesAllowed', t('couplesAllowed')],
+                ['smokingAllowed', t('smokingAllowed')],
+              ] as const)
           )
             .filter(([key]) => key !== 'nearMetro' || hasMetro(form.citySlug))
             .map(([key, label]) => (
@@ -443,11 +543,14 @@ export function ListingForm({ locale, edit }: Props) {
         </div>
       </section>
 
-      <HouseholdFields
-        classes={{ section: SECTION, title: SECTION_TITLE, label: LABEL, field: FIELD }}
-        onChange={(household) => set('household', household)}
-        value={form.household}
-      />
+      {/* The room on offer, the stay and who lives there: all roommate questions. */}
+      {!isParking && (
+        <HouseholdFields
+          classes={{ section: SECTION, title: SECTION_TITLE, label: LABEL, field: FIELD }}
+          onChange={(household) => set('household', household)}
+          value={form.household}
+        />
+      )}
 
       {/* Description */}
       <section className={SECTION}>

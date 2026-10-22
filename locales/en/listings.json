@@ -8,7 +8,8 @@
     "signInToSave": "Sign in to save",
     "retry": "Try again",
     "loadFailed": "We could not load this data.",
-    "listedBy": "Listed by {name}"
+    "listedBy": "Listed by {name}",
+    "vehicleLengthMetres": "up to {metres} m"
   },
   "detail": {
     "photoCount": "{count, plural, one {# photo} other {# photos}}",
@@ -246,7 +247,18 @@
     "mapPin": "Location on the map",
     "mapPinHint": "Click the map to drop a pin, then drag it to adjust. Visitors see the area, not the exact spot.",
     "mapPinClear": "Remove pin",
-    "mapPinMarker": "Listing location"
+    "mapPinMarker": "Listing location",
+    "sectionKind": "What are you listing?",
+    "parkingType": "Type of space",
+    "parkingLevel": "Level",
+    "maxVehicleLength": "Longest vehicle (cm)",
+    "maxVehicleLengthHint": "Leave empty if there is no limit.",
+    "evCharging": "EV charging",
+    "gatedAccess": "Gated access",
+    "kindHint": {
+      "HOME": "A room, apartment or house",
+      "PARKING": "A garage or parking space"
+    }
   },
   "myListings": {
     "heading": "My listings",
@@ -268,5 +280,19 @@
     "updatedAt": "Updated",
     "publishedAt": "Published",
     "unpublished": "Not published"
+  },
+  "parking": {
+    "heading": "Parking spots",
+    "headingIn": "Parking spots in {city}",
+    "metaDescription": "Garages and parking spaces to rent, direct from owners.",
+    "resultCount": "{count, plural, =0 {No parking spots} one {# parking spot} other {# parking spots}}",
+    "empty": "No parking spots found",
+    "emptyBody": "Try a wider area or clear some filters.",
+    "type": "Type of space",
+    "vehicleLength": "My vehicle",
+    "anyVehicleLength": "Any length",
+    "evCharging": "EV charging",
+    "gatedAccess": "Gated access",
+    "level": "Level"
   }
 }

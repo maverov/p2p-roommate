@@ -429,9 +429,22 @@
             }
           },
           {
+            "name": "kind",
+            "in": "query",
+            "description": "Which kind of listing to search. Homes and parking spots never appear in the same results.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HOME",
+                "PARKING"
+              ],
+              "default": "HOME"
+            }
+          },
+          {
             "name": "propertyType",
             "in": "query",
-            "description": "Comma-separated property types.",
+            "description": "Comma-separated property types. Homes only.",
             "style": "form",
             "explode": false,
             "schema": {
@@ -447,6 +460,51 @@
                   "ROOM"
                 ]
               }
+            }
+          },
+          {
+            "name": "parkingType",
+            "in": "query",
+            "description": "Comma-separated parking space types. Parking only.",
+            "style": "form",
+            "explode": false,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 4,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "GARAGE",
+                  "UNDERGROUND",
+                  "COVERED",
+                  "OPEN"
+                ]
+              }
+            }
+          },
+          {
+            "name": "vehicleLengthCm",
+            "in": "query",
+            "description": "Spots that fit a vehicle this long, including spots that state no limit. Parking only.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            }
+          },
+          {
+            "name": "evCharging",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "gatedAccess",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -8378,6 +8436,7 @@
           "title",
           "description",
           "status",
+          "kind",
           "propertyType",
           "roommatePreference",
           "citySlug",
@@ -8407,6 +8466,10 @@
           "smokingAllowed",
           "minStayMonths",
           "maxStayMonths",
+          "parkingType",
+          "maxVehicleLengthCm",
+          "evCharging",
+          "gatedAccess",
           "household",
           "availableFrom",
           "amenities",
@@ -8437,13 +8500,27 @@
               "ARCHIVED"
             ]
           },
-          "propertyType": {
+          "kind": {
             "type": "string",
             "enum": [
-              "APARTMENT",
-              "HOUSE",
-              "STUDIO",
-              "ROOM"
+              "HOME",
+              "PARKING"
+            ]
+          },
+          "propertyType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "APARTMENT",
+                  "HOUSE",
+                  "STUDIO",
+                  "ROOM"
+                ]
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "roommatePreference": {
@@ -8487,13 +8564,22 @@
             ]
           },
           "bedroomCount": {
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "bathroomCount": {
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "maxOccupants": {
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "sizeSqm": {
             "type": [
@@ -8581,6 +8667,34 @@
               "integer",
               "null"
             ]
+          },
+          "parkingType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "GARAGE",
+                  "UNDERGROUND",
+                  "COVERED",
+                  "OPEN"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maxVehicleLengthCm": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "evCharging": {
+            "type": "boolean"
+          },
+          "gatedAccess": {
+            "type": "boolean"
           },
           "household": {
             "$ref": "#/components/schemas/ListingHousehold"
@@ -8695,12 +8809,8 @@
         "required": [
           "title",
           "description",
-          "propertyType",
           "citySlug",
-          "monthlyRentCents",
-          "bedroomCount",
-          "bathroomCount",
-          "maxOccupants"
+          "monthlyRentCents"
         ],
         "properties": {
           "title": {
@@ -8723,14 +8833,30 @@
             ],
             "default": "DRAFT"
           },
-          "propertyType": {
+          "kind": {
             "type": "string",
             "enum": [
-              "APARTMENT",
-              "HOUSE",
-              "STUDIO",
-              "ROOM"
-            ]
+              "HOME",
+              "PARKING"
+            ],
+            "default": "HOME"
+          },
+          "propertyType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "APARTMENT",
+                  "HOUSE",
+                  "STUDIO",
+                  "ROOM"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required on a `HOME`, and must be absent on a `PARKING` listing."
           },
           "roommatePreference": {
             "type": "string",
@@ -8777,17 +8903,26 @@
             "default": "EUR"
           },
           "bedroomCount": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "maximum": 20
           },
           "bathroomCount": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "maximum": 20
           },
           "maxOccupants": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 1,
             "maximum": 30
           },
@@ -8867,6 +9002,38 @@
             ],
             "minimum": 1,
             "maximum": 60
+          },
+          "parkingType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "GARAGE",
+                  "UNDERGROUND",
+                  "COVERED",
+                  "OPEN"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required on a `PARKING` listing, and must be absent on a `HOME`."
+          },
+          "maxVehicleLengthCm": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 2000,
+            "description": "The longest vehicle that fits. `null` means the owner did not state a limit."
+          },
+          "evCharging": {
+            "type": "boolean"
+          },
+          "gatedAccess": {
+            "type": "boolean"
           },
           "household": {
             "$ref": "#/components/schemas/ListingHousehold",
@@ -8953,14 +9120,30 @@
               "ARCHIVED"
             ]
           },
-          "propertyType": {
+          "kind": {
             "type": "string",
             "enum": [
-              "APARTMENT",
-              "HOUSE",
-              "STUDIO",
-              "ROOM"
-            ]
+              "HOME",
+              "PARKING"
+            ],
+            "description": "What the listing offers. Fixed at creation: a listing cannot later change between a home and a parking spot."
+          },
+          "propertyType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "APARTMENT",
+                  "HOUSE",
+                  "STUDIO",
+                  "ROOM"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required on a `HOME`, and must be absent on a `PARKING` listing."
           },
           "roommatePreference": {
             "type": "string",
@@ -9005,17 +9188,26 @@
             "description": "Case-insensitive on input. Only the platform currency is accepted."
           },
           "bedroomCount": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "maximum": 20
           },
           "bathroomCount": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "maximum": 20
           },
           "maxOccupants": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 1,
             "maximum": 30
           },
@@ -9092,6 +9284,38 @@
             ],
             "minimum": 1,
             "maximum": 60
+          },
+          "parkingType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "GARAGE",
+                  "UNDERGROUND",
+                  "COVERED",
+                  "OPEN"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Required on a `PARKING` listing, and must be absent on a `HOME`."
+          },
+          "maxVehicleLengthCm": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 2000,
+            "description": "The longest vehicle that fits. `null` means the owner did not state a limit."
+          },
+          "evCharging": {
+            "type": "boolean"
+          },
+          "gatedAccess": {
+            "type": "boolean"
           },
           "household": {
             "$ref": "#/components/schemas/ListingHousehold"
