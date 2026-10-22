@@ -104,6 +104,9 @@ export async function notifyNewMessage(messageId: string) {
           eq(conversationParticipants.conversationId, conversationId),
           ne(conversationParticipants.userId, senderId),
           eq(user.banned, false),
+          // Unconfirmed signup addresses may belong to someone else. Never send
+          // private conversation contents to an address without proof of ownership.
+          eq(user.emailVerified, true),
         ),
       ),
     db

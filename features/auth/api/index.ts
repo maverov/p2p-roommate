@@ -36,6 +36,7 @@ function unwrapAuthResponse<TData>(response: AuthClientResponse<TData>) {
 export type AuthErrorKey =
   | 'errors.invalidCredentials'
   | 'errors.emailNotVerified'
+  | 'errors.emailInUse'
   | 'errors.tooManyRequests'
   | 'errors.generic';
 
@@ -47,6 +48,11 @@ export function authErrorKey(error: unknown): AuthErrorKey {
   if (error.status === 429) return 'errors.tooManyRequests';
   if (error.code === 'EMAIL_NOT_VERIFIED') return 'errors.emailNotVerified';
   if (error.code === 'INVALID_EMAIL_OR_PASSWORD') return 'errors.invalidCredentials';
+  if (
+    error.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL' ||
+    error.code === 'USER_ALREADY_EXISTS'
+  )
+    return 'errors.emailInUse';
 
   return 'errors.generic';
 }
@@ -56,8 +62,7 @@ export const useLogin = (nextPath?: string) => {
     mutationFn: async (credentials: LoginInput) => {
       const response = await authClient.signIn.email({
         ...credentials,
-        // Where the re-sent verification link lands if the address is still unconfirmed.
-        callbackURL: routes.verifyEmail(nextPath),
+        callbackURL: nextPath,
       });
 
       return unwrapAuthResponse(response);
@@ -71,7 +76,7 @@ export const useSignup = (locale: Locale, nextPath?: string) => {
       const response = await authClient.signUp.email({
         ...data,
         locale,
-        callbackURL: routes.verifyEmail(nextPath),
+        callbackURL: nextPath ?? routes.home(locale),
       });
 
       return unwrapAuthResponse(response);

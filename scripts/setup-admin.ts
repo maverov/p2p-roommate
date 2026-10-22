@@ -25,7 +25,7 @@ async function main() {
       'Sole admin ready: maverov@gmail.com (name: admin). Existing passwords are unchanged.',
     );
     console.log(
-      'For a new account, use Forgot password to set a password, then sign in and verify your email.',
+      'For a new account, use Forgot password to set a password, then sign in.',
     );
   } finally {
     await client.end();

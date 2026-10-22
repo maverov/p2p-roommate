@@ -57,9 +57,9 @@ scripts all follow that precedence.
 
 ### Email
 
-Sign-up requires email verification, so you need the emails to finish signing up. Without
-`RESEND_API_KEY` and `EMAIL_FROM`, `pnpm dev` prints every email (verification, password
-reset, notifications) to its console, links included; open the link from there. This
+Sign-up signs users in immediately without confirmation or an email provider.
+Password recovery still needs email delivery. Without `RESEND_API_KEY` and `EMAIL_FROM`,
+`pnpm dev` prints recovery links to its console; open the link from there. This
 fallback is development-only: in a production build (`pnpm start`) an unconfigured send
 throws instead.
 
@@ -97,7 +97,7 @@ Open `http://localhost:3000`.
 
 ## Admin access
 
-Sign up and confirm the address (or use a seeded account), then provision the designated administrator (`maverov@gmail.com`):
+Sign up (or use a seeded account), then provision the designated administrator (`maverov@gmail.com`):
 
 ```powershell
 pnpm admin:setup

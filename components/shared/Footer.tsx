@@ -120,12 +120,8 @@ export async function Footer({ locale }: { locale: Locale }) {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 justify-self-start lg:col-start-1 lg:row-start-3 lg:self-center"
+            className="justify-self-start lg:col-start-1 lg:row-start-3 lg:self-center"
           >
-            <svg className="h-10 w-10" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-              <circle cx="20" cy="20" r="18" fill="#c85b36" />
-              <path d="M20 8L26 24H14L20 8Z" fill="white" />
-            </svg>
             <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
               Rent<span className="text-brand-ink">Bee</span>
             </span>

@@ -127,8 +127,8 @@ canonical URLs, the sitemap, and JSON-LD point at `http://localhost:3000`, and
 notification email links fall back to `BETTER_AUTH_URL`. Verification and reset links are
 always built from `BETTER_AUTH_URL`, so it must be the public URL.
 
-Email is required in production: without `RESEND_API_KEY` and `EMAIL_FROM`, every send
-throws, so nobody can verify an address or reset a password. On serverless hosts, point
+Email is required for password recovery in production: without `RESEND_API_KEY` and
+`EMAIL_FROM`, reset messages cannot be delivered. Signup and login work without email. On serverless hosts, point
 `DATABASE_URL` at a connection pooler and lower `DATABASE_POOL_MAX` (default 10; e.g. 1),
 since every instance opens its own pool.
 

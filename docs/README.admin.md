@@ -23,7 +23,7 @@ local database and does not automatically run these setup commands.
 account. It sets its name to `admin`, clears bans and demotes other administrators.
 It is safe to repeat and preserves an existing password. No default password is
 created. After provisioning a new account, open `/forgot-password`, use the email
-link to set a password, then sign in and complete email verification.
+link to set a password, then sign in. Signup and login do not require email confirmation.
 
 Configure `RESEND_API_KEY`, a verified `EMAIL_FROM`, `BETTER_AUTH_URL` and
 `NEXT_PUBLIC_APP_URL` before using the flow in production. Without email setup,

@@ -13,7 +13,7 @@ const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 
 /**
  * Sends through Resend's HTTP API (no SDK). Without `RESEND_API_KEY`/`EMAIL_FROM` the
- * email is printed to the server log so sign-up and password reset stay testable
+ * email is printed to the server log so password reset stays testable
  * locally; in production that configuration gap throws instead, because a reset link
  * that only reaches a log file locks the user out.
  */

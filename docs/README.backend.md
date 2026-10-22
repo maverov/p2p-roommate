@@ -48,7 +48,7 @@ lib/server/admin.ts              Admin guards for pages and API routes
 lib/server/rate-limit.ts         Per-user rate limits for write routes
 lib/server/email.ts              Sends email through Resend
 lib/server/background.ts         Runs work after the response (runInBackground)
-lib/auth.ts                      Better Auth config (verification, reset, deletion)
+lib/auth.ts                      Better Auth config (immediate signup, reset, deletion)
 ```
 
 Files that import `server-only`, `db`, `auth`, or `serverEnv` must stay on the server. Do not import them into React client components.
@@ -134,7 +134,7 @@ If there is no session cookie, the endpoint returns:
 
 Better Auth's own endpoints live under `/api/auth` (`lib/auth.ts`); the browser calls them through `lib/auth-client.ts`. The account rules:
 
-- **Email verification is required.** Sign-up sends a verification link (valid 24 hours) and creates no session. Signing in before verifying returns `403 EMAIL_NOT_VERIFIED` and sends a fresh link. Opening the link signs the user in and lands on `/verify-email`.
+- **Email confirmation is not required.** Signup creates the account and session immediately, then redirects to the requested page. Existing unverified users can log in. Signup and login send no verification emails; account emails remain unverified until ownership is established by another supported method. Password recovery still uses email delivery.
 - **Password reset.** `/forgot-password` requests a link (valid 1 hour) that opens `/reset-password`. Resetting the password signs the user out of every session.
 - **Email language.** `user.locale` (`bg` or `en`) picks the language of every email. Sign-up stores the page's locale; `/settings` changes it through `updateUser`.
 - **Google and Facebook.** `/login` and `/signup` show a "Continue with" button per provider whose `*_CLIENT_ID` and `*_CLIENT_SECRET` are both set (`lib/server/social-auth.ts`). A first sign-in creates the account, in the page's language (passed through the OAuth state). Google confirms the email, so it links to an existing account with that address; Facebook does not, so a matching address fails with `account_not_linked` and the person signs in with their password. A Facebook account that shares no email fails with `email_not_found`. Failures return to `/login?error=<code>&provider=<id>`. Provider photos are not imported: their hosts are not on the image allowlist.

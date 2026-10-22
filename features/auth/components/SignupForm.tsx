@@ -1,11 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MailCheck } from 'lucide-react';
 import type { Route } from 'next';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { authErrorKey, useSignup } from '@/features/auth/api';
@@ -26,12 +26,14 @@ import {
 type SignupFormProps = {
   /** Emails to this account are written in this language (`user.locale`). */
   locale: Locale;
-  /** Carried through the verification link, so confirming lands where sign-up began. */
+  /** Destination after the account and its session are created. */
   nextPath?: Route | null;
 };
 
 export function SignupForm({ locale, nextPath }: SignupFormProps) {
   const t = useTranslations('auth');
+  const router = useRouter();
+  const [isNavigating, startTransition] = useTransition();
   const signup = useSignup(locale, nextPath ?? undefined);
   const schema = useMemo(() => createSignupSchema(t), [t]);
   const form = useForm<SignupInput>({
@@ -40,22 +42,16 @@ export function SignupForm({ locale, nextPath }: SignupFormProps) {
   });
 
   const { errors } = form.formState;
-  const onSubmit = form.handleSubmit((values) => signup.mutate(values));
-
-  // No session until the address is confirmed, so success is "go check your inbox".
-  // Better Auth answers the same way when the email is already registered, which is
-  // deliberate: the form must not reveal who has an account.
-  if (signup.isSuccess) {
-    return (
-      <div className="space-y-2" role="status">
-        <MailCheck aria-hidden="true" className="size-8 text-brand-terracotta" />
-        <h2 className="text-lg font-semibold text-brand-ink">{t('signup.checkEmailTitle')}</h2>
-        <p className="text-sm text-brand-muted">
-          {t('signup.checkEmailBody', { email: signup.variables.email })}
-        </p>
-      </div>
-    );
-  }
+  const onSubmit = form.handleSubmit((values) =>
+    signup.mutate(values, {
+      onSuccess: () =>
+        startTransition(() => {
+          router.replace(nextPath ?? routes.home(locale));
+          router.refresh();
+        }),
+    }),
+  );
+  const isBusy = signup.isPending || isNavigating;
 
   return (
     <form className="space-y-4" noValidate onSubmit={onSubmit}>
@@ -144,8 +140,8 @@ export function SignupForm({ locale, nextPath }: SignupFormProps) {
         })}
       </p>
 
-      <button className={AUTH_SUBMIT} disabled={signup.isPending} type="submit">
-        {signup.isPending ? t('signup.submitting') : t('signup.submit')}
+      <button className={AUTH_SUBMIT} disabled={isBusy} type="submit">
+        {isBusy ? t('signup.submitting') : t('signup.submit')}
       </button>
     </form>
   );

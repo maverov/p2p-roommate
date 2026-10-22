@@ -6,15 +6,11 @@ import { betterAuth } from 'better-auth';
 import { APIError, getOAuthState } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { admin } from 'better-auth/plugins/admin';
-import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { deleteUserUploads, listUserUploads } from '@/features/uploads/server/blob';
-import {
-  sendPasswordResetEmail,
-  sendVerificationEmail,
-} from '@/features/notifications/server/notify';
+import { sendPasswordResetEmail } from '@/features/notifications/server/notify';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/lib/auth-rules';
 import { defaultLocale, isLocale } from '@/lib/i18n';
 import { runInBackground } from '@/lib/server/background';
@@ -55,26 +51,12 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: PASSWORD_MIN_LENGTH,
     maxPasswordLength: PASSWORD_MAX_LENGTH,
-    // No session until the address is confirmed, so nobody can sign up as someone else.
-    requireEmailVerification: true,
+    // Sign-up establishes a session immediately; email ownership remains unverified.
+    requireEmailVerification: false,
+    autoSignIn: true,
     revokeSessionsOnPasswordReset: true,
     resetPasswordTokenExpiresIn: 60 * 60,
     sendResetPassword: ({ user, url }) => sendPasswordResetEmail(user, url),
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    // An unverified sign-in attempt re-sends the link instead of dead-ending.
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
-    expiresIn: 24 * 60 * 60,
-    sendVerificationEmail: ({ user, url }) => sendVerificationEmail(user, url),
-    afterEmailVerification: async (user) => {
-      // The profile keeps its own copy for the public "email verified" badge.
-      await db
-        .update(schema.userProfiles)
-        .set({ emailVerified: true, updatedAt: new Date() })
-        .where(eq(schema.userProfiles.userId, user.id));
-    },
   },
   socialProviders,
   account: {

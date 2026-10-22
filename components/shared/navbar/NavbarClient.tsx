@@ -47,12 +47,8 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
     <>
       <div className="mx-auto w-full max-w-[2000px] px-6 lg:px-10">
         <div className="flex h-19 items-center">
-          {/* Logo Placeholder */}
-          <Link href={routes.home(locale)} className="flex shrink-0 items-center gap-2.5">
-            <svg className="h-10 w-10" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-              <circle cx="20" cy="20" r="18" fill="#c85b36" />
-              <path d="M20 8L26 24H14L20 8Z" fill="white" />
-            </svg>
+          {/* Wordmark */}
+          <Link href={routes.home(locale)} className="shrink-0">
             <span className="text-2xl font-bold tracking-tight text-brand-terracotta">
               Rent<span className="text-brand-ink">Bee</span>
             </span>
@@ -111,6 +107,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
             ) : (
               <Link
                 href={loginHref}
+                prefetch={false}
                 className="hidden rounded-full bg-brand-terracotta px-6 py-2.5 text-[15px] font-semibold text-white transition hover:bg-brand-terracotta-hover lg:block"
               >
                 {t('signIn')}
@@ -237,6 +234,7 @@ export function NavbarClient({ locale, user }: NavbarClientProps) {
               ) : (
                 <Link
                   href={loginHref}
+                  prefetch={false}
                   className="mt-4 w-full rounded-full bg-brand-terracotta px-6 py-2.5 text-center text-[15px] font-semibold text-white transition hover:bg-brand-terracotta-hover"
                 >
                   {t('signIn')}
@@ -259,7 +257,8 @@ type LocaleLinksProps = {
 /**
  * Real links rather than buttons: crawlable, works without JS, and each
  * navigation passes through next-intl's middleware so the locale cookie stays
- * in sync with the URL.
+ * in sync with the URL. Prefetching a different language would also change that
+ * cookie, causing the locale-free auth pages to use a language never selected.
  */
 function LocaleLinks({ className, locale, pathname }: LocaleLinksProps) {
   const t = useTranslations('common.nav');
@@ -277,6 +276,7 @@ function LocaleLinks({ className, locale, pathname }: LocaleLinksProps) {
                 : 'text-brand-ink transition hover:text-brand-terracotta'
             }
             href={withLocale(pathname, candidate)}
+            prefetch={false}
             hrefLang={candidate}
           >
             {candidate.toUpperCase()}

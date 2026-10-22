@@ -32,8 +32,7 @@ MUST DO BEFORE LAUNCH
 [ ] 3. Email (Resend)
        - Verify rentbee.bg for sending (add the DNS records Resend gives you)
        - Set RESEND_API_KEY and EMAIL_FROM=RentBee <noreply@rentbee.bg>
-       Blocker: sign-up requires email verification, so without email
-       nobody can create an account.
+       Email is required for password recovery; signup works without it.
 
 [ ] 4. Photo uploads (Vercel Blob)
        - Create the Blob storage
